@@ -28,15 +28,19 @@ export default function Nav() {
   function navLink(href: string, label: string) {
     const active = pathname === href
     return (
-      <Link href={href} style={{
-        color: active ? '#f0f0f0' : '#666',
-        textDecoration: 'none',
-        fontSize: '13px',
-        letterSpacing: '0.05em',
-        paddingBottom: '4px',
-        borderBottom: active ? '1px solid #f0f0f0' : '1px solid transparent',
-        transition: 'all 0.15s',
-      }}>
+      <Link href={href}
+        style={{
+          color: active ? '#f0f0f0' : '#666',
+          textDecoration: 'none',
+          fontSize: '13px',
+          letterSpacing: '0.05em',
+          paddingBottom: '4px',
+          borderBottom: active ? '1px solid #f0f0f0' : '1px solid transparent',
+          transition: 'color 0.15s',
+        }}
+        onMouseEnter={e => { if (!active) e.currentTarget.style.color = '#aaa' }}
+        onMouseLeave={e => { if (!active) e.currentTarget.style.color = '#666' }}
+      >
         {label}
       </Link>
     )
@@ -50,7 +54,11 @@ export default function Nav() {
       alignItems: 'center',
       borderBottom: '1px solid #1a1a1a',
     }}>
-      <Link href="/" style={{ textDecoration: 'none' }}>
+      <Link href="/"
+        style={{ textDecoration: 'none', transition: 'opacity 0.15s' }}
+        onMouseEnter={e => (e.currentTarget.style.opacity = '0.6')}
+        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+      >
         <span style={{
           display: 'flex', alignItems: 'center', gap: '10px',
           fontSize: '15px', fontWeight: 600, letterSpacing: '0.15em',
@@ -70,11 +78,15 @@ export default function Nav() {
         {user ? (
           <>
             <span style={{ fontSize: '12px', color: '#555', letterSpacing: '0.04em' }}>{user}</span>
-            <button onClick={signOut} style={{
-              background: 'none', border: '1px solid #1e1e1e', color: '#555',
-              fontSize: '12px', padding: '7px 16px', borderRadius: '5px',
-              cursor: 'pointer', letterSpacing: '0.04em',
-            }}>
+            <button onClick={signOut}
+              style={{
+                background: 'none', border: '1px solid #1e1e1e', color: '#555',
+                fontSize: '12px', padding: '7px 16px', borderRadius: '5px',
+                cursor: 'pointer', letterSpacing: '0.04em', transition: 'color 0.15s, border-color 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#888'; e.currentTarget.style.borderColor = '#333' }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.borderColor = '#1e1e1e' }}
+            >
               Sign out
             </button>
           </>
