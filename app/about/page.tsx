@@ -97,7 +97,7 @@ export default async function About() {
         </div>
 
         <div style={{ marginTop: '32px' }}>
-          <Link href="/signin" style={{
+          <Link href="/" style={{
             fontSize: '13px', color: '#555', textDecoration: 'none', letterSpacing: '0.04em',
             border: '1px solid #1e1e1e', padding: '12px 24px', borderRadius: '6px',
           }}>
