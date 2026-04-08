@@ -35,7 +35,7 @@ export default function Educators() {
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.from('educator_applications').insert({
+    const { error } = await supabase.from('contributor_applications').insert({
       name: form.name,
       email: form.email,
       institution: form.institution,

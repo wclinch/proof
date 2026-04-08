@@ -56,6 +56,14 @@ export default function Footer() {
       </span>
       <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
         <a
+          href="/privacy"
+          style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#555')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+        >
+          Privacy
+        </a>
+        <a
           href="mailto:proof_dev@protonmail.com?subject=Issue Report"
           style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}

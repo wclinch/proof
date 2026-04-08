@@ -53,8 +53,10 @@ function HomeInner() {
       .ilike('topic', `%${q}%`)
       .order('citation_count', { ascending: false })
       .then(({ data }) => {
-        setResults(weightedShuffle(data || []))
+        const results = data || []
+        setResults(weightedShuffle(results))
         setLoading(false)
+        supabase.from('search_logs').insert({ query: q, result_count: results.length })
       })
   }, [searchParams])
 
