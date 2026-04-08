@@ -33,6 +33,10 @@ function hVelocity(w: HarvestWork) {
   return (w.cited_by_count || 0) / age
 }
 
+function stripHtml(str: string): string {
+  return str.replace(/<[^>]*>/g, '')
+}
+
 function hAuthors(authorships: HarvestWork['authorships']): string {
   const names = authorships.map(a => (a.author?.display_name || '').split(' ').at(-1)).filter(Boolean) as string[]
   if (!names.length) return ''
@@ -74,7 +78,7 @@ function HarvestRow({ work, query }: { work: HarvestWork; query: string }) {
             onMouseEnter={e => (e.currentTarget.style.color = '#888')}
             onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
           >
-            {work.title}
+            {stripHtml(work.title)}
           </a>
           <span style={{ fontSize: '11px', color: '#2a2a2a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {meta}
@@ -391,7 +395,7 @@ function HomeInner() {
                       textTransform: 'uppercase', paddingBottom: '12px',
                       borderBottom: '1px solid #1a1a1a',
                     }}>
-                      {harvestLoading ? 'Searching OpenAlex...' : `${harvestResults.length} results from OpenAlex`}
+                      {harvestLoading ? 'Searching OpenAlex...' : `However, ${harvestResults.length} results from OpenAlex`}
                     </div>
 
                     {harvestResults.map((w, i) => (
