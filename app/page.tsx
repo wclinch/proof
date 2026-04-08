@@ -50,7 +50,7 @@ function HomeInner() {
       .from('sources')
       .select('*')
       .eq('status', 'approved')
-      .ilike('topic', `%${q}%`)
+      .or(`topic.ilike.%${q}%,title.ilike.%${q}%`)
       .order('citation_count', { ascending: false })
       .then(({ data }) => {
         const results = data || []
@@ -80,19 +80,6 @@ function HomeInner() {
       await supabase.from('saved_sources').insert({ user_id: userId, source_id: sourceId })
       setSavedIds(prev => new Set(prev).add(sourceId))
     }
-  }
-
-  async function runSearch(q: string) {
-    setLoading(true)
-    setSearched(true)
-    const { data } = await supabase
-      .from('sources')
-      .select('*')
-      .eq('status', 'approved')
-      .ilike('topic', `%${q}%`)
-      .order('citation_count', { ascending: false })
-    setResults(weightedShuffle(data || []))
-    setLoading(false)
   }
 
   function search(q: string) {

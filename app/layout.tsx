@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import PageTransition from "@/components/PageTransition";
 
 export const metadata: Metadata = {
   title: "Proof",
@@ -14,9 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col">
-        <PageTransition>{children}</PageTransition>
-      </body>
+      <body className="min-h-screen flex flex-col">{children}</body>
     </html>
   );
 }
