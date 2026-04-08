@@ -38,10 +38,14 @@ export default function SignIn() {
       return
     }
     setResetLoading(true)
-    await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     })
-    setResetSent(true)
+    if (error) {
+      setError(error.message)
+    } else {
+      setResetSent(true)
+    }
     setResetLoading(false)
   }
 

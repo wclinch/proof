@@ -56,7 +56,7 @@ function HomeInner() {
         const results = data || []
         setResults(weightedShuffle(results))
         setLoading(false)
-        supabase.from('search_logs').insert({ query: q, result_count: results.length, is_verified: !!userId })
+        supabase.from('search_logs').insert({ query: q, result_count: results.length, is_verified: !!userId }).then(({ error }) => { if (error) console.error('search_logs:', error.message) })
       })
   }, [searchParams])
 
@@ -74,11 +74,11 @@ function HomeInner() {
   async function toggleSave(sourceId: string) {
     if (!userId) return
     if (savedIds.has(sourceId)) {
-      await supabase.from('saved_sources').delete().eq('user_id', userId).eq('source_id', sourceId)
-      setSavedIds(prev => { const s = new Set(prev); s.delete(sourceId); return s })
+      const { error } = await supabase.from('saved_sources').delete().eq('user_id', userId).eq('source_id', sourceId)
+      if (!error) setSavedIds(prev => { const s = new Set(prev); s.delete(sourceId); return s })
     } else {
-      await supabase.from('saved_sources').insert({ user_id: userId, source_id: sourceId })
-      setSavedIds(prev => new Set(prev).add(sourceId))
+      const { error } = await supabase.from('saved_sources').insert({ user_id: userId, source_id: sourceId })
+      if (!error) setSavedIds(prev => new Set(prev).add(sourceId))
     }
   }
 
@@ -245,7 +245,7 @@ function HomeInner() {
                     style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none', transition: 'color 0.15s' }}
                     onMouseEnter={e => (e.currentTarget.style.color = '#888')}
                     onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
-                    onClick={() => supabase.from('source_clicks').insert({ source_id: source.id, query, is_verified: !!userId })}
+                    onClick={() => supabase.from('source_clicks').insert({ source_id: source.id, query, is_verified: !!userId }).then(({ error }) => { if (error) console.error('source_clicks:', error.message) })}
                   >
                     {source.title}
                   </a>
@@ -283,7 +283,7 @@ function HomeInner() {
 
 export default function Home() {
   return (
-    <Suspense>
+    <Suspense fallback={null}>
       <HomeInner />
     </Suspense>
   )
