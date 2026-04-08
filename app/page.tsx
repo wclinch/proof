@@ -155,7 +155,7 @@ function HomeInner() {
             />
             {searched && (
               <button
-                onClick={() => router.push('/')}
+                onClick={() => router.replace('/')}
                 style={{
                   background: 'none', border: 'none', color: '#333',
                   fontSize: '18px', cursor: 'pointer', padding: '0 4px',
