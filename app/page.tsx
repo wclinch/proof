@@ -56,7 +56,7 @@ function HomeInner() {
         const results = data || []
         setResults(weightedShuffle(results))
         setLoading(false)
-        supabase.from('search_logs').insert({ query: q, result_count: results.length })
+        supabase.from('search_logs').insert({ query: q, result_count: results.length, is_verified: !!userId })
       })
   }, [searchParams])
 
@@ -245,7 +245,7 @@ function HomeInner() {
                     style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none', transition: 'color 0.15s' }}
                     onMouseEnter={e => (e.currentTarget.style.color = '#888')}
                     onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
-                    onClick={() => supabase.from('source_clicks').insert({ source_id: source.id, query })}
+                    onClick={() => supabase.from('source_clicks').insert({ source_id: source.id, query, is_verified: !!userId })}
                   >
                     {source.title}
                   </a>
