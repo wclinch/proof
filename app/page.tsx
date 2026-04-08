@@ -14,46 +14,6 @@ type Source = {
   citation_count: number
 }
 
-const HEADLINES = [
-  'Research, verified.',
-  'Sources that hold up.',
-  'No slop. Just sources.',
-  'Find it. Cite it. Done.',
-]
-
-const SUBTITLES = [
-  'Sources from real student essays. Vetted by educators.',
-  'Every source checked by a real person.',
-  'Built from bibliographies, not algorithms.',
-  'Academic sources worth citing.',
-]
-
-const PLACEHOLDERS = [
-  'Search a topic, subject, or keyword...',
-  'Try: Silent Spring',
-  'Try: Human Psychology',
-  'Try: The Origin of Species',
-  'Try: The Great Gatsby',
-  'Try: Cell Biology',
-  'Try: World War II',
-]
-
-function useRotating(items: string[], interval: number) {
-  const [index, setIndex] = useState(0)
-  const [opacity, setOpacity] = useState(1)
-  useEffect(() => {
-    const t = setInterval(() => {
-      setOpacity(0)
-      setTimeout(() => {
-        setIndex(i => (i + 1) % items.length)
-        setOpacity(1)
-      }, 300)
-    }, interval)
-    return () => clearInterval(t)
-  }, [items.length, interval])
-  return { text: items[index], opacity }
-}
-
 function HomeInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -64,9 +24,6 @@ function HomeInner() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [userId, setUserId] = useState<string | null>(null)
   const [topics, setTopics] = useState<string[]>([])
-  const headline = useRotating(HEADLINES, 4000)
-  const subtitle = useRotating(SUBTITLES, 4600)
-  const placeholder = useRotating(PLACEHOLDERS, 3000)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -172,11 +129,11 @@ function HomeInner() {
       }}>
         {!searched && (
           <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h1 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, opacity: headline.opacity, transition: 'opacity 0.3s ease' }}>
-              {headline.text}
+            <h1 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+              Research, verified.
             </h1>
-            <p style={{ fontSize: '15px', color: '#555', letterSpacing: '0.02em', opacity: subtitle.opacity, transition: 'opacity 0.3s ease' }}>
-              {subtitle.text}
+            <p style={{ fontSize: '15px', color: '#555', letterSpacing: '0.02em' }}>
+              Sources from real student essays. Vetted by educators.
             </p>
           </div>
         )}
@@ -196,7 +153,7 @@ function HomeInner() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && search(query)}
-              placeholder={placeholder.text}
+              placeholder="Search a topic, subject, or keyword..."
               style={{
                 flex: 1,
                 background: 'none',
