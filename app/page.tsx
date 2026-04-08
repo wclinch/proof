@@ -24,28 +24,6 @@ function HomeInner() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [userId, setUserId] = useState<string | null>(null)
   const [topics, setTopics] = useState<string[]>([])
-  const [history, setHistory] = useState<string[]>([])
-
-  useEffect(() => {
-    const stored = localStorage.getItem('proof_history')
-    if (stored) setHistory(JSON.parse(stored))
-  }, [])
-
-  function addToHistory(q: string) {
-    setHistory(prev => {
-      const updated = [q, ...prev.filter(h => h.toLowerCase() !== q.toLowerCase())].slice(0, 10)
-      localStorage.setItem('proof_history', JSON.stringify(updated))
-      return updated
-    })
-  }
-
-  function removeFromHistory(q: string) {
-    setHistory(prev => {
-      const updated = prev.filter(h => h !== q)
-      localStorage.setItem('proof_history', JSON.stringify(updated))
-      return updated
-    })
-  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -117,7 +95,6 @@ function HomeInner() {
 
   function search(q: string) {
     if (!q.trim()) return
-    addToHistory(q.trim())
     router.push(`/?q=${encodeURIComponent(q)}`, { scroll: false })
   }
 
@@ -217,36 +194,6 @@ function HomeInner() {
               Search
             </button>
           </div>
-
-          {!searched && history.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0', maxHeight: '200px', overflowY: 'auto' }}>
-              {history.map(h => (
-                <div key={h} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '8px 4px', borderBottom: '1px solid #111',
-                }}>
-                  <button
-                    onClick={() => { setQuery(h); search(h) }}
-                    style={{
-                      background: 'none', border: 'none', color: '#333', cursor: 'pointer',
-                      fontSize: '13px', padding: 0, letterSpacing: '0.02em', textAlign: 'left',
-                    }}
-                  >
-                    {h}
-                  </button>
-                  <button
-                    onClick={() => removeFromHistory(h)}
-                    style={{
-                      background: 'none', border: 'none', color: '#222', cursor: 'pointer',
-                      fontSize: '16px', padding: '0 4px', lineHeight: 1, flexShrink: 0,
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
 
           {!searched && <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {topics.map(topic => (
