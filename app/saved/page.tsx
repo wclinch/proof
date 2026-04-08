@@ -198,7 +198,7 @@ export default function Saved() {
 
       {citing && <CiteModal source={citing} onClose={closeCite} />}
 
-      <main style={{ flex: 1, maxWidth: '680px', width: '100%', margin: '0 auto', padding: '60px 20px', display: 'flex', flexDirection: 'column', gap: '0' }}>
+      <main style={{ flex: 1, maxWidth: '680px', width: '100%', margin: '0 auto', padding: '48px 20px', display: 'flex', flexDirection: 'column', gap: '0' }}>
 
         <div style={{ paddingBottom: '20px', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
           <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase', flexShrink: 0 }}>
@@ -238,7 +238,7 @@ export default function Saved() {
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '24px',
-            padding: '16px 0',
+            padding: '12px 0',
             borderBottom: '1px solid #141414',
           }}>
             <a

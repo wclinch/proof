@@ -25,7 +25,7 @@ export default async function About() {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Nav />
 
-      <main style={{ flex: 1, maxWidth: '580px', width: '100%', margin: '0 auto', padding: '80px 20px', display: 'flex', flexDirection: 'column' }}>
+      <main style={{ flex: 1, maxWidth: '580px', width: '100%', margin: '0 auto', padding: '56px 20px', display: 'flex', flexDirection: 'column' }}>
 
         <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '20px', borderBottom: '1px solid #1a1a1a' }}>
           About Proof

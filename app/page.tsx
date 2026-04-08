@@ -14,6 +14,117 @@ type Source = {
   citation_count: number
 }
 
+type HarvestWork = {
+  title: string
+  authorships: Array<{ author: { display_name: string } }>
+  primary_location: { source?: { display_name: string }; landing_page_url?: string; pdf_url?: string } | null
+  publication_year: number
+  cited_by_count: number
+  open_access: { oa_url?: string }
+  biblio?: { first_page?: string; last_page?: string }
+}
+
+function hUrl(w: HarvestWork): string {
+  return w.open_access?.oa_url || w.primary_location?.landing_page_url || w.primary_location?.pdf_url || ''
+}
+
+function hVelocity(w: HarvestWork) {
+  const age = Math.max(2026 - (w.publication_year || 2026), 1)
+  return (w.cited_by_count || 0) / age
+}
+
+function hAuthors(authorships: HarvestWork['authorships']): string {
+  const names = authorships.map(a => (a.author?.display_name || '').split(' ').at(-1)).filter(Boolean) as string[]
+  if (!names.length) return ''
+  if (names.length > 3) return names.slice(0, 3).join(', ') + ' et al.'
+  return names.join(', ')
+}
+
+function HarvestRow({ work, query }: { work: HarvestWork; query: string }) {
+  const [open, setOpen] = useState(false)
+  const [note, setNote] = useState('')
+  const [sent, setSent] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const url = hUrl(work)
+  const authors = hAuthors(work.authorships)
+  const journal = work.primary_location?.source?.display_name || ''
+  const meta = [authors, journal, work.publication_year].filter(Boolean).join(' · ')
+
+  async function submit() {
+    setSubmitting(true)
+    await supabase.from('topic_requests').insert({
+      query,
+      url,
+      suggested_title: work.title,
+      note: note || null,
+    })
+    setSent(true)
+    setSubmitting(false)
+  }
+
+  return (
+    <div style={{ padding: '11px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px' }}>
+        <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', transition: 'color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
+          >
+            {work.title}
+          </a>
+          <span style={{ fontSize: '11px', color: '#2a2a2a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {meta}
+          </span>
+        </div>
+        <div style={{ flexShrink: 0 }}>
+          {sent ? (
+            <span style={{ fontSize: '11px', color: '#888', letterSpacing: '0.04em' }}>Submitted</span>
+          ) : (
+            <button
+              onClick={() => setOpen(o => !o)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em', transition: 'color 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+            >
+              {open ? 'Cancel' : 'Suggest'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {open && !sent && (
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', paddingTop: '4px' }}>
+          <input
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && submit()}
+            placeholder="Additional comments (optional)"
+            style={{
+              flex: 1, background: '#111', border: '1px solid #161616', borderRadius: '5px',
+              padding: '9px 12px', color: '#f0f0f0', fontSize: '12px', outline: 'none',
+            }}
+          />
+          <button
+            onClick={submit}
+            disabled={submitting}
+            style={{
+              background: 'none', border: '1px solid #1a1a1a', borderRadius: '5px',
+              color: '#444', fontSize: '12px', padding: '8px 14px', cursor: 'pointer',
+              letterSpacing: '0.04em', flexShrink: 0, opacity: submitting ? 0.5 : 1,
+            }}
+          >
+            Submit
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function HomeInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -24,9 +135,9 @@ function HomeInner() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [userId, setUserId] = useState<string | null>(null)
   const [topics, setTopics] = useState<string[]>([])
-  const [requestNote, setRequestNote] = useState('')
-  const [requestSent, setRequestSent] = useState(false)
-  const [requestLoading, setRequestLoading] = useState(false)
+  const [harvestResults, setHarvestResults] = useState<HarvestWork[]>([])
+  const [harvestLoading, setHarvestLoading] = useState(false)
+  const [harvestOpen, setHarvestOpen] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -37,7 +148,6 @@ function HomeInner() {
     fetchTopics()
   }, [])
 
-  // React to URL param changes — drives all search state
   useEffect(() => {
     const q = searchParams.get('q')
     if (!q) {
@@ -49,8 +159,8 @@ function HomeInner() {
     setQuery(q)
     setLoading(true)
     setSearched(true)
-    setRequestSent(false)
-    setRequestNote('')
+    setHarvestOpen(false)
+    setHarvestResults([])
     supabase
       .from('sources')
       .select('*')
@@ -87,12 +197,28 @@ function HomeInner() {
     }
   }
 
-  async function submitTopicRequest() {
-    if (requestLoading || requestSent) return
-    setRequestLoading(true)
-    const { error } = await supabase.from('topic_requests').insert({ query, note: requestNote || null })
-    if (!error) setRequestSent(true)
-    setRequestLoading(false)
+  async function searchHarvest() {
+    if (harvestLoading) return
+    setHarvestOpen(true)
+    setHarvestLoading(true)
+    const params = new URLSearchParams({
+      search: query,
+      filter: 'type:article,from_publication_date:2010-01-01,open_access.is_oa:true',
+      select: 'title,authorships,primary_location,publication_year,cited_by_count,open_access,biblio',
+      'per-page': '50',
+      sort: 'cited_by_count:desc',
+      mailto: 'proof-db@example.com',
+    })
+    try {
+      const resp = await fetch(`https://api.openalex.org/works?${params}`)
+      const data = await resp.json()
+      const valid = (data.results || []).filter((w: HarvestWork) => hUrl(w))
+      const ranked = valid.sort((a: HarvestWork, b: HarvestWork) => hVelocity(b) - hVelocity(a)).slice(0, 10)
+      setHarvestResults(ranked)
+    } catch (e) {
+      console.error(e)
+    }
+    setHarvestLoading(false)
   }
 
   function search(q: string) {
@@ -127,7 +253,7 @@ function HomeInner() {
         alignItems: 'center',
         justifyContent: searched ? 'flex-start' : 'center',
         padding: searched ? '48px 20px' : '40px 20px',
-        gap: '40px',
+        gap: '32px',
       }}>
         {!searched && (
           <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -233,42 +359,43 @@ function HomeInner() {
             </div>
 
             {!loading && results.length === 0 && (
-              <div style={{ padding: '40px 0', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <span style={{ color: '#333', fontSize: '13px', letterSpacing: '0.04em' }}>
+              <div style={{ padding: '24px 0 32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <span style={{ color: '#444', fontSize: '13px', letterSpacing: '0.04em' }}>
                   No sources found. Try a different topic.
                 </span>
-                {requestSent ? (
-                  <span style={{ fontSize: '12px', color: '#555', letterSpacing: '0.04em' }}>
-                    Request submitted. We'll prioritize this topic.
-                  </span>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '420px' }}>
-                    <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                      Request this topic
-                    </span>
-                    <input
-                      type="text"
-                      value={requestNote}
-                      onChange={e => setRequestNote(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && submitTopicRequest()}
-                      placeholder="Any details? (optional)"
-                      style={{
-                        background: '#111', border: '1px solid #1e1e1e', borderRadius: '6px',
-                        padding: '12px 16px', color: '#f0f0f0', fontSize: '13px', outline: 'none', width: '100%',
-                      }}
-                    />
-                    <button
-                      onClick={submitTopicRequest}
-                      disabled={requestLoading}
-                      style={{
-                        alignSelf: 'flex-start',
-                        background: 'none', border: '1px solid #1e1e1e', borderRadius: '5px',
-                        color: '#555', fontSize: '12px', padding: '8px 18px', cursor: 'pointer',
-                        letterSpacing: '0.04em', opacity: requestLoading ? 0.5 : 1,
-                      }}
-                    >
-                      {requestLoading ? 'Submitting...' : 'Submit request'}
-                    </button>
+
+                {!harvestOpen && (
+                  <button
+                    onClick={searchHarvest}
+                    style={{
+                      alignSelf: 'flex-start', background: 'none', border: '1px solid #1a1a1a',
+                      borderRadius: '5px', color: '#444', fontSize: '12px', padding: '7px 16px',
+                      cursor: 'pointer', letterSpacing: '0.04em',
+                    }}
+                  >
+                    Search with Harvest
+                  </button>
+                )}
+
+                {harvestOpen && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                    <div style={{
+                      fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.08em',
+                      textTransform: 'uppercase', paddingBottom: '12px',
+                      borderBottom: '1px solid #1a1a1a',
+                    }}>
+                      {harvestLoading ? 'Searching OpenAlex...' : `${harvestResults.length} results from OpenAlex`}
+                    </div>
+
+                    {harvestResults.map((w, i) => (
+                      <HarvestRow key={i} work={w} query={query} />
+                    ))}
+
+                    {!harvestLoading && (
+                      <span style={{ fontSize: '10px', color: '#222', letterSpacing: '0.06em', paddingTop: '14px' }}>
+                        Powered by OpenAlex — open.alex.org
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
