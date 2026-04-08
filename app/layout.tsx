@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Proof",
-  description: "Curated academic sources for students. Real, cited, nothing filler.",
+  description: "A curated academic source database for student research.",
 };
 
 export default function RootLayout({

@@ -27,6 +27,11 @@ export default function Educators() {
       setError('Please fill in all required fields.')
       return
     }
+    const domain = form.email.split('@')[1] ?? ''
+    if (!domain.endsWith('.edu') && !domain.endsWith('.gov') && !domain.endsWith('.ac.uk') && !domain.endsWith('.edu.au')) {
+      setError('Only institutional email addresses are accepted (.edu, .gov, .ac.uk, .edu.au).')
+      return
+    }
     setLoading(true)
     setError('')
 
@@ -87,7 +92,7 @@ export default function Educators() {
         <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em' }}>Apply to contribute sources</h1>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            Proof is built source by source — curated for credibility, not volume. Researchers, academics, and subject-matter experts can apply to contribute. Every submission is reviewed before going live.
+            Proof maintains a curated database of academic sources. Researchers, academics, and subject-matter experts may apply to contribute. All submissions are reviewed prior to publication.
           </p>
         </div>
 
@@ -112,7 +117,7 @@ export default function Educators() {
               type="email"
               value={form.email}
               onChange={e => update('email', e.target.value)}
-              placeholder="jsmith@university.edu"
+              placeholder="you@university.edu or you@agency.gov"
               style={inputStyle}
             />
           </div>
@@ -140,18 +145,18 @@ export default function Educators() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={labelStyle}>Paste a bibliography (optional)</label>
+            <label style={labelStyle}>Sources to contribute (optional)</label>
             <textarea
               value={form.bibliography}
               onChange={e => update('bibliography', e.target.value)}
-              placeholder="Paste a works cited page from a student essay. We'll use this as your first submission."
+              placeholder="Paste a list of sources you'd like to contribute. We'll review and add them if they meet our standards."
               rows={5}
               style={{ ...inputStyle, resize: 'none' }}
             />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={labelStyle}>Topic of that essay (optional)</label>
+            <label style={labelStyle}>Topic area (optional)</label>
             <input
               type="text"
               value={form.topic}

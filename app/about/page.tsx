@@ -34,28 +34,28 @@ export default async function About() {
         <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>The problem</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            Google is broken for research. The first page is SEO farms, AI-generated summaries, and content optimized for clicks — not accuracy. Students spend hours finding sources that don't hold up.
+            Academic research has a sourcing problem. General search engines optimize for engagement, not accuracy — surfacing content that rarely meets scholarly standards. Finding credible, citable sources takes longer than it should.
           </p>
         </div>
 
         <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            A curated source database built for students who actually care about their research. Every source in Proof was cited in real academic work and hand-picked for credibility. No SEO farms. No filler. No ads.
+            A curated reference database for student research. Sources are drawn from real academic work, selected for credibility, and organized by subject. Free to use, no advertising.
           </p>
         </div>
 
         <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>How the database is built</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            Sources are added topic by topic — curated manually, checked for credibility, and organized so you can actually find what you need. We start narrow and go deep, one subject at a time, rather than trying to index everything.
+            The database is built subject by subject — each topic curated manually and verified before publication. Coverage expands one discipline at a time, prioritizing depth over breadth.
           </p>
         </div>
 
         <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>Built-in citation</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            Save any source, then generate a citation in MLA, APA, or Chicago format with one click. No third-party tools, no copy-pasting URLs into a citation generator. The source is already verified — the citation is just the last step.
+            Saved sources can be cited directly in MLA, APA, or Chicago format. No external tools required.
           </p>
         </div>
 
