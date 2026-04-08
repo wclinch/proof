@@ -159,8 +159,10 @@ function HomeInner() {
     setQuery(q)
     setLoading(true)
     setSearched(true)
-    setHarvestOpen(false)
-    setHarvestResults([])
+    if (searchParams.get('harvest') !== '1') {
+      setHarvestOpen(false)
+      setHarvestResults([])
+    }
     supabase
       .from('sources')
       .select('*')
@@ -172,7 +174,8 @@ function HomeInner() {
         const shuffled = weightedShuffle(results)
         setResults(shuffled)
         setLoading(false)
-        if (shuffled.length === 0) searchHarvest(q)
+        const harvestParam = searchParams.get('harvest')
+        if (shuffled.length === 0 && harvestParam === '1') searchHarvest(q)
         supabase.from('search_logs').insert({ query: q, result_count: results.length, is_verified: !!userId }).then(({ error }) => { if (error) console.error('search_logs:', error.message) })
       })
   }, [searchParams])
@@ -365,6 +368,21 @@ function HomeInner() {
                 <span style={{ color: '#444', fontSize: '13px', letterSpacing: '0.04em' }}>
                   No sources found. Try a different topic.
                 </span>
+
+                {!harvestOpen && (
+                  <button
+                    onClick={() => {
+                      router.push(`/?q=${encodeURIComponent(query)}&harvest=1`, { scroll: false })
+                    }}
+                    style={{
+                      alignSelf: 'flex-start', background: 'none', border: '1px solid #1a1a1a',
+                      borderRadius: '5px', color: '#444', fontSize: '12px', padding: '7px 16px',
+                      cursor: 'pointer', letterSpacing: '0.04em',
+                    }}
+                  >
+                    Search with Harvest
+                  </button>
+                )}
 
                 {harvestOpen && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
