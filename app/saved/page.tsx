@@ -161,7 +161,15 @@ export default function Saved() {
   const [saved, setSaved] = useState<SavedSource[]>([])
   const [loading, setLoading] = useState(true)
   const [citing, setCiting] = useState<SavedSource['sources'] | null>(null)
+  const [filter, setFilter] = useState('')
   const closeCite = useCallback(() => setCiting(null), [])
+
+  const filtered = filter.trim()
+    ? saved.filter(s =>
+        s.sources.title.toLowerCase().includes(filter.toLowerCase()) ||
+        s.sources.topic.toLowerCase().includes(filter.toLowerCase())
+      )
+    : saved
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -192,11 +200,22 @@ export default function Saved() {
 
       <main style={{ flex: 1, maxWidth: '680px', width: '100%', margin: '0 auto', padding: '60px 20px', display: 'flex', flexDirection: 'column', gap: '0' }}>
 
-        <div style={{ paddingBottom: '20px', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        <div style={{ paddingBottom: '20px', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+          <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase', flexShrink: 0 }}>
             Saved Sources
           </span>
-          <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em' }}>
+          <input
+            type="text"
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            placeholder="Filter by title or topic..."
+            style={{
+              background: 'none', border: 'none', outline: 'none',
+              color: '#888', fontSize: '12px', letterSpacing: '0.02em',
+              textAlign: 'right', flex: 1,
+            }}
+          />
+          <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em', flexShrink: 0 }}>
             {loading ? '' : `${saved.length} saved`}
           </span>
         </div>
@@ -213,7 +232,7 @@ export default function Saved() {
           </div>
         )}
 
-        {saved.map(item => (
+        {filtered.map(item => (
           <div key={item.id} style={{
             display: 'flex',
             alignItems: 'center',
