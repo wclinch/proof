@@ -212,7 +212,7 @@ export default function Saved() {
             style={{
               background: 'none', border: 'none', outline: 'none',
               color: '#888', fontSize: '12px', letterSpacing: '0.02em',
-              textAlign: 'right', flex: 1,
+              flex: 1,
             }}
           />
           <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em', flexShrink: 0 }}>
