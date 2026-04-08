@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 
 const TAGLINES = [
   'VETTED ACADEMIC SOURCES',
-  'NO ADS. NO SLOP.',
+  'NO ADS. NO FILLER.',
   'HAND CURATED',
   'BUILT FOR STUDENTS',
   'HUMAN REVIEWED',
@@ -14,7 +14,7 @@ const TAGLINES = [
   'NO ALGORITHMS',
   'ACCURACY FIRST',
   'BUILT FOR RESEARCH',
-  'ZERO AI SLOP',
+  'NOTHING GENERATED.',
   'PEER REVIEWED SOURCES',
   'TRUSTED BY STUDENTS',
   'BIBLIOGRAPHY READY',
@@ -69,7 +69,7 @@ export default function Footer() {
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}
           onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
         >
-          Educator Access
+          Contribute
         </a>
       </div>
     </footer>

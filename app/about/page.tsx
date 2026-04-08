@@ -20,6 +20,7 @@ export default async function About() {
     .eq('status', 'approved')
 
   const uniqueTopics = new Set(topicsData?.map(r => r.topic) ?? []).size
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Nav />
@@ -40,7 +41,7 @@ export default async function About() {
         <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            A curated source database built for students who actually care about their research. Every source in Proof was cited in real academic work and hand-picked for credibility. No SEO farms. No ads. No slop.
+            A curated source database built for students who actually care about their research. Every source in Proof was cited in real academic work and hand-picked for credibility. No SEO farms. No filler. No ads.
           </p>
         </div>
 
@@ -48,13 +49,6 @@ export default async function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>How the database is built</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
             Sources are added topic by topic — curated manually, checked for credibility, and organized so you can actually find what you need. We start narrow and go deep, one subject at a time, rather than trying to index everything.
-          </p>
-        </div>
-
-        <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>Who controls it</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            Educators and researchers can apply to contribute sources. Submissions are reviewed before going live — not everything makes it in. Quality over quantity, always.
           </p>
         </div>
 
@@ -68,13 +62,12 @@ export default async function About() {
         <div style={{ display: 'flex', gap: '0', marginTop: '16px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a' }}>
           {[
             { number: String(sourcesCount ?? 0), label: 'Sources indexed' },
-            { number: '0', label: 'Educators' },
             { number: String(uniqueTopics), label: 'Topics covered' },
           ].map((stat, i) => (
             <div key={i} style={{
               flex: 1,
               padding: '28px',
-              borderRight: i < 2 ? '1px solid #141414' : 'none',
+              borderRight: i < 1 ? '1px solid #141414' : 'none',
               display: 'flex',
               flexDirection: 'column',
               gap: '6px',
@@ -83,6 +76,24 @@ export default async function About() {
               <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{stat.label}</span>
             </div>
           ))}
+        </div>
+
+        <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>What's being built</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px' }}>
+              <span style={{ fontSize: '10px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase', flexShrink: 0 }}>Now</span>
+              <span style={{ fontSize: '14px', color: '#555', lineHeight: 1.6 }}>Economics — monetary policy, trade, labor markets, macroeconomics, behavioral economics.</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px' }}>
+              <span style={{ fontSize: '10px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase', flexShrink: 0 }}>Next</span>
+              <span style={{ fontSize: '14px', color: '#333', lineHeight: 1.6 }}>Psychology — cognitive science, developmental psychology, social behavior, mental health research.</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px' }}>
+              <span style={{ fontSize: '10px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase', flexShrink: 0 }}>Later</span>
+              <span style={{ fontSize: '14px', color: '#2a2a2a', lineHeight: 1.6 }}>Environmental science, US history, public health, criminal justice.</span>
+            </div>
+          </div>
         </div>
 
         <div style={{ marginTop: '32px' }}>

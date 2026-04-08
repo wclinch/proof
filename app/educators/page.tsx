@@ -81,13 +81,13 @@ export default function Educators() {
       <main style={{ flex: 1, maxWidth: '520px', width: '100%', margin: '0 auto', padding: '80px 20px', display: 'flex', flexDirection: 'column', gap: '0' }}>
 
         <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '20px', borderBottom: '1px solid #1a1a1a' }}>
-          Educator Access
+          Contribute
         </span>
 
         <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em' }}>Apply to contribute sources</h1>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            Proof is built from real student essays. Educators collect bibliography pages and submit them — we verify and add them to the database. Access is not automatic. Every educator is manually approved.
+            Proof is built source by source — curated for credibility, not volume. Researchers, academics, and subject-matter experts can apply to contribute. Every submission is reviewed before going live.
           </p>
         </div>
 
@@ -129,7 +129,7 @@ export default function Educators() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={labelStyle}>Subject You Teach *</label>
+            <label style={labelStyle}>Subject / Area of Expertise *</label>
             <input
               type="text"
               value={form.subject}
