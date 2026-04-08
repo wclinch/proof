@@ -169,8 +169,10 @@ function HomeInner() {
       .order('citation_count', { ascending: false })
       .then(({ data }) => {
         const results = data || []
-        setResults(weightedShuffle(results))
+        const shuffled = weightedShuffle(results)
+        setResults(shuffled)
         setLoading(false)
+        if (shuffled.length === 0) searchHarvest(q)
         supabase.from('search_logs').insert({ query: q, result_count: results.length, is_verified: !!userId }).then(({ error }) => { if (error) console.error('search_logs:', error.message) })
       })
   }, [searchParams])
@@ -197,12 +199,12 @@ function HomeInner() {
     }
   }
 
-  async function searchHarvest() {
+  async function searchHarvest(q?: string) {
     if (harvestLoading) return
     setHarvestOpen(true)
     setHarvestLoading(true)
     const params = new URLSearchParams({
-      search: query,
+      search: q ?? query,
       filter: 'type:article,from_publication_date:2010-01-01,open_access.is_oa:true',
       select: 'title,authorships,primary_location,publication_year,cited_by_count,open_access,biblio',
       'per-page': '50',
@@ -363,19 +365,6 @@ function HomeInner() {
                 <span style={{ color: '#444', fontSize: '13px', letterSpacing: '0.04em' }}>
                   No sources found. Try a different topic.
                 </span>
-
-                {!harvestOpen && (
-                  <button
-                    onClick={searchHarvest}
-                    style={{
-                      alignSelf: 'flex-start', background: 'none', border: '1px solid #1a1a1a',
-                      borderRadius: '5px', color: '#444', fontSize: '12px', padding: '7px 16px',
-                      cursor: 'pointer', letterSpacing: '0.04em',
-                    }}
-                  >
-                    Search with Harvest
-                  </button>
-                )}
 
                 {harvestOpen && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
