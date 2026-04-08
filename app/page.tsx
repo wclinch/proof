@@ -24,6 +24,9 @@ function HomeInner() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [userId, setUserId] = useState<string | null>(null)
   const [topics, setTopics] = useState<string[]>([])
+  const [requestNote, setRequestNote] = useState('')
+  const [requestSent, setRequestSent] = useState(false)
+  const [requestLoading, setRequestLoading] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -46,6 +49,8 @@ function HomeInner() {
     setQuery(q)
     setLoading(true)
     setSearched(true)
+    setRequestSent(false)
+    setRequestNote('')
     supabase
       .from('sources')
       .select('*')
@@ -80,6 +85,14 @@ function HomeInner() {
       const { error } = await supabase.from('saved_sources').insert({ user_id: userId, source_id: sourceId })
       if (!error) setSavedIds(prev => new Set(prev).add(sourceId))
     }
+  }
+
+  async function submitTopicRequest() {
+    if (requestLoading || requestSent) return
+    setRequestLoading(true)
+    const { error } = await supabase.from('topic_requests').insert({ query, note: requestNote || null })
+    if (!error) setRequestSent(true)
+    setRequestLoading(false)
   }
 
   function search(q: string) {
@@ -220,8 +233,44 @@ function HomeInner() {
             </div>
 
             {!loading && results.length === 0 && (
-              <div style={{ padding: '40px 0', color: '#333', fontSize: '13px', letterSpacing: '0.04em' }}>
-                No sources found. Try a different topic.
+              <div style={{ padding: '40px 0', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <span style={{ color: '#333', fontSize: '13px', letterSpacing: '0.04em' }}>
+                  No sources found. Try a different topic.
+                </span>
+                {requestSent ? (
+                  <span style={{ fontSize: '12px', color: '#555', letterSpacing: '0.04em' }}>
+                    Request submitted. We'll prioritize this topic.
+                  </span>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '420px' }}>
+                    <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                      Request this topic
+                    </span>
+                    <input
+                      type="text"
+                      value={requestNote}
+                      onChange={e => setRequestNote(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && submitTopicRequest()}
+                      placeholder="Any details? (optional)"
+                      style={{
+                        background: '#111', border: '1px solid #1e1e1e', borderRadius: '6px',
+                        padding: '12px 16px', color: '#f0f0f0', fontSize: '13px', outline: 'none', width: '100%',
+                      }}
+                    />
+                    <button
+                      onClick={submitTopicRequest}
+                      disabled={requestLoading}
+                      style={{
+                        alignSelf: 'flex-start',
+                        background: 'none', border: '1px solid #1e1e1e', borderRadius: '5px',
+                        color: '#555', fontSize: '12px', padding: '8px 18px', cursor: 'pointer',
+                        letterSpacing: '0.04em', opacity: requestLoading ? 0.5 : 1,
+                      }}
+                    >
+                      {requestLoading ? 'Submitting...' : 'Submit request'}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
