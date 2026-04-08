@@ -246,24 +246,23 @@ function HomeInner() {
                 rel="noopener noreferrer"
                 style={{
                   display: 'flex',
-                  alignItems: 'baseline',
+                  alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: '24px',
-                  padding: '16px 0',
+                  padding: '11px 0',
                   borderBottom: '1px solid #141414',
                   textDecoration: 'none',
                 }}
               >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
+                  <span style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {source.title}
                   </span>
-                  <span style={{ fontSize: '11px', color: '#2e2e2e' }}>
+                  <span style={{ fontSize: '11px', color: '#2a2a2a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {source.url}
                   </span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
-                  <span style={{ fontSize: '12px', color: '#3a3a3a' }}>{source.citation_count} cited</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
                   <span style={{ fontSize: '10px', color: '#222', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{source.topic}</span>
                   {userId && (
                     <button
