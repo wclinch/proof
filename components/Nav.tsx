@@ -54,11 +54,7 @@ export default function Nav() {
       alignItems: 'center',
       borderBottom: '1px solid #1a1a1a',
     }}>
-      <Link href="/"
-        style={{ textDecoration: 'none', transition: 'opacity 0.15s' }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = '0.6')}
-        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-      >
+      <Link href="/" style={{ textDecoration: 'none' }}>
         <span style={{
           display: 'flex', alignItems: 'center', gap: '10px',
           fontSize: '15px', fontWeight: 600, letterSpacing: '0.15em',
