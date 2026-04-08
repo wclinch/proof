@@ -56,7 +56,7 @@ function HomeInner() {
         const results = data || []
         setResults(weightedShuffle(results))
         setLoading(false)
-        supabase.from('search_logs').insert({ query: q, result_count: results.length, is_verified: !!userId }).then(({ error }) => { if (error) console.error('search_logs insert error:', error) })
+        supabase.from('search_logs').insert({ query: q, result_count: results.length, is_verified: !!userId })
       })
   }, [searchParams])
 
