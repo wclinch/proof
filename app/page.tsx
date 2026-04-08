@@ -133,7 +133,7 @@ function HomeInner() {
               Research, verified.
             </h1>
             <p style={{ fontSize: '15px', color: '#555', letterSpacing: '0.02em' }}>
-              Sources from real student essays. Vetted by educators.
+              Real sources. Curated by topic. No slop.
             </p>
           </div>
         )}

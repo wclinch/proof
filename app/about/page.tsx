@@ -40,21 +40,21 @@ export default async function About() {
         <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            A vetted source database built from real student essays. Every source in Proof was cited in actual academic work and reviewed by a credentialed educator before going live. No SEO. No ads. No slop.
+            A curated source database built for students who actually care about their research. Every source in Proof was cited in real academic work and hand-picked for credibility. No SEO farms. No ads. No slop.
           </p>
         </div>
 
         <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>How the database is built</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            Educators approved by Proof collect bibliography pages from student essays and submit them. We verify each source — checking it's live, credible, and correctly categorized — then add it to the database. The more educators contribute, the more useful it becomes.
+            Sources are added topic by topic — curated manually, checked for credibility, and organized so you can actually find what you need. We start narrow and go deep, one subject at a time, rather than trying to index everything.
           </p>
         </div>
 
         <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>Who controls it</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            Educator access is not open. Every teacher or professor on Proof is manually reviewed and approved. This is how we keep the database clean. If it's in Proof, a real educator put it there.
+            Educators and researchers can apply to contribute sources. Submissions are reviewed before going live — not everything makes it in. Quality over quantity, always.
           </p>
         </div>
 

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 const TAGLINES = [
   'VETTED ACADEMIC SOURCES',
   'NO ADS. NO SLOP.',
-  'EDUCATOR APPROVED',
+  'HAND CURATED',
   'BUILT FOR STUDENTS',
   'HUMAN REVIEWED',
   'NOT GENERATED',
@@ -22,7 +22,7 @@ const TAGLINES = [
   'FIND IT. CITE IT. DONE.',
   'NO SEO FARMS',
   'SOURCES THAT HOLD UP',
-  'VERIFIED BY EDUCATORS',
+  'QUALITY OVER QUANTITY',
 ]
 
 export default function Footer() {
