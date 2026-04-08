@@ -242,7 +242,9 @@ function HomeInner() {
                     href={source.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }}
+                    style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none', transition: 'color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
                   >
                     {source.title}
                   </a>
@@ -260,6 +262,8 @@ function HomeInner() {
                         fontSize: '11px', color: savedIds.has(source.id) ? '#888' : '#2a2a2a',
                         letterSpacing: '0.04em', transition: 'color 0.15s',
                       }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+                      onMouseLeave={e => (e.currentTarget.style.color = savedIds.has(source.id) ? '#888' : '#2a2a2a')}
                     >
                       {savedIds.has(source.id) ? 'Saved' : 'Save'}
                     </button>
