@@ -226,11 +226,8 @@ function HomeInner() {
             )}
 
             {results.map(source => (
-              <a
+              <div
                 key={source.id}
-                href={source.url}
-                target="_blank"
-                rel="noopener noreferrer"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -238,13 +235,17 @@ function HomeInner() {
                   gap: '24px',
                   padding: '11px 0',
                   borderBottom: '1px solid #141414',
-                  textDecoration: 'none',
                 }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
-                  <span style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }}
+                  >
                     {source.title}
-                  </span>
+                  </a>
                   <span style={{ fontSize: '11px', color: '#2a2a2a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {source.url}
                   </span>
@@ -253,7 +254,7 @@ function HomeInner() {
                   <span style={{ fontSize: '10px', color: '#222', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{source.topic}</span>
                   {userId && (
                     <button
-                      onClick={e => { e.preventDefault(); toggleSave(source.id) }}
+                      onClick={() => toggleSave(source.id)}
                       style={{
                         background: 'none', border: 'none', cursor: 'pointer', padding: 0,
                         fontSize: '11px', color: savedIds.has(source.id) ? '#888' : '#2a2a2a',
@@ -264,7 +265,7 @@ function HomeInner() {
                     </button>
                   )}
                 </div>
-              </a>
+              </div>
             ))}
           </div>
         )}
