@@ -6,9 +6,10 @@ import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
 import { supabase } from '@/lib/supabase'
 
-function PasswordInput({ value, onChange, placeholder }: {
+function PasswordInput({ value, onChange, onKeyDown, placeholder }: {
   value: string
   onChange: (v: string) => void
+  onKeyDown?: (e: React.KeyboardEvent) => void
   placeholder?: string
 }) {
   const [show, setShow] = useState(false)
@@ -18,6 +19,7 @@ function PasswordInput({ value, onChange, placeholder }: {
         type={show ? 'text' : 'password'}
         value={value}
         onChange={e => onChange(e.target.value)}
+        onKeyDown={onKeyDown}
         placeholder={placeholder ?? '••••••••'}
         style={{
           width: '100%',
@@ -120,7 +122,7 @@ export default function ResetPassword() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '11px', color: '#444', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Confirm Password</label>
-              <PasswordInput value={confirm} onChange={setConfirm} />
+              <PasswordInput value={confirm} onChange={setConfirm} onKeyDown={e => e.key === 'Enter' && handleReset()} />
             </div>
 
             {error && (

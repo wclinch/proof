@@ -228,7 +228,7 @@ export default function Saved() {
 
         {!loading && saved.length === 0 && (
           <div style={{ padding: '40px 0', color: '#2a2a2a', fontSize: '13px', letterSpacing: '0.04em' }}>
-            No saved sources yet. Search for a topic and save sources you find useful.
+            No sources saved.
           </div>
         )}
 

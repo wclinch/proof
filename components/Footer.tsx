@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 const TAGLINES = [
   'CURATED ACADEMIC SOURCES',
@@ -22,7 +23,7 @@ const TAGLINES = [
   'PEER REVIEWED',
   'INDEXED BY SUBJECT',
   'CREDIBILITY BY DESIGN',
-  'CITED. VERIFIED. DONE.',
+  'SOURCED. VERIFIED. CITED.',
 ]
 
 export default function Footer() {
@@ -55,30 +56,30 @@ export default function Footer() {
         </span>
       </span>
       <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-        <a
+        <Link
           href="/privacy"
           style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}
           onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
         >
           Privacy
-        </a>
+        </Link>
         <a
-          href="mailto:proof_dev@protonmail.com?subject=Issue Report"
+          href="mailto:proof_dev@protonmail.com?subject=Proof — Contact"
           style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}
           onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
         >
-          Report Issue
+          Contact
         </a>
-        <a
+        <Link
           href="/educators"
           style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}
           onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
         >
           Contribute
-        </a>
+        </Link>
       </div>
     </footer>
   )
