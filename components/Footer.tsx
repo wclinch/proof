@@ -1,6 +1,29 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+
+const TAGLINES = [
+  'VETTED ACADEMIC SOURCES',
+  'NO ADS. NO SLOP.',
+  'EDUCATOR APPROVED',
+  'BUILT FOR STUDENTS',
+]
+
 export default function Footer() {
+  const [index, setIndex] = useState(0)
+  const [opacity, setOpacity] = useState(1)
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setOpacity(0)
+      setTimeout(() => {
+        setIndex(i => (i + 1) % TAGLINES.length)
+        setOpacity(1)
+      }, 300)
+    }, 4000)
+    return () => clearInterval(t)
+  }, [])
+
   return (
     <footer style={{
       padding: '24px 40px',
@@ -10,7 +33,10 @@ export default function Footer() {
       alignItems: 'center',
     }}>
       <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-        Proof — Vetted Academic Sources
+        Proof —{' '}
+        <span style={{ opacity, transition: 'opacity 0.3s ease' }}>
+          {TAGLINES[index]}
+        </span>
       </span>
       <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
         <a
