@@ -316,7 +316,7 @@ function HomeInner() {
         gap: '20px',
       }}>
         {!searched && (
-          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <h1 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
               Research, verified.
             </h1>
