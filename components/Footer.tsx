@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
 const TAGLINES = [
@@ -29,16 +29,20 @@ const TAGLINES = [
 export default function Footer() {
   const [index, setIndex] = useState(0)
   const [opacity, setOpacity] = useState(1)
+  const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const t = setInterval(() => {
       setOpacity(0)
-      setTimeout(() => {
+      fadeTimer.current = setTimeout(() => {
         setIndex(i => (i + 1) % TAGLINES.length)
         setOpacity(1)
       }, 300)
     }, 4000)
-    return () => clearInterval(t)
+    return () => {
+      clearInterval(t)
+      if (fadeTimer.current) clearTimeout(fadeTimer.current)
+    }
   }, [])
 
   return (

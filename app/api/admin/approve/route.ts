@@ -29,8 +29,12 @@ export async function POST(req: NextRequest) {
     sourceId = inserted.id
   }
 
+  if (!sourceId) {
+    return NextResponse.json({ ok: false, message: 'Failed to insert or find source.' }, { status: 500 })
+  }
+
   // Auto-save to suggester's account
-  if (userId && sourceId) {
+  if (userId) {
     await supabase.from('saved_sources')
       .insert({ user_id: userId, source_id: sourceId })
       .then(() => {}) // ignore duplicate errors

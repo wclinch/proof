@@ -73,7 +73,7 @@ export default function Nav() {
         {user && navLink('/saved', 'Saved')}
         {user ? (
           <>
-            <span style={{ fontSize: '12px', color: '#555', letterSpacing: '0.04em' }}>{user}</span>
+            <span style={{ fontSize: '12px', color: '#555', letterSpacing: '0.04em', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user}</span>
             <button onClick={signOut}
               style={{
                 background: 'none', border: '1px solid #1e1e1e', color: '#555',

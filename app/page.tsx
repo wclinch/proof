@@ -54,6 +54,7 @@ function HarvestRow({ work, query, userId }: { work: HarvestWork; query: string;
   const [open, setOpen] = useState(false)
   const [note, setNote] = useState('')
   const [sent, setSent] = useState(false)
+  const [submitError, setSubmitError] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [alreadyInProof, setAlreadyInProof] = useState(false)
   const url = hUrl(work)
@@ -69,20 +70,22 @@ function HarvestRow({ work, query, userId }: { work: HarvestWork; query: string;
 
   async function submit() {
     setSubmitting(true)
+    setSubmitError(false)
     // upsert — if URL already suggested, increment count instead of duplicate insert
     const { data: existing } = await supabase
       .from('topic_requests').select('id, suggestion_count').eq('url', url).maybeSingle()
+    let error
     if (existing) {
-      await supabase.from('topic_requests')
+      ;({ error } = await supabase.from('topic_requests')
         .update({ suggestion_count: (existing.suggestion_count || 1) + 1 })
-        .eq('id', existing.id)
+        .eq('id', existing.id))
     } else {
-      await supabase.from('topic_requests').insert({
+      ;({ error } = await supabase.from('topic_requests').insert({
         query, url, suggested_title: work.title, note: note || null, suggestion_count: 1,
         user_id: userId || null,
-      })
+      }))
     }
-    setSent(true)
+    if (error) { setSubmitError(true) } else { setSent(true) }
     setSubmitting(false)
   }
 
@@ -125,29 +128,36 @@ function HarvestRow({ work, query, userId }: { work: HarvestWork; query: string;
       </div>
 
       {open && !sent && (
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', paddingTop: '4px' }}>
-          <input
-            value={note}
-            onChange={e => setNote(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && submit()}
-            placeholder="Additional comments (optional)"
-            maxLength={500}
-            style={{
-              flex: 1, background: '#111', border: '1px solid #161616', borderRadius: '5px',
-              padding: '9px 12px', color: '#f0f0f0', fontSize: '12px', outline: 'none',
-            }}
-          />
-          <button
-            onClick={submit}
-            disabled={submitting}
-            style={{
-              background: 'none', border: '1px solid #1a1a1a', borderRadius: '5px',
-              color: '#444', fontSize: '12px', padding: '8px 14px', cursor: 'pointer',
-              letterSpacing: '0.04em', flexShrink: 0, opacity: submitting ? 0.5 : 1,
-            }}
-          >
-            Submit
-          </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '4px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && submit()}
+              placeholder="Additional comments (optional)"
+              maxLength={500}
+              style={{
+                flex: 1, background: '#111', border: '1px solid #161616', borderRadius: '5px',
+                padding: '9px 12px', color: '#f0f0f0', fontSize: '12px', outline: 'none',
+              }}
+            />
+            <button
+              onClick={submit}
+              disabled={submitting}
+              style={{
+                background: 'none', border: '1px solid #1a1a1a', borderRadius: '5px',
+                color: '#444', fontSize: '12px', padding: '8px 14px', cursor: 'pointer',
+                letterSpacing: '0.04em', flexShrink: 0, opacity: submitting ? 0.5 : 1,
+              }}
+            >
+              Submit
+            </button>
+          </div>
+          {submitError && (
+            <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.02em' }}>
+              Couldn't submit. Try again.
+            </span>
+          )}
         </div>
       )}
     </div>
@@ -164,6 +174,7 @@ function HomeInner() {
   const [searchError, setSearchError] = useState(false)
   const [saveError, setSaveError] = useState(false)
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
+  const [savingIds, setSavingIds] = useState<Set<string>>(new Set())
   const [reportedIds, setReportedIds] = useState<Set<string>>(new Set())
   const [reportingIds, setReportingIds] = useState<Set<string>>(new Set())
   const [userId, setUserId] = useState<string | null>(null)
@@ -227,7 +238,7 @@ function HomeInner() {
         const shuffled = weightedShuffle(results)
         setResults(shuffled)
         setLoading(false)
-        supabase.from('search_logs').insert({ query: q, result_count: results.length, is_verified: !!userId, user_domain: userDomain }).then(({ error }) => { if (error) console.error('search_logs:', error.message) })
+        supabase.from('search_logs').insert({ query: q, result_count: results.length, is_verified: !!userId, user_domain: userDomain, user_id: userId ?? null }).then(({ error }) => { if (error) console.error('search_logs:', error.message) }).catch(() => {})
       })
   }, [searchParams])
 
@@ -248,17 +259,19 @@ function HomeInner() {
   }
 
   async function toggleSave(sourceId: string) {
-    if (!userId) return
+    if (!userId || savingIds.has(sourceId)) return
     setSaveError(false)
+    setSavingIds(prev => new Set(prev).add(sourceId))
     if (savedIds.has(sourceId)) {
       const { error } = await supabase.from('saved_sources').delete().eq('user_id', userId).eq('source_id', sourceId)
-      if (error) { await checkSession(); setSaveError(true); return }
-      setSavedIds(prev => { const s = new Set(prev); s.delete(sourceId); return s })
+      if (error) { await checkSession(); setSaveError(true) }
+      else setSavedIds(prev => { const s = new Set(prev); s.delete(sourceId); return s })
     } else {
       const { error } = await supabase.from('saved_sources').insert({ user_id: userId, source_id: sourceId })
-      if (error) { await checkSession(); setSaveError(true); return }
-      setSavedIds(prev => new Set(prev).add(sourceId))
+      if (error) { await checkSession(); setSaveError(true) }
+      else setSavedIds(prev => new Set(prev).add(sourceId))
     }
+    setSavingIds(prev => { const s = new Set(prev); s.delete(sourceId); return s })
   }
 
   async function searchHarvest(q?: string) {
@@ -356,6 +369,7 @@ function HomeInner() {
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && search(query)}
               placeholder="Search a topic, subject, or keyword..."
+              maxLength={200}
               style={{
                 flex: 1,
                 background: 'none',
@@ -458,7 +472,7 @@ function HomeInner() {
                     style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none', transition: 'color 0.15s' }}
                     onMouseEnter={e => (e.currentTarget.style.color = '#888')}
                     onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
-                    onClick={() => supabase.from('source_clicks').insert({ source_id: source.id, query, is_verified: !!userId, user_domain: userDomain }).then(({ error }) => { if (error) console.error('source_clicks:', error.message) })}
+                    onClick={() => supabase.from('source_clicks').insert({ source_id: source.id, query, is_verified: !!userId, user_domain: userDomain }).then(({ error }) => { if (error) console.error('source_clicks:', error.message) }).catch(() => {})}
                   >
                     {source.title}
                   </a>
@@ -489,8 +503,8 @@ function HomeInner() {
                       onClick={async () => {
                         if (reportingIds.has(source.id)) return
                         setReportingIds(prev => new Set(prev).add(source.id))
-                        await supabase.from('source_reports').insert({ source_id: source.id, query })
-                        setReportedIds(prev => new Set(prev).add(source.id))
+                        const { error } = await supabase.from('source_reports').insert({ source_id: source.id, query })
+                        if (!error) setReportedIds(prev => new Set(prev).add(source.id))
                         setReportingIds(prev => { const s = new Set(prev); s.delete(source.id); return s })
                       }}
                       style={{
@@ -527,7 +541,7 @@ function HomeInner() {
               </button>
             )}
 
-            {!loading && (
+            {!loading && !searchError && (
               <div style={{ marginTop: '32px', paddingTop: '20px', borderTop: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '0' }}>
                 {!harvestOpen && (
                   <button

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
@@ -60,9 +60,12 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+  const submitting = useRef(false)
 
   async function handleSignUp() {
     if (!email || !password || !confirm) return
+    if (submitting.current) return
+    submitting.current = true
     const parts = email.split('@')
     const domain = parts.length === 2 ? parts[1] : ''
     const validDomain = domain && (
@@ -89,6 +92,7 @@ export default function SignUp() {
     setError('')
 
     const { error } = await supabase.auth.signUp({ email, password })
+    submitting.current = false
 
     if (error) {
       setError(error.message)

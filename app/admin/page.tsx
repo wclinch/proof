@@ -307,6 +307,7 @@ function SuggestionsTab({ pass }: { pass: string }) {
   const [approvingId, setApprovingId] = useState<string | null>(null)
   const [topicInputs, setTopicInputs] = useState<Record<string, string>>({})
   const [workingIds, setWorkingIds] = useState<Set<string>>(new Set())
+  const [actionError, setActionError] = useState('')
 
   async function load() {
     setLoading(true)
@@ -327,6 +328,7 @@ function SuggestionsTab({ pass }: { pass: string }) {
   async function approve(s: Suggestion) {
     const topic = (topicInputs[s.id] ?? s.query).trim()
     if (!topic) return
+    setActionError('')
     setWorkingIds(prev => new Set(prev).add(s.id))
     const res = await fetch('/api/admin/approve', {
       method: 'POST',
@@ -335,18 +337,22 @@ function SuggestionsTab({ pass }: { pass: string }) {
     })
     const data = await res.json()
     if (data.ok) { setSuggestions(prev => prev.filter(x => x.id !== s.id)); setApprovingId(null) }
+    else setActionError(data.message ?? 'Approve failed. Try again.')
     setWorkingIds(prev => { const n = new Set(prev); n.delete(s.id); return n })
   }
 
   async function dismiss(id: string) {
     if (!confirm('Dismiss this suggestion? This cannot be undone.')) return
+    setActionError('')
     setWorkingIds(prev => new Set(prev).add(id))
-    await fetch('/api/admin/dismiss', {
+    const res = await fetch('/api/admin/dismiss', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pass, id }),
     })
-    setSuggestions(prev => prev.filter(x => x.id !== id))
+    const data = await res.json()
+    if (data.ok) setSuggestions(prev => prev.filter(x => x.id !== id))
+    else setActionError('Dismiss failed. Try again.')
     setWorkingIds(prev => { const n = new Set(prev); n.delete(id); return n })
   }
 
@@ -357,6 +363,7 @@ function SuggestionsTab({ pass }: { pass: string }) {
         <button style={ghostBtn} onClick={load} onMouseEnter={e => (e.currentTarget.style.color = '#888')} onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}>Refresh</button>
       </div>
       {error && <div style={{ padding: '20px 0', fontSize: '13px', color: '#555' }}>{error}</div>}
+      {actionError && <div style={{ padding: '8px 0', fontSize: '12px', color: '#555', letterSpacing: '0.04em' }}>{actionError}</div>}
       {loading && <div style={{ padding: '40px 0', fontSize: '13px', color: '#2a2a2a', letterSpacing: '0.04em' }}>Loading...</div>}
       {!loading && !error && suggestions.length === 0 && (
         <div style={{ padding: '40px 0', fontSize: '13px', color: '#2a2a2a', letterSpacing: '0.04em' }}>No pending suggestions.</div>
@@ -537,8 +544,13 @@ export default function Admin() {
   const [inserting, setInserting] = useState(false)
   const [status, setStatus] = useState('')
 
-  function checkPass() {
-    if (pass === process.env.NEXT_PUBLIC_ADMIN_PASS) setAuthed(true)
+  async function checkPass() {
+    const res = await fetch('/api/admin/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pass }),
+    })
+    if (res.ok) setAuthed(true)
     else setAuthError(true)
   }
 
