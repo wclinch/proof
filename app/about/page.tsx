@@ -41,21 +41,21 @@ export default async function About() {
         <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            A curated reference database for student research. Sources are drawn from real academic work, selected for credibility, and organized by subject. Free to use, no advertising.
+            A curated reference database for student research. Search by topic, save sources to your account, and export citations in MLA, APA, or Chicago format directly — no external tools required. When Proof doesn't have what you need, search OpenAlex for peer-reviewed papers and suggest additions. Free to use, no advertising.
           </p>
         </div>
 
         <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>How the database is built</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            The database is built subject by subject — each topic curated manually and verified before publication. Coverage expands one discipline at a time, prioritizing depth over breadth.
+            Built subject by subject — each source selected manually, verified against publication standards, and organized by topic. Coverage expands one discipline at a time, prioritizing depth over breadth. User suggestions and contributor submissions feed directly into what gets added next.
           </p>
         </div>
 
         <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>Built-in citation</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>Contributing sources</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
-            Saved sources can be cited directly in MLA, APA, or Chicago format. No external tools required.
+            Researchers, academics, and subject-matter experts can apply to contribute sources directly. Submissions are reviewed before publication. Institutional email required.
           </p>
         </div>
 
