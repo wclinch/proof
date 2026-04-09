@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 type Filters = {
   topic: string
@@ -24,23 +24,75 @@ function getUrl(w: Work): string {
   return w.open_access?.oa_url || w.primary_location?.landing_page_url || ''
 }
 
-const field: React.CSSProperties = {
-  background: '#111',
-  border: '1px solid #1e1e1e',
-  borderRadius: '6px',
-  padding: '10px 14px',
-  color: '#e8e8e8',
-  fontSize: '13px',
-  outline: 'none',
-  width: '100%',
-  fontFamily: 'inherit',
+const SORT_OPTIONS = [
+  { value: 'cited_by_count:desc', label: 'Citations (high → low)' },
+  { value: 'relevance_score:desc', label: 'Relevance' },
+  { value: 'publication_year:desc', label: 'Newest first' },
+]
+
+function Dropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const selected = SORT_OPTIONS.find(o => o.value === value)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', background: '#111', border: '1px solid #1e1e1e',
+          borderRadius: '6px', padding: '14px 16px', color: '#f0f0f0',
+          fontSize: '14px', outline: 'none', cursor: 'pointer', textAlign: 'left',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          fontFamily: 'inherit',
+        }}
+      >
+        <span>{selected?.label}</span>
+        <span style={{ color: '#333', fontSize: '10px' }}>▾</span>
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+          background: '#111', border: '1px solid #1e1e1e', borderRadius: '6px',
+          zIndex: 10, overflow: 'hidden',
+        }}>
+          {SORT_OPTIONS.map(o => (
+            <div
+              key={o.value}
+              onClick={() => { onChange(o.value); setOpen(false) }}
+              style={{
+                padding: '12px 16px', fontSize: '14px', cursor: 'pointer',
+                color: o.value === value ? '#f0f0f0' : '#444',
+                transition: 'background 0.1s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#161616')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              {o.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
-const label: React.CSSProperties = {
-  fontSize: '10px',
-  color: '#333',
-  letterSpacing: '0.1em',
-  textTransform: 'uppercase',
+const inputStyle: React.CSSProperties = {
+  background: '#111', border: '1px solid #1e1e1e', borderRadius: '6px',
+  padding: '14px 16px', color: '#f0f0f0', fontSize: '14px', outline: 'none',
+  width: '100%', fontFamily: 'inherit',
+}
+
+const labelStyle: React.CSSProperties = {
+  fontSize: '11px', color: '#444', letterSpacing: '0.08em', textTransform: 'uppercase',
 }
 
 export default function Admin() {
@@ -147,164 +199,146 @@ export default function Admin() {
 
   if (!authed) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '280px' }}>
-          <span style={{ fontSize: '10px', color: '#2a2a2a', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Proof / Admin</span>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input
-              type="password"
-              value={pass}
-              onChange={e => { setPass(e.target.value); setAuthError(false) }}
-              onKeyDown={e => e.key === 'Enter' && checkPass()}
-              placeholder="password"
-              style={{ ...field, flex: 1 }}
-            />
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+        <div style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Admin</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={labelStyle}>Password</label>
+              <input
+                type="password"
+                value={pass}
+                onChange={e => { setPass(e.target.value); setAuthError(false) }}
+                onKeyDown={e => e.key === 'Enter' && checkPass()}
+                placeholder="••••••••"
+                style={inputStyle}
+              />
+            </div>
+            {authError && <p style={{ fontSize: '12px', color: '#555', letterSpacing: '0.02em', margin: 0 }}>Incorrect password.</p>}
             <button
               onClick={checkPass}
               style={{
-                background: 'none', color: '#555', border: '1px solid #1e1e1e',
-                borderRadius: '6px', padding: '10px 16px', fontSize: '13px',
-                cursor: 'pointer', flexShrink: 0,
+                background: '#f0f0f0', color: '#0a0a0a', border: 'none', borderRadius: '6px',
+                padding: '14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                letterSpacing: '0.04em', marginTop: '4px',
               }}
             >
-              →
+              Continue
             </button>
           </div>
-          {authError && <span style={{ fontSize: '11px', color: '#333', letterSpacing: '0.04em' }}>Incorrect password.</span>}
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#f0f0f0', padding: '48px 40px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#0a0a0a' }}>
       <style>{`
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
-        select option { background: #111; }
       `}</style>
 
-      <div style={{ maxWidth: '820px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <main style={{ flex: 1, maxWidth: '680px', width: '100%', margin: '0 auto', padding: '48px 20px', display: 'flex', flexDirection: 'column', gap: '0' }}>
 
-        <div style={{ paddingBottom: '16px', borderBottom: '1px solid #1a1a1a' }}>
-          <span style={{ fontSize: '10px', color: '#2a2a2a', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-            Proof / Admin / Ingest
+        <div style={{ paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
+          <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Admin / Ingest
           </span>
         </div>
 
         {/* Filters */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={label}>Topic</label>
+            <label style={labelStyle}>Topic</label>
             <input
               value={filters.topic}
               onChange={e => setFilters(f => ({ ...f, topic: e.target.value }))}
               onKeyDown={e => e.key === 'Enter' && search()}
-              placeholder="e.g. monetary policy"
-              style={field}
+              placeholder="monetary policy"
+              style={inputStyle}
             />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={label}>Min Citations</label>
-              <input
-                type="number"
-                value={filters.minCitations}
-                onChange={e => setFilters(f => ({ ...f, minCitations: Number(e.target.value) }))}
-                style={field}
-              />
+              <label style={labelStyle}>Min Citations</label>
+              <input type="number" value={filters.minCitations} onChange={e => setFilters(f => ({ ...f, minCitations: Number(e.target.value) }))} style={inputStyle} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={label}>From Year</label>
-              <input
-                type="number"
-                value={filters.fromYear}
-                onChange={e => setFilters(f => ({ ...f, fromYear: Number(e.target.value) }))}
-                style={field}
-              />
+              <label style={labelStyle}>From Year</label>
+              <input type="number" value={filters.fromYear} onChange={e => setFilters(f => ({ ...f, fromYear: Number(e.target.value) }))} style={inputStyle} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={label}>Results</label>
-              <input
-                type="number"
-                value={filters.perPage}
-                onChange={e => setFilters(f => ({ ...f, perPage: Number(e.target.value) }))}
-                style={field}
-              />
+              <label style={labelStyle}>Results</label>
+              <input type="number" value={filters.perPage} onChange={e => setFilters(f => ({ ...f, perPage: Number(e.target.value) }))} style={inputStyle} />
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'flex-end' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={label}>Sort</label>
-              <select
-                value={filters.sort}
-                onChange={e => setFilters(f => ({ ...f, sort: e.target.value as Filters['sort'] }))}
-                style={{ ...field, cursor: 'pointer' }}
-              >
-                <option value="cited_by_count:desc">Citations (high → low)</option>
-                <option value="relevance_score:desc">Relevance</option>
-                <option value="publication_year:desc">Newest first</option>
-              </select>
+              <label style={labelStyle}>Sort</label>
+              <Dropdown value={filters.sort} onChange={v => setFilters(f => ({ ...f, sort: v as Filters['sort'] }))} />
             </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', paddingBottom: '2px' }}>
-              <div
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '2px' }}>
+              <button
                 onClick={() => setFilters(f => ({ ...f, openAccess: !f.openAccess }))}
                 style={{
                   width: '36px', height: '20px', borderRadius: '10px', flexShrink: 0,
-                  background: filters.openAccess ? '#e8e8e8' : '#1e1e1e',
-                  border: '1px solid',
-                  borderColor: filters.openAccess ? '#e8e8e8' : '#2a2a2a',
+                  background: filters.openAccess ? '#444' : '#1a1a1a',
+                  border: '1px solid', borderColor: filters.openAccess ? '#555' : '#222',
                   position: 'relative', cursor: 'pointer', transition: 'background 0.15s',
+                  padding: 0,
                 }}
               >
                 <div style={{
                   position: 'absolute', top: '2px',
-                  left: filters.openAccess ? '17px' : '2px',
+                  left: filters.openAccess ? '16px' : '2px',
                   width: '14px', height: '14px', borderRadius: '50%',
-                  background: filters.openAccess ? '#0a0a0a' : '#333',
+                  background: filters.openAccess ? '#e8e8e8' : '#333',
                   transition: 'left 0.15s',
                 }} />
-              </div>
+              </button>
               <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Open access only</span>
-            </label>
+            </div>
           </div>
+
+          <button
+            onClick={search}
+            disabled={loading}
+            style={{
+              alignSelf: 'flex-start', background: '#f0f0f0', color: '#0a0a0a',
+              border: 'none', borderRadius: '6px', padding: '10px 24px',
+              fontSize: '13px', fontWeight: 600, cursor: loading ? 'default' : 'pointer',
+              letterSpacing: '0.04em', opacity: loading ? 0.5 : 1, marginTop: '4px',
+            }}
+          >
+            {loading ? 'Fetching...' : 'Fetch'}
+          </button>
         </div>
 
-        <button
-          onClick={search}
-          disabled={loading}
-          style={{
-            alignSelf: 'flex-start', background: '#f0f0f0', color: '#0a0a0a',
-            border: 'none', borderRadius: '6px', padding: '10px 24px',
-            fontSize: '12px', fontWeight: 600, cursor: loading ? 'default' : 'pointer',
-            letterSpacing: '0.06em', textTransform: 'uppercase', opacity: loading ? 0.5 : 1,
-          }}
-        >
-          {loading ? 'Fetching...' : 'Fetch'}
-        </button>
-
-        {results.length > 0 && (
+        {/* Results */}
+        {(results.length > 0 || status) && (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              paddingBottom: '12px', borderBottom: '1px solid #1a1a1a', marginBottom: '4px',
+              padding: '14px 0', borderBottom: '1px solid #1a1a1a',
             }}>
-              <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em' }}>
+              <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.06em' }}>
                 {results.length} results — {selected.size} selected
               </span>
               <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                 <button
                   onClick={toggleAll}
                   style={{
-                    background: 'none', border: 'none', color: '#333',
-                    fontSize: '11px', cursor: 'pointer', letterSpacing: '0.06em', padding: 0,
+                    background: 'none', border: 'none', color: '#2a2a2a',
+                    fontSize: '11px', cursor: 'pointer', letterSpacing: '0.04em', padding: 0,
                     transition: 'color 0.15s',
                   }}
                   onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
                 >
                   {selected.size === results.length ? 'Deselect all' : 'Select all'}
                 </button>
@@ -318,8 +352,7 @@ export default function Admin() {
                     borderRadius: '6px', padding: '8px 18px',
                     fontSize: '11px', fontWeight: 600,
                     cursor: selected.size ? 'pointer' : 'default',
-                    letterSpacing: '0.06em', textTransform: 'uppercase',
-                    opacity: inserting ? 0.5 : 1,
+                    letterSpacing: '0.04em', opacity: inserting ? 0.5 : 1,
                   }}
                 >
                   {inserting ? 'Inserting...' : `Insert ${selected.size}`}
@@ -328,7 +361,7 @@ export default function Admin() {
             </div>
 
             {status && (
-              <div style={{ padding: '10px 0', fontSize: '12px', color: '#555', letterSpacing: '0.04em' }}>
+              <div style={{ padding: '12px 0', fontSize: '12px', color: '#555', letterSpacing: '0.04em' }}>
                 {status}
               </div>
             )}
@@ -347,18 +380,17 @@ export default function Admin() {
                   key={i}
                   onClick={() => toggle(i)}
                   style={{
-                    display: 'flex', gap: '16px', alignItems: 'flex-start',
-                    padding: '11px 8px', borderBottom: '1px solid #111',
+                    display: 'flex', gap: '16px', alignItems: 'center',
+                    padding: '11px 0', borderBottom: '1px solid #141414',
                     cursor: 'pointer', opacity: url ? 1 : 0.3,
-                    background: isSelected ? '#0f0f0f' : 'transparent',
-                    borderRadius: '4px',
                   }}
                 >
                   <div style={{
-                    width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0, marginTop: '2px',
-                    border: `1px solid ${isSelected ? '#555' : '#222'}`,
+                    width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0,
+                    border: `1px solid ${isSelected ? '#444' : '#1e1e1e'}`,
                     background: isSelected ? '#333' : 'transparent',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.1s',
                   }}>
                     {isSelected && <span style={{ fontSize: '9px', color: '#e8e8e8', lineHeight: 1 }}>✓</span>}
                   </div>
@@ -368,12 +400,9 @@ export default function Admin() {
                       {w.title}
                     </span>
                     <span style={{ fontSize: '11px', color: '#2a2a2a' }}>{meta}</span>
-                    <span style={{ fontSize: '10px', color: '#1e1e1e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {url || 'no url — will be skipped'}
-                    </span>
                   </div>
 
-                  <span style={{ fontSize: '11px', color: '#2a2a2a', flexShrink: 0, letterSpacing: '0.02em' }}>
+                  <span style={{ fontSize: '10px', color: '#222', flexShrink: 0, letterSpacing: '0.04em' }}>
                     {w.cited_by_count.toLocaleString()}
                   </span>
                 </div>
@@ -381,7 +410,7 @@ export default function Admin() {
             })}
           </div>
         )}
-      </div>
+      </main>
     </div>
   )
 }
