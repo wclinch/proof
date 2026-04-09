@@ -1,6 +1,16 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+
+type DBSource = {
+  id: string
+  title: string
+  url: string
+  topic: string
+  citation_count: number
+  author: string | null
+  published_date: string | null
+}
 
 type Filters = {
   topic: string
@@ -85,6 +95,112 @@ function Dropdown({ value, onChange }: { value: string; onChange: (v: string) =>
   )
 }
 
+function SourcesTab({ pass }: { pass: string }) {
+  const [sources, setSources] = useState<DBSource[]>([])
+  const [loading, setLoading] = useState(false)
+  const [filter, setFilter] = useState('')
+  const [error, setError] = useState('')
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    const res = await fetch('/api/admin/sources', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pass }),
+    })
+    const data = await res.json()
+    if (data.ok) setSources(data.data)
+    else setError(data.message)
+    setLoading(false)
+  }, [pass])
+
+  useEffect(() => { load() }, [load])
+
+  async function remove(id: string) {
+    setDeletingIds(prev => new Set(prev).add(id))
+    const res = await fetch('/api/admin/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, pass }),
+    })
+    const data = await res.json()
+    if (data.ok) setSources(prev => prev.filter(s => s.id !== id))
+    setDeletingIds(prev => { const s = new Set(prev); s.delete(id); return s })
+  }
+
+  const filtered = filter.trim()
+    ? sources.filter(s =>
+        s.title.toLowerCase().includes(filter.toLowerCase()) ||
+        s.topic.toLowerCase().includes(filter.toLowerCase())
+      )
+    : sources
+
+  const byTopic = filtered.reduce<Record<string, DBSource[]>>((acc, s) => {
+    acc[s.topic] = acc[s.topic] ?? []
+    acc[s.topic].push(s)
+    return acc
+  }, {})
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+        <input
+          value={filter}
+          onChange={e => setFilter(e.target.value)}
+          placeholder="Filter by title or topic..."
+          style={{ background: 'none', border: 'none', outline: 'none', color: '#888', fontSize: '13px', flex: 1 }}
+        />
+        <span style={{ fontSize: '11px', color: '#2a2a2a', flexShrink: 0 }}>
+          {loading ? '' : `${sources.length} sources`}
+        </span>
+      </div>
+
+      {error && <div style={{ padding: '20px 0', fontSize: '13px', color: '#555' }}>{error}</div>}
+      {loading && <div style={{ padding: '40px 0', fontSize: '13px', color: '#2a2a2a', letterSpacing: '0.04em' }}>Loading...</div>}
+
+      {!loading && Object.entries(byTopic).map(([topic, items]) => (
+        <div key={topic}>
+          <div style={{ padding: '16px 0 8px', fontSize: '10px', color: '#2a2a2a', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            {topic} — {items.length}
+          </div>
+          {items.map(s => (
+            <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px', padding: '10px 0', borderBottom: '1px solid #111' }}>
+              <a
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, transition: 'color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
+              >
+                {s.title}
+              </a>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
+                <span style={{ fontSize: '10px', color: '#222' }}>{s.citation_count.toLocaleString()}</span>
+                <button
+                  onClick={() => remove(s.id)}
+                  disabled={deletingIds.has(s.id)}
+                  style={{
+                    background: 'none', border: 'none', color: '#2a2a2a', fontSize: '11px',
+                    cursor: 'pointer', letterSpacing: '0.04em', padding: 0, transition: 'color 0.15s',
+                    opacity: deletingIds.has(s.id) ? 0.4 : 1,
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 const inputStyle: React.CSSProperties = {
   background: '#111', border: '1px solid #1e1e1e', borderRadius: '6px',
   padding: '14px 16px', color: '#f0f0f0', fontSize: '14px', outline: 'none',
@@ -99,6 +215,7 @@ export default function Admin() {
   const [pass, setPass] = useState('')
   const [authed, setAuthed] = useState(false)
   const [authError, setAuthError] = useState(false)
+  const [tab, setTab] = useState<'ingest' | 'sources'>('ingest')
 
   const [filters, setFilters] = useState<Filters>({
     topic: '',
@@ -112,6 +229,7 @@ export default function Admin() {
   const [results, setResults] = useState<Work[]>([])
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(false)
+  const [fetched, setFetched] = useState(false)
   const [inserting, setInserting] = useState(false)
   const [status, setStatus] = useState('')
 
@@ -129,6 +247,7 @@ export default function Admin() {
     setResults([])
     setSelected(new Set())
     setStatus('')
+    setFetched(false)
 
     const filterParts = [
       `title.search:${filters.topic}`,
@@ -149,8 +268,10 @@ export default function Admin() {
       const res = await fetch(`https://api.openalex.org/works?${params}`)
       const data = await res.json()
       setResults(data.results || [])
+      setFetched(true)
     } catch {
       setStatus('OpenAlex request failed.')
+      setFetched(true)
     }
     setLoading(false)
   }
@@ -243,12 +364,32 @@ export default function Admin() {
 
       <main style={{ flex: 1, maxWidth: '680px', width: '100%', margin: '0 auto', padding: '48px 20px', display: 'flex', flexDirection: 'column', gap: '0' }}>
 
-        <div style={{ paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
+        <div style={{ paddingBottom: '14px', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            Admin / Ingest
+            Admin
           </span>
+          <div style={{ display: 'flex', gap: '20px' }}>
+            {(['ingest', 'sources'] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase',
+                  color: tab === t ? '#e8e8e8' : '#2a2a2a',
+                  borderBottom: tab === t ? '1px solid #e8e8e8' : '1px solid transparent',
+                  paddingBottom: '2px', transition: 'color 0.15s',
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
         </div>
 
+        {tab === 'sources' && <SourcesTab pass={pass} />}
+
+        {tab === 'ingest' && <>
         {/* Filters */}
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -318,6 +459,13 @@ export default function Admin() {
             {loading ? 'Fetching...' : 'Fetch'}
           </button>
         </div>
+
+        {/* No results */}
+        {fetched && !loading && results.length === 0 && !status && (
+          <div style={{ padding: '24px 0', fontSize: '13px', color: '#2a2a2a', letterSpacing: '0.04em' }}>
+            No results found. Try different filters.
+          </div>
+        )}
 
         {/* Results */}
         {(results.length > 0 || status) && (
@@ -418,6 +566,7 @@ export default function Admin() {
             })}
           </div>
         )}
+        </>}
       </main>
     </div>
   )

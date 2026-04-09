@@ -165,6 +165,8 @@ export default function Saved() {
   const router = useRouter()
   const [saved, setSaved] = useState<SavedSource[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
+  const [removeError, setRemoveError] = useState(false)
   const [citing, setCiting] = useState<SavedSource['sources'] | null>(null)
   const [filter, setFilter] = useState('')
   const closeCite = useCallback(() => setCiting(null), [])
@@ -182,18 +184,21 @@ export default function Saved() {
         router.push('/signin')
         return
       }
-      const { data: saved } = await supabase
+      const { data: saved, error } = await supabase
         .from('saved_sources')
         .select('id, source_id, sources(id, title, url, topic, citation_count, author, published_date, publisher)')
         .eq('user_id', data.session.user.id)
         .order('created_at', { ascending: false })
+      if (error) { setFetchError(true); setLoading(false); return }
       setSaved(((saved as unknown as SavedSource[]) ?? []).filter(s => s.sources != null))
       setLoading(false)
     })
   }, [router])
 
   async function removeSource(savedId: string) {
-    await supabase.from('saved_sources').delete().eq('id', savedId)
+    setRemoveError(false)
+    const { error } = await supabase.from('saved_sources').delete().eq('id', savedId)
+    if (error) { setRemoveError(true); return }
     setSaved(prev => prev.filter(s => s.id !== savedId))
   }
 
@@ -231,9 +236,21 @@ export default function Saved() {
           </div>
         )}
 
-        {!loading && saved.length === 0 && (
+        {!loading && fetchError && (
+          <div style={{ padding: '40px 0', color: '#555', fontSize: '13px', letterSpacing: '0.04em' }}>
+            Couldn't load saved sources. Try refreshing.
+          </div>
+        )}
+
+        {!loading && !fetchError && saved.length === 0 && (
           <div style={{ padding: '40px 0', color: '#2a2a2a', fontSize: '13px', letterSpacing: '0.04em' }}>
             No sources saved.
+          </div>
+        )}
+
+        {removeError && (
+          <div style={{ padding: '8px 0', color: '#555', fontSize: '12px', letterSpacing: '0.04em' }}>
+            Couldn't remove source. Try again.
           </div>
         )}
 

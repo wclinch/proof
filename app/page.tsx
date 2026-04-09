@@ -153,6 +153,8 @@ function HomeInner() {
   const [results, setResults] = useState<Source[]>([])
   const [searched, setSearched] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [searchError, setSearchError] = useState(false)
+  const [saveError, setSaveError] = useState(false)
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [reportedIds, setReportedIds] = useState<Set<string>>(new Set())
   const [reportingIds, setReportingIds] = useState<Set<string>>(new Set())
@@ -194,6 +196,7 @@ function HomeInner() {
     setQuery(q)
     setLoading(true)
     setSearched(true)
+    setSearchError(false)
     setVisibleCount(20)
     if (searchParams.get('harvest') !== '1') {
       setHarvestOpen(false)
@@ -207,7 +210,8 @@ function HomeInner() {
       .eq('status', 'approved')
       .or(`topic.ilike.%${esc}%,title.ilike.%${esc}%`)
       .order('citation_count', { ascending: false })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) { setSearchError(true); setLoading(false); return }
         const results = data || []
         const shuffled = weightedShuffle(results)
         setResults(shuffled)
@@ -236,13 +240,14 @@ function HomeInner() {
 
   async function toggleSave(sourceId: string) {
     if (!userId) return
+    setSaveError(false)
     if (savedIds.has(sourceId)) {
       const { error } = await supabase.from('saved_sources').delete().eq('user_id', userId).eq('source_id', sourceId)
-      if (error) { checkSession(); return }
+      if (error) { checkSession(); setSaveError(true); return }
       setSavedIds(prev => { const s = new Set(prev); s.delete(sourceId); return s })
     } else {
       const { error } = await supabase.from('saved_sources').insert({ user_id: userId, source_id: sourceId })
-      if (error) { checkSession(); return }
+      if (error) { checkSession(); setSaveError(true); return }
       setSavedIds(prev => new Set(prev).add(sourceId))
     }
   }
@@ -410,7 +415,7 @@ function HomeInner() {
               paddingBottom: '14px',
               borderBottom: '1px solid #1a1a1a',
             }}>
-              {loading ? 'Searching...' : `${results.length} sources found`}
+              {loading ? 'Searching...' : searchError ? 'Something went wrong. Try again.' : `${results.length} sources found`}
             </div>
 
             {!loading && results.length === 0 && (
@@ -526,6 +531,12 @@ function HomeInner() {
                 </div>
               </div>
             ))}
+            {saveError && (
+              <div style={{ padding: '10px 0', fontSize: '12px', color: '#555', letterSpacing: '0.04em' }}>
+                Couldn't save. Try again.
+              </div>
+            )}
+
             {results.length > visibleCount && (
               <button
                 onClick={() => setVisibleCount(c => c + 20)}
