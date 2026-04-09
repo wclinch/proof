@@ -66,7 +66,7 @@ export default function Educators() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Nav />
-        <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+        <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '56px 20px' }}>
           <div style={{ width: '100%', maxWidth: '520px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em' }}>Application received</h1>
             <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
