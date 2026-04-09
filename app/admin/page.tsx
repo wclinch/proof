@@ -450,9 +450,9 @@ export default function Admin() {
             onClick={search}
             disabled={loading}
             style={{
-              alignSelf: 'flex-start', background: '#f0f0f0', color: '#0a0a0a',
-              border: 'none', borderRadius: '6px', padding: '10px 24px',
-              fontSize: '13px', fontWeight: 600, cursor: loading ? 'default' : 'pointer',
+              alignSelf: 'flex-start', background: 'none', color: '#888',
+              border: '1px solid #1e1e1e', borderRadius: '6px', padding: '10px 24px',
+              fontSize: '13px', cursor: loading ? 'default' : 'pointer',
               letterSpacing: '0.04em', opacity: loading ? 0.5 : 1, marginTop: '4px',
             }}
           >
