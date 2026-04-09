@@ -267,9 +267,11 @@ export default function Saved() {
               href={item.sources.url}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0, textDecoration: 'none', flex: 1 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0, textDecoration: 'none', flex: 1, color: '#e8e8e8', transition: 'color 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
             >
-              <span style={{ fontSize: '14px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '14px', fontWeight: 500, color: 'inherit', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {item.sources.title}
               </span>
               <span style={{ fontSize: '11px', color: '#2e2e2e' }}>

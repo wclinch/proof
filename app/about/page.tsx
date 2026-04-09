@@ -32,29 +32,29 @@ export default async function About() {
         </span>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>The problem</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>The problem</h2>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
             Academic research has a sourcing problem. General search engines optimize for engagement, not accuracy — surfacing content that rarely meets scholarly standards. Finding credible, citable sources takes longer than it should.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>What Proof is</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>What Proof is</h2>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
             A curated reference database for student research. Search by topic, save sources to your account, and export citations in MLA, APA, or Chicago format directly — no external tools required. When Proof doesn't have what you need, search OpenAlex for peer-reviewed papers and suggest additions. Free to use, no advertising.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>How the database is built</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>How the database is built</h2>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
             Built subject by subject — each source selected manually, verified against publication standards, and organized by topic. Coverage expands one discipline at a time, prioritizing depth over breadth. User suggestions and contributor submissions feed directly into what gets added next.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>Contributing sources</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>Contributing sources</h2>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
             Researchers, academics, and subject-matter experts can apply to contribute sources directly. Submissions are reviewed before publication. Institutional email required.
           </p>
         </div>
@@ -79,7 +79,7 @@ export default async function About() {
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>What's being built</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>What's being built</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px' }}>
               <span style={{ fontSize: '10px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase', flexShrink: 0 }}>Now</span>

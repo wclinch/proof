@@ -100,8 +100,8 @@ export default function SignUp() {
         <Nav />
         <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
           <div style={{ width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em' }}>Check your email</h1>
-            <p style={{ fontSize: '13px', color: '#444', lineHeight: 1.7 }}>
+            <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>Check your email</h1>
+            <p style={{ fontSize: '13px', color: '#444', lineHeight: 1.7, margin: 0 }}>
               We sent a confirmation link to <span style={{ color: '#888' }}>{email}</span>. Click it to activate your account then sign in.
             </p>
             <Link href="/signin" style={{ fontSize: '13px', color: '#666', textDecoration: 'none', marginTop: '8px' }}>
@@ -122,8 +122,8 @@ export default function SignUp() {
         <div style={{ width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em' }}>Create account</h1>
-            <p style={{ fontSize: '13px', color: '#444' }}>
+            <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>Create account</h1>
+            <p style={{ fontSize: '13px', color: '#444', margin: 0 }}>
               Already have one?{' '}
               <Link href="/signin" style={{ color: '#888', textDecoration: 'none' }}>Sign in</Link>
             </p>
@@ -160,7 +160,7 @@ export default function SignUp() {
             </div>
 
             {error && (
-              <p style={{ fontSize: '12px', color: '#888888', letterSpacing: '0.02em' }}>{error}</p>
+              <p style={{ fontSize: '12px', color: '#888888', letterSpacing: '0.02em', margin: 0 }}>{error}</p>
             )}
 
             <button

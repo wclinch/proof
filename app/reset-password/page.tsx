@@ -91,8 +91,8 @@ export default function ResetPassword() {
         <Nav />
         <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
           <div style={{ width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em' }}>Password updated</h1>
-            <p style={{ fontSize: '13px', color: '#444', lineHeight: 1.7 }}>
+            <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>Password updated</h1>
+            <p style={{ fontSize: '13px', color: '#444', lineHeight: 1.7, margin: 0 }}>
               Your password has been changed. Redirecting you home...
             </p>
           </div>
@@ -110,8 +110,8 @@ export default function ResetPassword() {
         <div style={{ width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em' }}>Set new password</h1>
-            <p style={{ fontSize: '13px', color: '#444' }}>Choose a new password for your account.</p>
+            <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>Set new password</h1>
+            <p style={{ fontSize: '13px', color: '#444', margin: 0 }}>Choose a new password for your account.</p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -126,7 +126,7 @@ export default function ResetPassword() {
             </div>
 
             {error && (
-              <p style={{ fontSize: '12px', color: '#888888', letterSpacing: '0.02em' }}>{error}</p>
+              <p style={{ fontSize: '12px', color: '#888888', letterSpacing: '0.02em', margin: 0 }}>{error}</p>
             )}
 
             <button

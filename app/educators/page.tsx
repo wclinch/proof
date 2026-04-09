@@ -68,8 +68,8 @@ export default function Educators() {
         <Nav />
         <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '56px 20px' }}>
           <div style={{ width: '100%', maxWidth: '520px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em' }}>Application received</h1>
-            <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
+            <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>Application received</h1>
+            <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
               We'll review your application and reach out to <span style={{ color: '#888' }}>{form.email}</span> within a few days.
             </p>
           </div>
@@ -90,8 +90,8 @@ export default function Educators() {
         </span>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em' }}>Apply to contribute sources</h1>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
+          <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>Apply to contribute sources</h1>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
             Proof maintains a curated database of academic sources. Researchers, academics, and subject-matter experts may apply to contribute. All submissions are reviewed prior to publication.
           </p>
         </div>
@@ -167,7 +167,7 @@ export default function Educators() {
           </div>
 
           {error && (
-            <p style={{ fontSize: '12px', color: '#888888', letterSpacing: '0.02em' }}>{error}</p>
+            <p style={{ fontSize: '12px', color: '#888888', letterSpacing: '0.02em', margin: 0 }}>{error}</p>
           )}
 
           <button
@@ -182,7 +182,7 @@ export default function Educators() {
             {loading ? 'Submitting...' : 'Submit application'}
           </button>
 
-          <p style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em', lineHeight: 1.6, margin: 0 }}>
             Applications are reviewed manually. We'll contact you at your institution email within a few days.
           </p>
         </div>

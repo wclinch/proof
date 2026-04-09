@@ -60,8 +60,8 @@ export default function SignIn() {
         <div style={{ width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em' }}>Sign in</h1>
-            <p style={{ fontSize: '13px', color: '#444' }}>
+            <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>Sign in</h1>
+            <p style={{ fontSize: '13px', color: '#444', margin: 0 }}>
               No account?{' '}
               <Link href="/signup" style={{ color: '#888', textDecoration: 'none' }}>Create one</Link>
             </p>
@@ -134,13 +134,13 @@ export default function SignIn() {
             </div>
 
             {resetSent && (
-              <p style={{ fontSize: '12px', color: '#888888', letterSpacing: '0.02em' }}>
+              <p style={{ fontSize: '12px', color: '#888888', letterSpacing: '0.02em', margin: 0 }}>
                 Reset link sent. Check your email.
               </p>
             )}
 
             {error && (
-              <p style={{ fontSize: '12px', color: '#888888', letterSpacing: '0.02em' }}>{error}</p>
+              <p style={{ fontSize: '12px', color: '#888888', letterSpacing: '0.02em', margin: 0 }}>{error}</p>
             )}
 
             <button

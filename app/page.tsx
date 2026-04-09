@@ -317,10 +317,10 @@ function HomeInner() {
       }}>
         {!searched && (
           <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <h1 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+            <h1 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, margin: 0 }}>
               Research, verified.
             </h1>
-            <p style={{ fontSize: '15px', color: '#555', letterSpacing: '0.02em' }}>
+            <p style={{ fontSize: '15px', color: '#555', letterSpacing: '0.02em', margin: 0 }}>
               Curated academic sources, organized by subject.
             </p>
           </div>
