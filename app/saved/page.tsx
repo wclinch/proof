@@ -184,7 +184,7 @@ export default function Saved() {
         .select('id, source_id, sources(id, title, url, topic, citation_count, author, published_date, publisher)')
         .eq('user_id', data.session.user.id)
         .order('created_at', { ascending: false })
-      setSaved((saved ?? []) as SavedSource[])
+      setSaved((saved as unknown as SavedSource[]) ?? [])
       setLoading(false)
     })
   }, [router])
