@@ -85,18 +85,18 @@ export default function Educators() {
 
       <main style={{ flex: 1, maxWidth: '520px', width: '100%', margin: '0 auto', padding: '56px 20px', display: 'flex', flexDirection: 'column', gap: '0' }}>
 
-        <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '20px', borderBottom: '1px solid #1a1a1a' }}>
+        <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
           Contribute
         </span>
 
-        <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h1 style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.02em' }}>Apply to contribute sources</h1>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
             Proof maintains a curated database of academic sources. Researchers, academics, and subject-matter experts may apply to contribute. All submissions are reviewed prior to publication.
           </p>
         </div>
 
-        <div style={{ paddingTop: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           <div style={{ display: 'flex', gap: '12px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>

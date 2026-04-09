@@ -27,39 +27,39 @@ export default async function About() {
 
       <main style={{ flex: 1, maxWidth: '580px', width: '100%', margin: '0 auto', padding: '56px 20px', display: 'flex', flexDirection: 'column' }}>
 
-        <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '20px', borderBottom: '1px solid #1a1a1a' }}>
+        <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
           About Proof
         </span>
 
-        <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>The problem</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
             Academic research has a sourcing problem. General search engines optimize for engagement, not accuracy — surfacing content that rarely meets scholarly standards. Finding credible, citable sources takes longer than it should.
           </p>
         </div>
 
-        <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
             A curated reference database for student research. Search by topic, save sources to your account, and export citations in MLA, APA, or Chicago format directly — no external tools required. When Proof doesn't have what you need, search OpenAlex for peer-reviewed papers and suggest additions. Free to use, no advertising.
           </p>
         </div>
 
-        <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>How the database is built</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
             Built subject by subject — each source selected manually, verified against publication standards, and organized by topic. Coverage expands one discipline at a time, prioritizing depth over breadth. User suggestions and contributor submissions feed directly into what gets added next.
           </p>
         </div>
 
-        <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>Contributing sources</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75 }}>
             Researchers, academics, and subject-matter experts can apply to contribute sources directly. Submissions are reviewed before publication. Institutional email required.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0', marginTop: '16px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a' }}>
+        <div style={{ display: 'flex', gap: '0', marginTop: '8px', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a' }}>
           {[
             { number: String(sourcesCount ?? 0), label: 'Sources indexed' },
             { number: String(uniqueTopics), label: 'Topics covered' },
@@ -78,7 +78,7 @@ export default async function About() {
           ))}
         </div>
 
-        <div style={{ padding: '32px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8' }}>What's being built</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px' }}>
