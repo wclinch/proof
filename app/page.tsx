@@ -313,10 +313,10 @@ function HomeInner() {
         alignItems: 'center',
         justifyContent: searched ? 'flex-start' : 'center',
         padding: searched ? '48px 20px' : '40px 20px',
-        gap: '32px',
+        gap: '20px',
       }}>
         {!searched && (
-          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <h1 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
               Research, verified.
             </h1>
