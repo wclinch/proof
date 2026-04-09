@@ -243,11 +243,11 @@ function HomeInner() {
     setSaveError(false)
     if (savedIds.has(sourceId)) {
       const { error } = await supabase.from('saved_sources').delete().eq('user_id', userId).eq('source_id', sourceId)
-      if (error) { checkSession(); setSaveError(true); return }
+      if (error) { await checkSession(); setSaveError(true); return }
       setSavedIds(prev => { const s = new Set(prev); s.delete(sourceId); return s })
     } else {
       const { error } = await supabase.from('saved_sources').insert({ user_id: userId, source_id: sourceId })
-      if (error) { checkSession(); setSaveError(true); return }
+      if (error) { await checkSession(); setSaveError(true); return }
       setSavedIds(prev => new Set(prev).add(sourceId))
     }
   }

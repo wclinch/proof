@@ -118,7 +118,8 @@ function SourcesTab({ pass }: { pass: string }) {
 
   useEffect(() => { load() }, [load])
 
-  async function remove(id: string) {
+  async function remove(id: string, title: string) {
+    if (!confirm(`Remove "${title}"?`)) return
     setDeletingIds(prev => new Set(prev).add(id))
     const res = await fetch('/api/admin/delete', {
       method: 'POST',
@@ -152,13 +153,29 @@ function SourcesTab({ pass }: { pass: string }) {
           placeholder="Filter by title or topic..."
           style={{ background: 'none', border: 'none', outline: 'none', color: '#888', fontSize: '13px', flex: 1 }}
         />
-        <span style={{ fontSize: '11px', color: '#2a2a2a', flexShrink: 0 }}>
-          {loading ? '' : `${sources.length} sources`}
-        </span>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexShrink: 0 }}>
+          <span style={{ fontSize: '11px', color: '#2a2a2a' }}>
+            {loading ? '' : `${sources.length} sources`}
+          </span>
+          <button
+            onClick={load}
+            style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '11px', cursor: 'pointer', letterSpacing: '0.04em', padding: 0, transition: 'color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error && <div style={{ padding: '20px 0', fontSize: '13px', color: '#555' }}>{error}</div>}
       {loading && <div style={{ padding: '40px 0', fontSize: '13px', color: '#2a2a2a', letterSpacing: '0.04em' }}>Loading...</div>}
+
+      {!loading && !error && sources.length === 0 && (
+        <div style={{ padding: '40px 0', fontSize: '13px', color: '#2a2a2a', letterSpacing: '0.04em' }}>
+          No sources in the database yet.
+        </div>
+      )}
 
       {!loading && Object.entries(byTopic).map(([topic, items]) => (
         <div key={topic}>
@@ -180,7 +197,7 @@ function SourcesTab({ pass }: { pass: string }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
                 <span style={{ fontSize: '10px', color: '#222' }}>{s.citation_count.toLocaleString()}</span>
                 <button
-                  onClick={() => remove(s.id)}
+                  onClick={() => remove(s.id, s.title)}
                   disabled={deletingIds.has(s.id)}
                   style={{
                     background: 'none', border: 'none', color: '#2a2a2a', fontSize: '11px',
