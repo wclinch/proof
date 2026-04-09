@@ -198,11 +198,9 @@ function HomeInner() {
     setSearched(true)
     setSearchError(false)
     setVisibleCount(20)
-    if (searchParams.get('harvest') !== '1') {
-      setHarvestOpen(false)
-      setHarvestResults([])
-      setHarvestError(false)
-    }
+    setHarvestOpen(false)
+    setHarvestResults([])
+    setHarvestError(false)
     const esc = q.replace(/%/g, '\\%').replace(/_/g, '\\_')
     supabase
       .from('sources')
@@ -216,8 +214,6 @@ function HomeInner() {
         const shuffled = weightedShuffle(results)
         setResults(shuffled)
         setLoading(false)
-        const harvestParam = searchParams.get('harvest')
-        if (shuffled.length === 0 && harvestParam === '1') searchHarvest(q)
         supabase.from('search_logs').insert({ query: q, result_count: results.length, is_verified: !!userId }).then(({ error }) => { if (error) console.error('search_logs:', error.message) })
       })
   }, [searchParams])
@@ -284,6 +280,9 @@ function HomeInner() {
   function search(q: string) {
     if (!q.trim() || q.trim().length < 2) return
     router.push(`/?q=${encodeURIComponent(q)}`, { scroll: false })
+    setHarvestOpen(false)
+    setHarvestResults([])
+    setHarvestError(false)
   }
 
   function weightedShuffle(sources: Source[]) {
@@ -419,47 +418,8 @@ function HomeInner() {
             </div>
 
             {!loading && results.length === 0 && (
-              <div style={{ padding: '24px 0 32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <span style={{ color: '#444', fontSize: '13px', letterSpacing: '0.04em' }}>
-                  No sources found. Try a different topic.
-                </span>
-
-                {!harvestOpen && (
-                  <button
-                    onClick={() => {
-                      router.push(`/?q=${encodeURIComponent(query)}&harvest=1`, { scroll: false })
-                    }}
-                    style={{
-                      alignSelf: 'flex-start', background: 'none', border: '1px solid #1a1a1a',
-                      borderRadius: '5px', color: '#444', fontSize: '12px', padding: '7px 16px',
-                      cursor: 'pointer', letterSpacing: '0.04em',
-                    }}
-                  >
-                    Search with Harvest
-                  </button>
-                )}
-
-                {harvestOpen && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                    <div style={{
-                      fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.08em',
-                      textTransform: 'uppercase', paddingBottom: '12px',
-                      borderBottom: '1px solid #1a1a1a',
-                    }}>
-                      {harvestLoading ? 'Searching OpenAlex...' : harvestError && !harvestResults.length ? 'OpenAlex unavailable. Try again later.' : `However, ${harvestResults.length} results from OpenAlex`}
-                    </div>
-
-                    {harvestResults.map((w, i) => (
-                      <HarvestRow key={`${w.title}-${i}`} work={w} query={query} />
-                    ))}
-
-                    {!harvestLoading && (
-                      <span style={{ fontSize: '10px', color: '#222', letterSpacing: '0.06em', paddingTop: '14px' }}>
-                        Powered by OpenAlex — open.alex.org
-                      </span>
-                    )}
-                  </div>
-                )}
+              <div style={{ padding: '24px 0', fontSize: '13px', color: '#444', letterSpacing: '0.04em' }}>
+                No sources found. Try a different topic.
               </div>
             )}
 
@@ -550,6 +510,47 @@ function HomeInner() {
               >
                 Load more ({results.length - visibleCount} remaining)
               </button>
+            )}
+
+            {!loading && (
+              <div style={{ marginTop: '32px', paddingTop: '20px', borderTop: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '0' }}>
+                {!harvestOpen && (
+                  <button
+                    onClick={() => searchHarvest()}
+                    style={{
+                      alignSelf: 'flex-start', background: 'none', border: 'none', padding: 0,
+                      fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.08em',
+                      textTransform: 'uppercase', cursor: 'pointer', transition: 'color 0.15s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+                  >
+                    Search with Harvest
+                  </button>
+                )}
+
+                {harvestOpen && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                    <div style={{
+                      fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.08em',
+                      textTransform: 'uppercase', paddingBottom: '12px',
+                      borderBottom: '1px solid #1a1a1a',
+                    }}>
+                      {harvestLoading ? 'Searching OpenAlex...' : harvestError && !harvestResults.length ? 'OpenAlex unavailable. Try again later.' : `${harvestResults.length} results from OpenAlex`}
+                    </div>
+
+                    {harvestResults.map((w, i) => (
+                      <HarvestRow key={`${w.title}-${i}`} work={w} query={query} />
+                    ))}
+
+                    {!harvestLoading && (
+                      <span style={{ fontSize: '10px', color: '#222', letterSpacing: '0.06em', paddingTop: '14px' }}>
+                        Powered by OpenAlex — open.alex.org
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
