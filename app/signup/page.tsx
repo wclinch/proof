@@ -81,6 +81,10 @@ export default function SignUp() {
       setError('Password must be at least 8 characters.')
       return
     }
+    if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setError('Password must contain at least one uppercase letter and one number.')
+      return
+    }
     setLoading(true)
     setError('')
 
@@ -136,7 +140,7 @@ export default function SignUp() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="you@university.edu"
+                placeholder="you@university.edu or you@agency.gov"
                 style={{
                   background: '#111', border: '1px solid #1e1e1e', borderRadius: '6px',
                   padding: '14px 16px', color: '#f0f0f0', fontSize: '14px', outline: 'none', width: '100%',

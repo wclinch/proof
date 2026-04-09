@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
@@ -23,9 +23,13 @@ type SavedSource = {
 
 type CiteFormat = 'MLA' | 'APA' | 'Chicago'
 
+function escapeTitle(title: string): string {
+  return title.replace(/"/g, '\u201c').replace(/"/g, '\u201d')
+}
+
 function formatMLA(s: SavedSource['sources']): string {
   const author = s.author ?? 'Author Unknown'
-  const title = `"${s.title}."`
+  const title = `\u201c${escapeTitle(s.title)}.\u201d`
   const publisher = s.publisher ? s.publisher + ', ' : ''
   const year = s.published_date ? s.published_date.split('-')[0] : 'n.d.'
   const url = s.url ? ` <${s.url}>.` : '.'
@@ -42,7 +46,7 @@ function formatAPA(s: SavedSource['sources']): string {
 
 function formatChicago(s: SavedSource['sources']): string {
   const author = s.author ?? 'Author Unknown'
-  const title = `"${s.title}."`
+  const title = `\u201c${escapeTitle(s.title)}.\u201d`
   const publisher = s.publisher ? s.publisher + ', ' : ''
   const year = s.published_date ? s.published_date.split('-')[0] : 'n.d.'
   const url = s.url ? ` ${s.url}.` : ''
@@ -171,12 +175,14 @@ export default function Saved() {
   const [filter, setFilter] = useState('')
   const closeCite = useCallback(() => setCiting(null), [])
 
-  const filtered = filter.trim()
-    ? saved.filter(s =>
-        s.sources.title.toLowerCase().includes(filter.toLowerCase()) ||
-        s.sources.topic.toLowerCase().includes(filter.toLowerCase())
-      )
-    : saved
+  const filtered = useMemo(() => {
+    if (!filter.trim()) return saved
+    const q = filter.toLowerCase()
+    return saved.filter(s =>
+      s.sources.title.toLowerCase().includes(q) ||
+      s.sources.topic.toLowerCase().includes(q)
+    )
+  }, [saved, filter])
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {

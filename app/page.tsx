@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
@@ -25,7 +25,12 @@ type HarvestWork = {
 }
 
 function hUrl(w: HarvestWork): string {
-  return w.open_access?.oa_url || w.primary_location?.landing_page_url || w.primary_location?.pdf_url || ''
+  const candidates = [w.open_access?.oa_url, w.primary_location?.landing_page_url, w.primary_location?.pdf_url]
+  for (const u of candidates) {
+    if (!u) continue
+    try { new URL(u); return u } catch {}
+  }
+  return ''
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -105,6 +110,8 @@ function HarvestRow({ work, query, userId }: { work: HarvestWork; query: string;
             <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em' }}>In Proof</span>
           ) : sent ? (
             <span style={{ fontSize: '11px', color: '#888', letterSpacing: '0.04em' }}>Submitted</span>
+          ) : !userId ? (
+            <a href="/signin" style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em', textDecoration: 'none' }}>Sign in to suggest</a>
           ) : (
             <button
               onClick={() => setOpen(o => !o)}
@@ -125,6 +132,7 @@ function HarvestRow({ work, query, userId }: { work: HarvestWork; query: string;
             onChange={e => setNote(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && submit()}
             placeholder="Additional comments (optional)"
+            maxLength={500}
             style={{
               flex: 1, background: '#111', border: '1px solid #161616', borderRadius: '5px',
               padding: '9px 12px', color: '#f0f0f0', fontSize: '12px', outline: 'none',
@@ -160,6 +168,7 @@ function HomeInner() {
   const [reportedIds, setReportedIds] = useState<Set<string>>(new Set())
   const [reportingIds, setReportingIds] = useState<Set<string>>(new Set())
   const [userId, setUserId] = useState<string | null>(null)
+  const [userDomain, setUserDomain] = useState<string | null>(null)
   const [visibleCount, setVisibleCount] = useState(20)
   const [topics, setTopics] = useState<string[]>([])
   const [harvestResults, setHarvestResults] = useState<HarvestWork[]>([])
@@ -170,15 +179,19 @@ function HomeInner() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       const uid = data.session?.user?.id ?? null
+      const domain = data.session?.user?.email?.split('@')[1] ?? null
       setUserId(uid)
+      setUserDomain(domain)
       if (uid) fetchSaved(uid)
     })
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         setUserId(null)
+        setUserDomain(null)
         setSavedIds(new Set())
       } else if (event === 'SIGNED_IN' && session) {
         setUserId(session.user.id)
+        setUserDomain(session.user.email?.split('@')[1] ?? null)
         fetchSaved(session.user.id)
       }
     })
@@ -215,7 +228,7 @@ function HomeInner() {
         const shuffled = weightedShuffle(results)
         setResults(shuffled)
         setLoading(false)
-        supabase.from('search_logs').insert({ query: q, result_count: results.length, is_verified: !!userId }).then(({ error }) => { if (error) console.error('search_logs:', error.message) })
+        supabase.from('search_logs').insert({ query: q, result_count: results.length, is_verified: !!userId, user_domain: userDomain }).then(({ error }) => { if (error) console.error('search_logs:', error.message) })
       })
   }, [searchParams])
 
@@ -285,6 +298,8 @@ function HomeInner() {
     setHarvestResults([])
     setHarvestError(false)
   }
+
+  const visibleResults = useMemo(() => results.slice(0, visibleCount), [results, visibleCount])
 
   function weightedShuffle(sources: Source[]) {
     const sorted = [...sources]
@@ -424,7 +439,7 @@ function HomeInner() {
               </div>
             )}
 
-            {results.slice(0, visibleCount).map(source => (
+            {visibleResults.map(source => (
               <div
                 key={source.id}
                 style={{
@@ -444,7 +459,7 @@ function HomeInner() {
                     style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none', transition: 'color 0.15s' }}
                     onMouseEnter={e => (e.currentTarget.style.color = '#888')}
                     onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
-                    onClick={() => supabase.from('source_clicks').insert({ source_id: source.id, query, is_verified: !!userId }).then(({ error }) => { if (error) console.error('source_clicks:', error.message) })}
+                    onClick={() => supabase.from('source_clicks').insert({ source_id: source.id, query, is_verified: !!userId, user_domain: userDomain }).then(({ error }) => { if (error) console.error('source_clicks:', error.message) })}
                   >
                     {source.title}
                   </a>
@@ -518,12 +533,14 @@ function HomeInner() {
                 {!harvestOpen && (
                   <button
                     onClick={() => searchHarvest()}
+                    disabled={harvestLoading}
                     style={{
                       alignSelf: 'flex-start', background: 'none', border: 'none', padding: 0,
                       fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.08em',
-                      textTransform: 'uppercase', cursor: 'pointer', transition: 'color 0.15s',
+                      textTransform: 'uppercase', cursor: harvestLoading ? 'default' : 'pointer',
+                      transition: 'color 0.15s', opacity: harvestLoading ? 0.4 : 1,
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+                    onMouseEnter={e => { if (!harvestLoading) e.currentTarget.style.color = '#888' }}
                     onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
                   >
                     Search with Harvest

@@ -339,6 +339,7 @@ function SuggestionsTab({ pass }: { pass: string }) {
   }
 
   async function dismiss(id: string) {
+    if (!confirm('Dismiss this suggestion? This cannot be undone.')) return
     setWorkingIds(prev => new Set(prev).add(id))
     await fetch('/api/admin/dismiss', {
       method: 'POST',
@@ -579,19 +580,28 @@ export default function Admin() {
 
     try {
       const res = await fetch(`https://api.openalex.org/works?${new URLSearchParams(params)}`)
+      if (!res.ok) throw new Error(`OpenAlex ${res.status}`)
       const data = await res.json()
       const works: OAWork[] = data.results || []
-      setResults(works.map(w => ({
-        title: w.title,
-        url: w.open_access?.oa_url || w.primary_location?.landing_page_url || '',
-        author: w.authorships?.[0]?.author?.display_name ?? '',
-        journal: w.primary_location?.source?.display_name ?? '',
-        year: w.publication_year,
-        citations: w.cited_by_count,
-      })))
+      setResults(works.map(w => {
+        const candidates = [w.open_access?.oa_url, w.primary_location?.landing_page_url]
+        let url = ''
+        for (const u of candidates) {
+          if (!u) continue
+          try { new URL(u); url = u; break } catch {}
+        }
+        return {
+          title: w.title || 'Untitled',
+          url,
+          author: w.authorships?.[0]?.author?.display_name ?? '',
+          journal: w.primary_location?.source?.display_name ?? '',
+          year: w.publication_year,
+          citations: w.cited_by_count,
+        }
+      }))
       setFetched(true)
-    } catch {
-      setStatus('OpenAlex request failed.')
+    } catch (e: unknown) {
+      setStatus(e instanceof Error ? e.message : 'OpenAlex request failed.')
       setFetched(true)
     }
     setLoading(false)
@@ -621,24 +631,27 @@ export default function Admin() {
 
     try {
       const res = await fetch(`https://api.crossref.org/works?${params}`)
+      if (!res.ok) throw new Error(`CrossRef ${res.status}`)
       const data = await res.json()
       const items: CRWork[] = (data.message?.items || [])
-        .filter((w: CRWork) => w['is-referenced-by-count'] >= crFilters.minCitations)
+        .filter((w: CRWork) => (w['is-referenced-by-count'] ?? 0) >= crFilters.minCitations)
       setResults(items.map(w => {
         const year = w.published?.['date-parts']?.[0]?.[0] ?? null
         const authors = (w.author || []).map(a => [a.given, a.family].filter(Boolean).join(' '))
+        let url = w.URL ?? ''
+        try { new URL(url) } catch { url = '' }
         return {
           title: w.title?.[0] ?? 'Untitled',
-          url: w.URL,
+          url,
           author: authors[0] ?? '',
           journal: w['container-title']?.[0] ?? '',
           year,
-          citations: w['is-referenced-by-count'],
+          citations: w['is-referenced-by-count'] ?? 0,
         }
       }))
       setFetched(true)
-    } catch {
-      setStatus('CrossRef request failed.')
+    } catch (e: unknown) {
+      setStatus(e instanceof Error ? e.message : 'CrossRef request failed.')
       setFetched(true)
     }
     setLoading(false)
@@ -676,6 +689,10 @@ export default function Admin() {
   async function insertManual() {
     if (!manual.title.trim() || !manual.url.trim() || !manual.topic.trim()) {
       setManualStatus('Title, URL, and topic are required.')
+      return
+    }
+    try { new URL(manual.url.trim()) } catch {
+      setManualStatus('Invalid URL format.')
       return
     }
     setManualLoading(true); setManualStatus('')

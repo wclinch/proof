@@ -9,17 +9,13 @@ const supabase = createClient(
 )
 
 export default async function About() {
-  const { count: sourcesCount } = await supabase
-    .from('sources')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'approved')
-
-  const { data: topicsData } = await supabase
+  const { data: sourcesData } = await supabase
     .from('sources')
     .select('topic')
     .eq('status', 'approved')
 
-  const uniqueTopics = new Set(topicsData?.map(r => r.topic) ?? []).size
+  const sourcesCount = sourcesData?.length ?? 0
+  const uniqueTopics = new Set(sourcesData?.map(r => r.topic) ?? []).size
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
