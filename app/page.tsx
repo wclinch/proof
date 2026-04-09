@@ -215,7 +215,7 @@ function HomeInner() {
       filter: 'type:article,from_publication_date:2010-01-01,open_access.is_oa:true',
       select: 'title,authorships,primary_location,publication_year,cited_by_count,open_access,biblio',
       'per-page': '50',
-      sort: 'cited_by_count:desc',
+      sort: 'relevance_score:desc',
       mailto: 'proof-db@example.com',
     })
     try {
