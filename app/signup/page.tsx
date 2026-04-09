@@ -63,8 +63,9 @@ export default function SignUp() {
 
   async function handleSignUp() {
     if (!email || !password || !confirm) return
-    const domain = email.split('@')[1] ?? ''
-    if (!domain.endsWith('.edu')) {
+    const parts = email.split('@')
+    const domain = parts.length === 2 ? parts[1] : ''
+    if (!domain || domain.length < 5 || !domain.endsWith('.edu')) {
       setError('Only .edu email addresses are accepted.')
       return
     }

@@ -28,8 +28,10 @@ function hUrl(w: HarvestWork): string {
   return w.open_access?.oa_url || w.primary_location?.landing_page_url || w.primary_location?.pdf_url || ''
 }
 
+const CURRENT_YEAR = new Date().getFullYear()
+
 function hVelocity(w: HarvestWork) {
-  const age = Math.max(2026 - (w.publication_year || 2026), 1)
+  const age = Math.max(CURRENT_YEAR - (w.publication_year || CURRENT_YEAR), 1)
   return (w.cited_by_count || 0) / age
 }
 
@@ -216,7 +218,7 @@ function HomeInner() {
       select: 'title,authorships,primary_location,publication_year,cited_by_count,open_access,biblio',
       'per-page': '50',
       sort: 'relevance_score:desc',
-      mailto: 'proof-db@example.com',
+      mailto: 'proof_dev@protonmail.com',
     })
     try {
       const resp = await fetch(`https://api.openalex.org/works?${params}`)
@@ -399,7 +401,7 @@ function HomeInner() {
                     </div>
 
                     {harvestResults.map((w, i) => (
-                      <HarvestRow key={i} work={w} query={query} />
+                      <HarvestRow key={`${w.title}-${i}`} work={w} query={query} />
                     ))}
 
                     {!harvestLoading && (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
@@ -63,10 +63,12 @@ function CiteModal({ source, onClose }: { source: SavedSource['sources'], onClos
     return () => window.removeEventListener('keydown', handleKey)
   }, [onClose])
 
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   function copy() {
     navigator.clipboard.writeText(citation)
     setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    if (copyTimer.current) clearTimeout(copyTimer.current)
+    copyTimer.current = setTimeout(() => setCopied(false), 2000)
   }
 
   return (
