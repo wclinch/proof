@@ -257,7 +257,7 @@ export default function Admin() {
               value={filters.topic}
               onChange={e => setFilters(f => ({ ...f, topic: e.target.value }))}
               onKeyDown={e => e.key === 'Enter' && search()}
-              placeholder="monetary policy"
+              placeholder="Search a topic, subject, or keyword..."
               style={inputStyle}
             />
           </div>
@@ -396,9 +396,17 @@ export default function Admin() {
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={e => e.stopPropagation()}
+                      style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none', transition: 'color 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
+                    >
                       {w.title}
-                    </span>
+                    </a>
                     <span style={{ fontSize: '11px', color: '#2a2a2a' }}>{meta}</span>
                   </div>
 
