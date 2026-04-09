@@ -154,7 +154,10 @@ function HomeInner() {
   const [searched, setSearched] = useState(false)
   const [loading, setLoading] = useState(false)
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
+  const [reportedIds, setReportedIds] = useState<Set<string>>(new Set())
+  const [reportingIds, setReportingIds] = useState<Set<string>>(new Set())
   const [userId, setUserId] = useState<string | null>(null)
+  const [visibleCount, setVisibleCount] = useState(20)
   const [topics, setTopics] = useState<string[]>([])
   const [harvestResults, setHarvestResults] = useState<HarvestWork[]>([])
   const [harvestLoading, setHarvestLoading] = useState(false)
@@ -167,7 +170,17 @@ function HomeInner() {
       setUserId(uid)
       if (uid) fetchSaved(uid)
     })
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setUserId(null)
+        setSavedIds(new Set())
+      } else if (event === 'SIGNED_IN' && session) {
+        setUserId(session.user.id)
+        fetchSaved(session.user.id)
+      }
+    })
     fetchTopics()
+    return () => listener.subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
@@ -181,16 +194,18 @@ function HomeInner() {
     setQuery(q)
     setLoading(true)
     setSearched(true)
+    setVisibleCount(20)
     if (searchParams.get('harvest') !== '1') {
       setHarvestOpen(false)
       setHarvestResults([])
       setHarvestError(false)
     }
+    const esc = q.replace(/%/g, '\\%').replace(/_/g, '\\_')
     supabase
       .from('sources')
       .select('*')
       .eq('status', 'approved')
-      .or(`topic.ilike.%${q}%,title.ilike.%${q}%`)
+      .or(`topic.ilike.%${esc}%,title.ilike.%${esc}%`)
       .order('citation_count', { ascending: false })
       .then(({ data }) => {
         const results = data || []
@@ -214,14 +229,21 @@ function HomeInner() {
     setSavedIds(new Set(data?.map(r => r.source_id) ?? []))
   }
 
+  async function checkSession() {
+    const { data } = await supabase.auth.getSession()
+    if (!data.session) setUserId(null)
+  }
+
   async function toggleSave(sourceId: string) {
     if (!userId) return
     if (savedIds.has(sourceId)) {
       const { error } = await supabase.from('saved_sources').delete().eq('user_id', userId).eq('source_id', sourceId)
-      if (!error) setSavedIds(prev => { const s = new Set(prev); s.delete(sourceId); return s })
+      if (error) { checkSession(); return }
+      setSavedIds(prev => { const s = new Set(prev); s.delete(sourceId); return s })
     } else {
       const { error } = await supabase.from('saved_sources').insert({ user_id: userId, source_id: sourceId })
-      if (!error) setSavedIds(prev => new Set(prev).add(sourceId))
+      if (error) { checkSession(); return }
+      setSavedIds(prev => new Set(prev).add(sourceId))
     }
   }
 
@@ -436,7 +458,7 @@ function HomeInner() {
               </div>
             )}
 
-            {results.map(source => (
+            {results.slice(0, visibleCount).map(source => (
               <div
                 key={source.id}
                 style={{
@@ -480,9 +502,44 @@ function HomeInner() {
                       {savedIds.has(source.id) ? 'Saved' : 'Save'}
                     </button>
                   )}
+                  {reportedIds.has(source.id) ? (
+                    <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em' }}>Reported</span>
+                  ) : (
+                    <button
+                      onClick={async () => {
+                        if (reportingIds.has(source.id)) return
+                        setReportingIds(prev => new Set(prev).add(source.id))
+                        await supabase.from('source_reports').insert({ source_id: source.id, query })
+                        setReportedIds(prev => new Set(prev).add(source.id))
+                        setReportingIds(prev => { const s = new Set(prev); s.delete(source.id); return s })
+                      }}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                        fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em', transition: 'color 0.15s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+                    >
+                      Report
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
+            {results.length > visibleCount && (
+              <button
+                onClick={() => setVisibleCount(c => c + 20)}
+                style={{
+                  alignSelf: 'flex-start', background: 'none', border: 'none',
+                  color: '#2a2a2a', fontSize: '11px', cursor: 'pointer',
+                  letterSpacing: '0.06em', padding: '16px 0 4px', transition: 'color 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+              >
+                Load more ({results.length - visibleCount} remaining)
+              </button>
+            )}
           </div>
         )}
       </main>

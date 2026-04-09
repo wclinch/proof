@@ -25,7 +25,10 @@ export default function SignIn() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError(error.message)
+      const msg = error.message.toLowerCase().includes('email not confirmed')
+        ? 'Check your inbox — confirm your email before signing in.'
+        : error.message
+      setError(msg)
       setLoading(false)
     } else {
       router.push('/')
@@ -72,7 +75,7 @@ export default function SignIn() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSignIn()}
-                placeholder="you@university.edu"
+                placeholder="you@university.edu or you@agency.gov"
                 style={{
                   background: '#111', border: '1px solid #1e1e1e', borderRadius: '6px',
                   padding: '14px 16px', color: '#f0f0f0', fontSize: '14px', outline: 'none', width: '100%',

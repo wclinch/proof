@@ -65,8 +65,12 @@ export default function SignUp() {
     if (!email || !password || !confirm) return
     const parts = email.split('@')
     const domain = parts.length === 2 ? parts[1] : ''
-    if (!domain || domain.length < 5 || !domain.endsWith('.edu')) {
-      setError('Only .edu email addresses are accepted.')
+    const validDomain = domain && (
+      domain.endsWith('.edu') || domain.endsWith('.gov') ||
+      domain.endsWith('.ac.uk') || domain.endsWith('.edu.au')
+    )
+    if (!validDomain) {
+      setError('Only institutional email addresses are accepted (.edu, .gov, .ac.uk, .edu.au).')
       return
     }
     if (password !== confirm) {
