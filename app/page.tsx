@@ -46,7 +46,7 @@ function hAuthors(authorships: HarvestWork['authorships']): string {
   return names.join(', ')
 }
 
-function HarvestRow({ work, query }: { work: HarvestWork; query: string }) {
+function HarvestRow({ work, query, userId }: { work: HarvestWork; query: string; userId: string | null }) {
   const [open, setOpen] = useState(false)
   const [note, setNote] = useState('')
   const [sent, setSent] = useState(false)
@@ -75,6 +75,7 @@ function HarvestRow({ work, query }: { work: HarvestWork; query: string }) {
     } else {
       await supabase.from('topic_requests').insert({
         query, url, suggested_title: work.title, note: note || null, suggestion_count: 1,
+        user_id: userId || null,
       })
     }
     setSent(true)
@@ -540,7 +541,7 @@ function HomeInner() {
                     </div>
 
                     {harvestResults.map((w, i) => (
-                      <HarvestRow key={`${w.title}-${i}`} work={w} query={query} />
+                      <HarvestRow key={`${w.title}-${i}`} work={w} query={query} userId={userId} />
                     ))}
 
                     {!harvestLoading && (
