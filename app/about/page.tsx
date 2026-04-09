@@ -96,10 +96,12 @@ export default async function About() {
           </div>
         </div>
 
+        <style>{`.about-search:hover { color: #888 !important; border-color: #333 !important; }`}</style>
         <div style={{ marginTop: '32px' }}>
-          <a href="/" style={{
+          <a href="/" className="about-search" style={{
             fontSize: '13px', color: '#555', textDecoration: 'none', letterSpacing: '0.04em',
             border: '1px solid #1e1e1e', padding: '12px 24px', borderRadius: '6px',
+            transition: 'color 0.15s, border-color 0.15s',
           }}>
             Search
           </a>
