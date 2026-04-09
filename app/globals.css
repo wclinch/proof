@@ -14,7 +14,6 @@ body {
   background: #0a0a0a;
   color: #f0f0f0;
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
-  min-height: 100vh;
 }
 
 ::selection {
