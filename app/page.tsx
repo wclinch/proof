@@ -21,7 +21,6 @@ type HarvestWork = {
   publication_year: number
   cited_by_count: number
   open_access: { oa_url?: string }
-  biblio?: { first_page?: string; last_page?: string }
 }
 
 function hUrl(w: HarvestWork): string {
@@ -269,7 +268,7 @@ function HomeInner() {
     const searchQuery = q ?? query
     const params = new URLSearchParams({
       filter: `title.search:${searchQuery},type:article,from_publication_date:2010-01-01,open_access.is_oa:true`,
-      select: 'title,authorships,primary_location,publication_year,cited_by_count,open_access,biblio',
+      select: 'title,authorships,primary_location,publication_year,cited_by_count,open_access',
       'per-page': '50',
       sort: 'relevance_score:desc',
       mailto: 'proof_dev@protonmail.com',
