@@ -51,19 +51,32 @@ function HarvestRow({ work, query }: { work: HarvestWork; query: string }) {
   const [note, setNote] = useState('')
   const [sent, setSent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [alreadyInProof, setAlreadyInProof] = useState(false)
   const url = hUrl(work)
   const authors = hAuthors(work.authorships)
   const journal = work.primary_location?.source?.display_name || ''
   const meta = [authors, journal, work.publication_year].filter(Boolean).join(' · ')
 
+  useEffect(() => {
+    if (!url) return
+    supabase.from('sources').select('id').eq('url', url).eq('status', 'approved').maybeSingle()
+      .then(({ data }) => { if (data) setAlreadyInProof(true) })
+  }, [url])
+
   async function submit() {
     setSubmitting(true)
-    await supabase.from('topic_requests').insert({
-      query,
-      url,
-      suggested_title: work.title,
-      note: note || null,
-    })
+    // upsert — if URL already suggested, increment count instead of duplicate insert
+    const { data: existing } = await supabase
+      .from('topic_requests').select('id, suggestion_count').eq('url', url).maybeSingle()
+    if (existing) {
+      await supabase.from('topic_requests')
+        .update({ suggestion_count: (existing.suggestion_count || 1) + 1 })
+        .eq('id', existing.id)
+    } else {
+      await supabase.from('topic_requests').insert({
+        query, url, suggested_title: work.title, note: note || null, suggestion_count: 1,
+      })
+    }
     setSent(true)
     setSubmitting(false)
   }
@@ -87,7 +100,9 @@ function HarvestRow({ work, query }: { work: HarvestWork; query: string }) {
           </span>
         </div>
         <div style={{ flexShrink: 0 }}>
-          {sent ? (
+          {alreadyInProof ? (
+            <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em' }}>In Proof</span>
+          ) : sent ? (
             <span style={{ fontSize: '11px', color: '#888', letterSpacing: '0.04em' }}>Submitted</span>
           ) : (
             <button
@@ -144,6 +159,7 @@ function HomeInner() {
   const [harvestResults, setHarvestResults] = useState<HarvestWork[]>([])
   const [harvestLoading, setHarvestLoading] = useState(false)
   const [harvestOpen, setHarvestOpen] = useState(false)
+  const [harvestError, setHarvestError] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -168,6 +184,7 @@ function HomeInner() {
     if (searchParams.get('harvest') !== '1') {
       setHarvestOpen(false)
       setHarvestResults([])
+      setHarvestError(false)
     }
     supabase
       .from('sources')
@@ -221,19 +238,24 @@ function HomeInner() {
       mailto: 'proof_dev@protonmail.com',
     })
     try {
-      const resp = await fetch(`https://api.openalex.org/works?${params}`)
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 8000)
+      const resp = await fetch(`https://api.openalex.org/works?${params}`, { signal: controller.signal })
+      clearTimeout(timeout)
+      if (!resp.ok) throw new Error(`API error ${resp.status}`)
       const data = await resp.json()
       const valid = (data.results || []).filter((w: HarvestWork) => hUrl(w))
       const ranked = valid.sort((a: HarvestWork, b: HarvestWork) => hVelocity(b) - hVelocity(a)).slice(0, 10)
       setHarvestResults(ranked)
+      if (!ranked.length) setHarvestError(true)
     } catch (e) {
-      console.error(e)
+      setHarvestError(true)
     }
     setHarvestLoading(false)
   }
 
   function search(q: string) {
-    if (!q.trim()) return
+    if (!q.trim() || q.trim().length < 2) return
     router.push(`/?q=${encodeURIComponent(q)}`, { scroll: false })
   }
 
@@ -397,7 +419,7 @@ function HomeInner() {
                       textTransform: 'uppercase', paddingBottom: '12px',
                       borderBottom: '1px solid #1a1a1a',
                     }}>
-                      {harvestLoading ? 'Searching OpenAlex...' : `However, ${harvestResults.length} results from OpenAlex`}
+                      {harvestLoading ? 'Searching OpenAlex...' : harvestError && !harvestResults.length ? 'OpenAlex unavailable. Try again later.' : `However, ${harvestResults.length} results from OpenAlex`}
                     </div>
 
                     {harvestResults.map((w, i) => (

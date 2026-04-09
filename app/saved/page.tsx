@@ -24,26 +24,29 @@ type SavedSource = {
 type CiteFormat = 'MLA' | 'APA' | 'Chicago'
 
 function formatMLA(s: SavedSource['sources']): string {
-  const author = s.author ?? 'Unknown Author'
+  const author = s.author ?? 'Author Unknown'
   const title = `"${s.title}."`
   const publisher = s.publisher ? s.publisher + ', ' : ''
   const year = s.published_date ? s.published_date.split('-')[0] : 'n.d.'
-  return `${author}. ${title} ${publisher}${year}, <${s.url}>.`
+  const url = s.url ? ` <${s.url}>.` : '.'
+  return `${author}. ${title} ${publisher}${year},${url}`
 }
 
 function formatAPA(s: SavedSource['sources']): string {
-  const author = s.author ?? 'Unknown Author'
+  const author = s.author ?? 'Author Unknown'
   const year = s.published_date ? s.published_date.split('-')[0] : 'n.d.'
   const publisher = s.publisher ? s.publisher + '. ' : ''
-  return `${author}. (${year}). ${s.title}. ${publisher}${s.url}`
+  const url = s.url ?? ''
+  return `${author}. (${year}). ${s.title}. ${publisher}${url}`
 }
 
 function formatChicago(s: SavedSource['sources']): string {
-  const author = s.author ?? 'Unknown Author'
+  const author = s.author ?? 'Author Unknown'
   const title = `"${s.title}."`
   const publisher = s.publisher ? s.publisher + ', ' : ''
   const year = s.published_date ? s.published_date.split('-')[0] : 'n.d.'
-  return `${author}. ${title} ${publisher}${year}. ${s.url}.`
+  const url = s.url ? ` ${s.url}.` : ''
+  return `${author}. ${title} ${publisher}${year}.${url}`
 }
 
 function CiteModal({ source, onClose }: { source: SavedSource['sources'], onClose: () => void }) {
