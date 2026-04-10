@@ -13,26 +13,26 @@ export default function Privacy() {
         </span>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>What we collect</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>How Proof works</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Each citation request logs the DOI or URL submitted, the title of the source retrieved, and which citation format was copied (MLA, APA, or Chicago). No account, email address, or personal identifier is required or stored.
+            Proof is free, has no ads, and requires no account. To keep it that way, we collect anonymous usage data — the kind that tells us how the tool is being used without ever identifying who is using it.
           </p>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            We derive the following from your request, none of which identifies you personally: approximate country, region, and city; the name of your internet service provider or institution (e.g. a university network); your browser and operating system (e.g. Chrome on macOS); whether you are on a desktop or mobile device; the page that referred you to Proof; your browser language; and the domain of the source you cited. Your IP address is never stored.
-          </p>
-        </div>
-
-        <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>Why we collect it</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Aggregate data helps us understand which sources are cited most, where our users are, and how the tool is used. This informs product decisions. We may publish anonymized trend reports — for example, the most-cited domains across all users. These contain no personal information.
+            When you generate a citation, we log the source you submitted, its title, and which format you copied. We also record aggregate signals from your request: your approximate location (country, region, city), your network provider or institution, your browser and device type, the page that sent you here, and the domain of the source cited. Your IP address is never stored — only what can be derived from it.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>What we do not do</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>Why this matters</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            We do not store IP addresses. We do not use cookies. We do not require sign-up. We do not serve advertising. We do not sell data. We do not track users across other websites or between sessions.
+            This data helps us understand what kinds of sources students and researchers actually cite, which formats are most used, and where our users are. It shapes how Proof is built and improved. At scale, anonymized trends — like the most-cited journals or domains — may be shared with academic institutions or publishers. Nothing shared ever contains personal information.
+          </p>
+        </div>
+
+        <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>What we will never do</h2>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+            Sell your personal data. Store your IP address. Use cookies. Require a sign-up. Serve ads. Track you across other websites or sessions.
           </p>
         </div>
 
