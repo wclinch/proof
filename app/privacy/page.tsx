@@ -18,21 +18,21 @@ export default function Privacy() {
             Each citation request logs the DOI or URL submitted, the title of the source retrieved, and which citation format was copied (MLA, APA, or Chicago). No account, email address, or personal identifier is required or stored.
           </p>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            We also log your approximate country and region (derived from your IP address via a third-party geolocation service) and your browser's user agent string (e.g. Chrome on macOS). Your IP address itself is never stored.
+            We derive the following from your request, none of which identifies you personally: approximate country, region, and city; the name of your internet service provider or institution (e.g. a university network); your browser and operating system (e.g. Chrome on macOS); whether you are on a desktop or mobile device; the page that referred you to Proof; your browser language; and the domain of the source you cited. Your IP address is never stored.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>Why we collect it</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Aggregate data helps us understand which sources are cited most, where our users are, and how the tool is used. This informs product decisions. We may publish anonymized trend reports — for example, the most-cited journals across all users. These contain no personal information.
+            Aggregate data helps us understand which sources are cited most, where our users are, and how the tool is used. This informs product decisions. We may publish anonymized trend reports — for example, the most-cited domains across all users. These contain no personal information.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>What we do not do</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            We do not store IP addresses. We do not use cookies. We do not require sign-up. We do not serve advertising. We do not sell data. We do not track users across other websites.
+            We do not store IP addresses. We do not use cookies. We do not require sign-up. We do not serve advertising. We do not sell data. We do not track users across other websites or between sessions.
           </p>
         </div>
 
