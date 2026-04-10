@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense, useMemo } from 'react'
+import { useState, useEffect, useRef, Suspense, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
@@ -14,151 +14,88 @@ type Source = {
   citation_count: number
 }
 
-type HarvestWork = {
-  title: string
-  authorships: Array<{ author: { display_name: string } }>
-  primary_location: { source?: { display_name: string }; landing_page_url?: string; pdf_url?: string } | null
-  publication_year: number
-  cited_by_count: number
-  open_access: { oa_url?: string }
-}
-
-function hUrl(w: HarvestWork): string {
-  const candidates = [w.open_access?.oa_url, w.primary_location?.landing_page_url, w.primary_location?.pdf_url]
-  for (const u of candidates) {
-    if (!u) continue
-    try { new URL(u); return u } catch {}
-  }
-  return ''
-}
-
-const CURRENT_YEAR = new Date().getFullYear()
-
-function hVelocity(w: HarvestWork) {
-  const age = Math.max(CURRENT_YEAR - (w.publication_year || CURRENT_YEAR), 1)
-  return (w.cited_by_count || 0) / age
-}
-
-function stripHtml(str: string): string {
-  return str.replace(/<[^>]*>/g, '')
-}
-
-function hAuthors(authorships: HarvestWork['authorships']): string {
-  const names = authorships.map(a => (a.author?.display_name || '').split(' ').at(-1)).filter(Boolean) as string[]
-  if (!names.length) return ''
-  if (names.length > 3) return names.slice(0, 3).join(', ') + ' et al.'
-  return names.join(', ')
-}
-
-function HarvestRow({ work, query, userId }: { work: HarvestWork; query: string; userId: string | null }) {
-  const [open, setOpen] = useState(false)
-  const [note, setNote] = useState('')
+function RequestTopic({ query, userId }: { query: string; userId: string | null }) {
   const [sent, setSent] = useState(false)
-  const [submitError, setSubmitError] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [alreadyInProof, setAlreadyInProof] = useState(false)
-  const url = hUrl(work)
-  const authors = hAuthors(work.authorships)
-  const journal = work.primary_location?.source?.display_name || ''
-  const meta = [authors, journal, work.publication_year].filter(Boolean).join(' · ')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+  const submitted = useRef(false)
 
-  useEffect(() => {
-    if (!url) return
-    supabase.from('sources').select('id').eq('url', url).eq('status', 'approved').maybeSingle()
-      .then(({ data }) => { if (data) setAlreadyInProof(true) })
-  }, [url])
+  async function request() {
+    if (submitted.current) return
+    submitted.current = true
+    setLoading(true)
+    setError(false)
 
-  async function submit() {
-    setSubmitting(true)
-    setSubmitError(false)
-    // upsert — if URL already suggested, increment count instead of duplicate insert
     const { data: existing } = await supabase
-      .from('topic_requests').select('id, suggestion_count').eq('url', url).maybeSingle()
-    let error
+      .from('topic_requests')
+      .select('id, suggestion_count')
+      .eq('query', query)
+      .is('url', null)
+      .maybeSingle()
+
+    let err
     if (existing) {
-      ;({ error } = await supabase.from('topic_requests')
+      ;({ error: err } = await supabase
+        .from('topic_requests')
         .update({ suggestion_count: (existing.suggestion_count || 1) + 1 })
         .eq('id', existing.id))
     } else {
-      ;({ error } = await supabase.from('topic_requests').insert({
-        query, url, suggested_title: work.title, note: note || null, suggestion_count: 1,
+      ;({ error: err } = await supabase.from('topic_requests').insert({
+        query,
+        url: null,
+        suggested_title: null,
+        note: null,
+        suggestion_count: 1,
         user_id: userId || null,
       }))
     }
-    if (error) { setSubmitError(true) } else { setSent(true) }
-    setSubmitting(false)
+
+    if (err) { setError(true); submitted.current = false }
+    else setSent(true)
+    setLoading(false)
+  }
+
+  if (sent) {
+    return (
+      <span style={{ fontSize: '12px', color: '#555', letterSpacing: '0.04em' }}>
+        Requested — we'll review and add sources for this topic.
+      </span>
+    )
+  }
+
+  if (!userId) {
+    return (
+      <a
+        href="/signin"
+        style={{ fontSize: '12px', color: '#2a2a2a', letterSpacing: '0.04em', textDecoration: 'none', transition: 'color 0.15s' }}
+        onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+        onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+      >
+        Sign in to request this topic
+      </a>
+    )
   }
 
   return (
-    <div style={{ padding: '11px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px' }}>
-        <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', transition: 'color 0.15s' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
-          >
-            {stripHtml(work.title)}
-          </a>
-          <span style={{ fontSize: '11px', color: '#2a2a2a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {meta}
-          </span>
-        </div>
-        <div style={{ flexShrink: 0 }}>
-          {alreadyInProof ? (
-            <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em' }}>In Proof</span>
-          ) : sent ? (
-            <span style={{ fontSize: '11px', color: '#888', letterSpacing: '0.04em' }}>Submitted</span>
-          ) : !userId ? (
-            <a href="/signin" style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em', textDecoration: 'none' }}>Sign in to suggest</a>
-          ) : (
-            <button
-              onClick={() => setOpen(o => !o)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em', transition: 'color 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
-            >
-              {open ? 'Cancel' : 'Suggest'}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {open && !sent && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '4px' }}>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <input
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && submit()}
-              placeholder="Additional comments (optional)"
-              maxLength={500}
-              style={{
-                flex: 1, background: '#111', border: '1px solid #161616', borderRadius: '5px',
-                padding: '9px 12px', color: '#f0f0f0', fontSize: '12px', outline: 'none',
-              }}
-            />
-            <button
-              onClick={submit}
-              disabled={submitting}
-              style={{
-                background: 'none', border: '1px solid #1a1a1a', borderRadius: '5px',
-                color: '#444', fontSize: '12px', padding: '8px 14px', cursor: 'pointer',
-                letterSpacing: '0.04em', flexShrink: 0, opacity: submitting ? 0.5 : 1,
-              }}
-            >
-              Submit
-            </button>
-          </div>
-          {submitError && (
-            <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.02em' }}>
-              Couldn't submit. Try again.
-            </span>
-          )}
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <button
+        onClick={request}
+        disabled={loading}
+        style={{
+          alignSelf: 'flex-start', background: 'none', border: '1px solid #1e1e1e',
+          borderRadius: '5px', color: '#444', fontSize: '12px', padding: '8px 16px',
+          cursor: 'pointer', letterSpacing: '0.04em', opacity: loading ? 0.5 : 1,
+          transition: 'color 0.15s, border-color 0.15s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.color = '#888'; e.currentTarget.style.borderColor = '#333' }}
+        onMouseLeave={e => { e.currentTarget.style.color = '#444'; e.currentTarget.style.borderColor = '#1e1e1e' }}
+      >
+        {loading ? 'Requesting...' : 'Request this topic'}
+      </button>
+      {error && (
+        <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.02em' }}>
+          Couldn't submit. Try again.
+        </span>
       )}
     </div>
   )
@@ -181,10 +118,6 @@ function HomeInner() {
   const [userDomain, setUserDomain] = useState<string | null>(null)
   const [visibleCount, setVisibleCount] = useState(20)
   const [topics, setTopics] = useState<string[]>([])
-  const [harvestResults, setHarvestResults] = useState<HarvestWork[]>([])
-  const [harvestLoading, setHarvestLoading] = useState(false)
-  const [harvestOpen, setHarvestOpen] = useState(false)
-  const [harvestError, setHarvestError] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -222,9 +155,6 @@ function HomeInner() {
     setSearched(true)
     setSearchError(false)
     setVisibleCount(20)
-    setHarvestOpen(false)
-    setHarvestResults([])
-    setHarvestError(false)
     const esc = q.replace(/%/g, '\\%').replace(/_/g, '\\_')
     supabase
       .from('sources')
@@ -238,7 +168,10 @@ function HomeInner() {
         const shuffled = weightedShuffle(results)
         setResults(shuffled)
         setLoading(false)
-        supabase.from('search_logs').insert({ query: q, result_count: results.length, is_verified: !!userId, user_domain: userDomain, user_id: userId ?? null }).then(({ error }) => { if (error) console.error('search_logs:', error.message) }).catch(() => {})
+        supabase.from('search_logs')
+          .insert({ query: q, result_count: results.length, is_verified: !!userId, user_domain: userDomain, user_id: userId ?? null })
+          .then(({ error }) => { if (error) console.error('search_logs:', error.message) })
+          .catch(() => {})
       })
   }, [searchParams])
 
@@ -274,41 +207,9 @@ function HomeInner() {
     setSavingIds(prev => { const s = new Set(prev); s.delete(sourceId); return s })
   }
 
-  async function searchHarvest(q?: string) {
-    if (harvestLoading) return
-    setHarvestOpen(true)
-    setHarvestLoading(true)
-    const searchQuery = q ?? query
-    const params = new URLSearchParams({
-      filter: `title.search:${searchQuery},type:article,from_publication_date:2010-01-01,open_access.is_oa:true`,
-      select: 'title,authorships,primary_location,publication_year,cited_by_count,open_access',
-      'per-page': '50',
-      sort: 'relevance_score:desc',
-      mailto: 'proof_dev@protonmail.com',
-    })
-    try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 8000)
-      const resp = await fetch(`https://api.openalex.org/works?${params}`, { signal: controller.signal })
-      clearTimeout(timeout)
-      if (!resp.ok) throw new Error(`API error ${resp.status}`)
-      const data = await resp.json()
-      const valid = (data.results || []).filter((w: HarvestWork) => hUrl(w))
-      const ranked = valid.sort((a: HarvestWork, b: HarvestWork) => hVelocity(b) - hVelocity(a)).slice(0, 10)
-      setHarvestResults(ranked)
-      if (!ranked.length) setHarvestError(true)
-    } catch (e) {
-      setHarvestError(true)
-    }
-    setHarvestLoading(false)
-  }
-
   function search(q: string) {
     if (!q.trim() || q.trim().length < 2) return
     router.push(`/?q=${encodeURIComponent(q)}`, { scroll: false })
-    setHarvestOpen(false)
-    setHarvestResults([])
-    setHarvestError(false)
   }
 
   const visibleResults = useMemo(() => results.slice(0, visibleCount), [results, visibleCount])
@@ -322,11 +223,6 @@ function HomeInner() {
     const random = sorted.slice(Math.ceil(len * 0.9))
     const shuffle = (arr: Source[]) => arr.sort(() => Math.random() - 0.5)
     return [...shuffle(top), ...shuffle(secondary), ...shuffle(recent), ...shuffle(random)]
-  }
-
-  function fillSearch(topic: string) {
-    setQuery(topic)
-    search(topic)
   }
 
   return (
@@ -371,13 +267,8 @@ function HomeInner() {
               placeholder="Search a topic, subject, or keyword..."
               maxLength={200}
               style={{
-                flex: 1,
-                background: 'none',
-                border: 'none',
-                outline: 'none',
-                color: '#f0f0f0',
-                fontSize: '15px',
-                padding: '18px 0',
+                flex: 1, background: 'none', border: 'none', outline: 'none',
+                color: '#f0f0f0', fontSize: '15px', padding: '18px 0',
               }}
             />
             {searched && (
@@ -395,60 +286,49 @@ function HomeInner() {
             <button
               onClick={() => search(query)}
               style={{
-                background: '#f0f0f0',
-                color: '#0a0a0a',
-                border: 'none',
-                borderRadius: '5px',
-                padding: '8px 18px',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                letterSpacing: '0.03em',
-                flexShrink: 0,
+                background: '#f0f0f0', color: '#0a0a0a', border: 'none',
+                borderRadius: '5px', padding: '8px 18px', fontSize: '13px',
+                fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', flexShrink: 0,
               }}
             >
               Search
             </button>
           </div>
 
-          {!searched && <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {topics.map(topic => (
-              <button
-                key={topic}
-                onClick={() => fillSearch(topic)}
-                style={{
-                  background: '#111',
-                  border: '1px solid #1e1e1e',
-                  color: '#444',
-                  fontSize: '12px',
-                  padding: '6px 14px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  letterSpacing: '0.03em',
-                }}
-              >
-                {topic}
-              </button>
-            ))}
-          </div>}
+          {!searched && (
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {topics.map(topic => (
+                <button
+                  key={topic}
+                  onClick={() => { setQuery(topic); search(topic) }}
+                  style={{
+                    background: '#111', border: '1px solid #1e1e1e', color: '#444',
+                    fontSize: '12px', padding: '6px 14px', borderRadius: '4px',
+                    cursor: 'pointer', letterSpacing: '0.03em',
+                  }}
+                >
+                  {topic}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {searched && (
           <div style={{ width: '100%', maxWidth: '680px', display: 'flex', flexDirection: 'column' }}>
             <div style={{
-              fontSize: '11px',
-              color: '#2e2e2e',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              paddingBottom: '14px',
-              borderBottom: '1px solid #1a1a1a',
+              fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em',
+              textTransform: 'uppercase', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a',
             }}>
               {loading ? 'Searching...' : searchError ? 'Something went wrong. Try again.' : `${results.length} sources found`}
             </div>
 
-            {!loading && results.length === 0 && (
-              <div style={{ padding: '24px 0', fontSize: '13px', color: '#444', letterSpacing: '0.04em' }}>
-                No sources found. Try a different topic.
+            {!loading && !searchError && results.length === 0 && (
+              <div style={{ padding: '32px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <span style={{ fontSize: '13px', color: '#333', letterSpacing: '0.04em' }}>
+                  No sources found for this topic yet.
+                </span>
+                <RequestTopic query={query} userId={userId} />
               </div>
             )}
 
@@ -456,12 +336,8 @@ function HomeInner() {
               <div
                 key={source.id}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '24px',
-                  padding: '11px 0',
-                  borderBottom: '1px solid #141414',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: '24px', padding: '11px 0', borderBottom: '1px solid #141414',
                 }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
@@ -520,6 +396,7 @@ function HomeInner() {
                 </div>
               </div>
             ))}
+
             {saveError && (
               <div style={{ padding: '10px 0', fontSize: '12px', color: '#555', letterSpacing: '0.04em' }}>
                 Couldn't save. Try again.
@@ -539,49 +416,6 @@ function HomeInner() {
               >
                 Load more ({results.length - visibleCount} remaining)
               </button>
-            )}
-
-            {!loading && !searchError && (
-              <div style={{ marginTop: '32px', paddingTop: '20px', borderTop: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '0' }}>
-                {!harvestOpen && (
-                  <button
-                    onClick={() => searchHarvest()}
-                    disabled={harvestLoading}
-                    style={{
-                      alignSelf: 'flex-start', background: 'none', border: 'none', padding: 0,
-                      fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.08em',
-                      textTransform: 'uppercase', cursor: harvestLoading ? 'default' : 'pointer',
-                      transition: 'color 0.15s', opacity: harvestLoading ? 0.4 : 1,
-                    }}
-                    onMouseEnter={e => { if (!harvestLoading) e.currentTarget.style.color = '#888' }}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
-                  >
-                    Search with Harvest
-                  </button>
-                )}
-
-                {harvestOpen && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                    <div style={{
-                      fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.08em',
-                      textTransform: 'uppercase', paddingBottom: '12px',
-                      borderBottom: '1px solid #1a1a1a',
-                    }}>
-                      {harvestLoading ? 'Searching OpenAlex...' : harvestError && !harvestResults.length ? 'OpenAlex unavailable. Try again later.' : `${harvestResults.length} results from OpenAlex`}
-                    </div>
-
-                    {harvestResults.map((w, i) => (
-                      <HarvestRow key={`${w.title}-${i}`} work={w} query={query} userId={userId} />
-                    ))}
-
-                    {!harvestLoading && (
-                      <span style={{ fontSize: '10px', color: '#222', letterSpacing: '0.06em', paddingTop: '14px' }}>
-                        Powered by OpenAlex — open.alex.org
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
             )}
           </div>
         )}

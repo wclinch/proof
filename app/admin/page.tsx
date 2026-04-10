@@ -372,21 +372,29 @@ function SuggestionsTab({ pass }: { pass: string }) {
         <div key={s.id} style={{ padding: '16px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px', opacity: workingIds.has(s.id) ? 0.4 : 1 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px' }}>
             <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <a href={s.url} target="_blank" rel="noopener noreferrer"
-                style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', transition: 'color 0.15s' }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
-              >{s.suggested_title}</a>
+              {s.url ? (
+                <a href={s.url} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', transition: 'color 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
+                >{s.suggested_title}</a>
+              ) : (
+                <span style={{ fontSize: '13px', fontWeight: 500, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  Topic request — no specific source
+                </span>
+              )}
               <span style={{ fontSize: '11px', color: '#2a2a2a' }}>
                 Query: {s.query}{s.suggestion_count > 1 ? ` · ${s.suggestion_count}×` : ''}{s.user_id ? ' · has account' : ''}
               </span>
               {s.note && <span style={{ fontSize: '11px', color: '#444', fontStyle: 'italic' }}>{s.note}</span>}
             </div>
             <div style={{ display: 'flex', gap: '16px', flexShrink: 0, alignItems: 'center' }}>
-              <button style={ghostBtn} onClick={() => setApprovingId(approvingId === s.id ? null : s.id)}
-                onMouseEnter={e => (e.currentTarget.style.color = '#888')} onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}>
-                {approvingId === s.id ? 'Cancel' : 'Approve'}
-              </button>
+              {s.url && (
+                <button style={ghostBtn} onClick={() => setApprovingId(approvingId === s.id ? null : s.id)}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#888')} onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}>
+                  {approvingId === s.id ? 'Cancel' : 'Approve'}
+                </button>
+              )}
               <button style={ghostBtn} onClick={() => dismiss(s.id)}
                 onMouseEnter={e => (e.currentTarget.style.color = '#888')} onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}>
                 Dismiss

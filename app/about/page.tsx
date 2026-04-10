@@ -37,7 +37,7 @@ export default async function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            A curated reference database for student research. Search by topic, save sources to your account, and export citations in MLA, APA, or Chicago format directly — no external tools required. When Proof doesn't have what you need, search OpenAlex for peer-reviewed papers and suggest additions. Free to use, no advertising.
+            A curated reference database for student research. Search by topic, save sources to your account, and export citations in MLA, APA, or Chicago format directly — no external tools required. When Proof doesn't have what you need, request the topic and we'll add it. Free to use, no advertising.
           </p>
         </div>
 
