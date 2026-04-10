@@ -8,25 +8,34 @@ import type { CitationMeta } from '@/lib/cite'
 
 type Format = 'MLA' | 'APA' | 'Chicago'
 
+interface Source {
+  meta: CitationMeta
+  logId: string | null
+}
+
+function sortSources(sources: Source[]): Source[] {
+  return [...sources].sort((a, b) => {
+    const keyA = a.meta.authors[0]?.split(',')[0].trim() || a.meta.title
+    const keyB = b.meta.authors[0]?.split(',')[0].trim() || b.meta.title
+    return keyA.localeCompare(keyB)
+  })
+}
+
 export default function Home() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [meta, setMeta] = useState<CitationMeta | null>(null)
+  const [sources, setSources] = useState<Source[]>([])
   const [format, setFormat] = useState<Format>('MLA')
   const [copied, setCopied] = useState(false)
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const submitting = useRef(false)
-  const logId = useRef<string | null>(null)
 
   async function cite() {
     if (!input.trim() || submitting.current) return
     submitting.current = true
     setLoading(true)
     setError('')
-    setMeta(null)
-    setCopied(false)
-    logId.current = null
 
     try {
       const res = await fetch('/api/cite', {
@@ -38,8 +47,9 @@ export default function Home() {
       if (!res.ok || data.error) {
         setError(data.error ?? 'Could not retrieve metadata. Check the DOI or URL and try again.')
       } else {
-        setMeta(data.meta)
-        logId.current = data.logId ?? null
+        setSources(prev => [...prev, { meta: data.meta, logId: data.logId ?? null }])
+        setInput('')
+        setCopied(false)
       }
     } catch {
       setError('Something went wrong. Try again.')
@@ -49,28 +59,39 @@ export default function Home() {
     submitting.current = false
   }
 
-  const citation = meta
-    ? format === 'MLA' ? formatMLA(meta)
-    : format === 'APA' ? formatAPA(meta)
-    : formatChicago(meta)
-    : ''
+  function removeSource(index: number) {
+    setSources(prev => prev.filter((_, i) => i !== index))
+    setCopied(false)
+  }
 
-  function copy() {
-    if (!citation) return
-    navigator.clipboard.writeText(citation)
+  const sorted = sortSources(sources)
+  const listTitle = format === 'MLA' ? 'Works Cited' : format === 'APA' ? 'References' : 'Bibliography'
+
+  const allCitations = sorted.map(s =>
+    format === 'MLA' ? formatMLA(s.meta)
+    : format === 'APA' ? formatAPA(s.meta)
+    : formatChicago(s.meta)
+  )
+
+  function copyAll() {
+    if (!allCitations.length) return
+    const text = `${listTitle}\n\n` + allCitations.join('\n\n')
+    navigator.clipboard.writeText(text)
     setCopied(true)
     if (copyTimer.current) clearTimeout(copyTimer.current)
     copyTimer.current = setTimeout(() => setCopied(false), 2000)
-    if (logId.current) {
-      fetch('/api/log-copy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ logId: logId.current, format }),
-      }).catch(() => {})
-    }
+    sorted.forEach(s => {
+      if (s.logId) {
+        fetch('/api/log-copy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ logId: s.logId, format }),
+        }).catch(() => {})
+      }
+    })
   }
 
-  const hasResult = !!meta
+  const hasSources = sources.length > 0
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
@@ -81,18 +102,18 @@ export default function Home() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: hasResult ? 'flex-start' : 'center',
-        padding: hasResult ? '48px 20px' : '40px 20px',
+        justifyContent: hasSources ? 'flex-start' : 'center',
+        padding: hasSources ? '48px 20px' : '40px 20px',
         gap: '32px',
       }}>
 
-        {!hasResult && (
+        {!hasSources && (
           <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <h1 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
               Cite anything.
             </h1>
             <p style={{ fontSize: '15px', color: '#555', letterSpacing: '0.02em' }}>
-              Paste a DOI or URL — get MLA, APA, or Chicago instantly.
+              Paste a DOI or URL — build your works cited instantly.
             </p>
           </div>
         )}
@@ -113,7 +134,7 @@ export default function Home() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && cite()}
-              placeholder="https://doi.org/10.1038/... or any URL"
+              placeholder={hasSources ? 'Add another source...' : 'https://doi.org/10.1038/... or any URL'}
               style={{
                 flex: 1, background: 'none', border: 'none', outline: 'none',
                 color: '#f0f0f0', fontSize: '15px', padding: '18px 0',
@@ -121,7 +142,7 @@ export default function Home() {
             />
             {input && (
               <button
-                onClick={() => { setInput(''); setMeta(null); setError('') }}
+                onClick={() => { setInput(''); setError('') }}
                 style={{ background: 'none', border: 'none', color: '#333', fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}
               >
                 ×
@@ -139,7 +160,7 @@ export default function Home() {
               whiteSpace: 'nowrap',
             }}
           >
-            {loading ? 'Loading...' : 'Cite'}
+            {loading ? 'Loading...' : 'Add'}
           </button>
         </div>
 
@@ -149,23 +170,38 @@ export default function Home() {
           </p>
         )}
 
-        {/* Result */}
-        {meta && (
-          <div style={{ width: '100%', maxWidth: '680px', display: 'flex', flexDirection: 'column', gap: '0', border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
+        {/* Sources + output */}
+        {hasSources && (
+          <div style={{ width: '100%', maxWidth: '680px', border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
 
-            {/* Source info */}
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #1a1a1a' }}>
-              <p style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', marginBottom: '4px', lineHeight: 1.4 }}>
-                {meta.title}
-              </p>
-              <p style={{ fontSize: '11px', color: '#333', letterSpacing: '0.04em' }}>
-                {[
-                  meta.authors[0] ?? null,
-                  meta.journal ?? meta.siteName ?? null,
-                  meta.year ?? null,
-                ].filter(Boolean).join(' · ')}
-              </p>
-            </div>
+            {/* Source list */}
+            {sources.map((s, i) => (
+              <div key={i} style={{
+                padding: '14px 20px',
+                borderBottom: '1px solid #141414',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+              }}>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: '13px', color: '#e8e8e8', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {s.meta.title}
+                  </p>
+                  <p style={{ fontSize: '11px', color: '#333', margin: 0, letterSpacing: '0.03em' }}>
+                    {[s.meta.authors[0] ?? null, s.meta.year ?? null].filter(Boolean).join(' · ')}
+                  </p>
+                </div>
+                <button
+                  onClick={() => removeSource(i)}
+                  style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '16px', cursor: 'pointer', flexShrink: 0, lineHeight: 1, transition: 'color 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#666')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
 
             {/* Format tabs */}
             <div style={{ display: 'flex', borderBottom: '1px solid #1a1a1a' }}>
@@ -188,23 +224,35 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Citation text */}
-            <div style={{ padding: '24px', background: '#0d0d0d' }}>
-              <p style={{
-                fontSize: '14px', color: '#aaa', lineHeight: 1.85,
-                fontFamily: 'Georgia, serif', letterSpacing: '0.01em',
-              }}>
-                {citation}
+            {/* Works cited label */}
+            <div style={{ padding: '20px 24px 0', background: '#0d0d0d' }}>
+              <p style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
+                {listTitle}
               </p>
             </div>
 
-            {/* Copy + note */}
+            {/* Citations */}
+            <div style={{ padding: '16px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {allCitations.map((c, i) => (
+                <p key={i} style={{
+                  fontSize: '14px', color: '#aaa', lineHeight: 1.85,
+                  fontFamily: 'Georgia, serif', letterSpacing: '0.01em',
+                  margin: 0,
+                  paddingLeft: '2em',
+                  textIndent: '-2em',
+                }}>
+                  {c}
+                </p>
+              ))}
+            </div>
+
+            {/* Copy all */}
             <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #1a1a1a' }}>
               <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em' }}>
-                Italicize journal/book titles before submitting.
+                {sources.length} source{sources.length !== 1 ? 's' : ''} · Italicize titles before submitting.
               </span>
               <button
-                onClick={copy}
+                onClick={copyAll}
                 style={{
                   background: copied ? 'none' : '#f0f0f0',
                   color: copied ? '#555' : '#0a0a0a',
@@ -214,9 +262,10 @@ export default function Home() {
                   letterSpacing: '0.06em', textTransform: 'uppercase',
                 }}
               >
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? 'Copied' : 'Copy All'}
               </button>
             </div>
+
           </div>
         )}
       </main>
