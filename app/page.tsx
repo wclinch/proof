@@ -268,7 +268,7 @@ export default function Home() {
             {/* Copy all */}
             <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #1a1a1a' }}>
               <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em' }}>
-                {sources.length} source{sources.length !== 1 ? 's' : ''} · Italicize titles before submitting.
+                {sources.length} source{sources.length !== 1 ? 's' : ''}
               </span>
               <button
                 onClick={copyAll}
