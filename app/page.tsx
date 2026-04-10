@@ -134,7 +134,7 @@ export default function Home() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && cite()}
-              placeholder={hasSources ? 'Add another source...' : 'https://doi.org/10.1038/... or any URL'}
+              placeholder={hasSources ? 'Add another source...' : 'Paste a source link or DOI...'}
               style={{
                 flex: 1, background: 'none', border: 'none', outline: 'none',
                 color: '#f0f0f0', fontSize: '15px', padding: '18px 0',
