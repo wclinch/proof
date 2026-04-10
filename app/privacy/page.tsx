@@ -15,14 +15,20 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>What we collect</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            When you generate a citation, we log the source and which format you used. We also record basic, anonymous context — roughly where you are, what browser and device you're on, and what site sent you here. Nothing is tied to you personally. No account, no cookies, no IP address stored.
+            When you generate a citation, we log the source you submitted, its title, and which format you copied. We also record anonymous context from your request — your approximate location (country, region, city), your network or institution, your browser and device type, and the page that brought you here.
+          </p>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+            None of this is tied to you personally. We don't store your IP address — only signals derived from it. No account is required. No cookies are used.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>Why</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>Why we collect it</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            To understand how Proof is used and make it better. That's it. We're not an ad platform. We don't sell personal data. We don't track you between sessions.
+            Proof is free with no ads. The anonymous usage data we collect helps us understand how the tool is being used — which formats are most common, what kinds of sources people cite, and where our users are. This informs how Proof is built and improved over time.
+          </p>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+            We are not an ad platform. We do not sell personal data. We do not track you between sessions or across other websites.
           </p>
         </div>
 
