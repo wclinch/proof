@@ -166,15 +166,15 @@ async function fetchURL(url: string): Promise<CitationMeta> {
 
 async function fetchGeo(ip: string): Promise<{ country: string | null; region: string | null; city: string | null; org: string | null }> {
   try {
-    const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
-      headers: { 'User-Agent': 'Proof/1.0 (mailto:proof_official@protonmail.com)' },
+    const res = await fetch(`http://ip-api.com/json/${encodeURIComponent(ip)}?fields=country,regionName,city,org`, {
       signal: AbortSignal.timeout(3000),
     })
     if (!res.ok) return { country: null, region: null, city: null, org: null }
     const data = await res.json()
+    if (data.status === 'fail') return { country: null, region: null, city: null, org: null }
     return {
-      country: typeof data.country_name === 'string' ? data.country_name : null,
-      region: typeof data.region === 'string' ? data.region : null,
+      country: typeof data.country === 'string' ? data.country : null,
+      region: typeof data.regionName === 'string' ? data.regionName : null,
       city: typeof data.city === 'string' ? data.city : null,
       org: typeof data.org === 'string' ? data.org : null,
     }
