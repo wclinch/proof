@@ -22,6 +22,7 @@ type Suggestion = {
   note: string | null
   suggestion_count: number
   user_id: string | null
+  user_domain: string | null
   created_at: string
 }
 
@@ -384,7 +385,7 @@ function SuggestionsTab({ pass }: { pass: string }) {
                 </span>
               )}
               <span style={{ fontSize: '11px', color: '#2a2a2a' }}>
-                Query: {s.query}{s.suggestion_count > 1 ? ` · ${s.suggestion_count}×` : ''}{s.user_id ? ' · has account' : ''}
+                Query: {s.query}{s.suggestion_count > 1 ? ` · ${s.suggestion_count}×` : ''}{s.user_domain ? ` · ${s.user_domain}` : s.user_id ? ' · has account' : ''}
               </span>
               {s.note && <span style={{ fontSize: '11px', color: '#444', fontStyle: 'italic' }}>{s.note}</span>}
             </div>
@@ -457,6 +458,7 @@ function SourcesTab({ pass }: { pass: string }) {
     })
     const data = await res.json()
     if (data.ok) setSources(prev => prev.filter(s => s.id !== id))
+    else setError(data.message ?? 'Failed to remove source. Try again.')
     setDeletingIds(prev => { const s = new Set(prev); s.delete(id); return s })
   }
 
@@ -653,8 +655,12 @@ export default function Admin() {
       const res = await fetch(`https://api.crossref.org/works?${params}`)
       if (!res.ok) throw new Error(`CrossRef ${res.status}`)
       const data = await res.json()
-      const items: CRWork[] = (data.message?.items || [])
+      const raw: CRWork[] = data.message?.items || []
+      const items: CRWork[] = raw
         .filter((w: CRWork) => (w['is-referenced-by-count'] ?? 0) >= crFilters.minCitations)
+      if (items.length < raw.length) {
+        setStatus(`${raw.length - items.length} of ${raw.length} results removed by citation filter (min ${crFilters.minCitations}).`)
+      }
       setResults(items.map(w => {
         const year = w.published?.['date-parts']?.[0]?.[0] ?? null
         const authors = (w.author || []).map(a => [a.given, a.family].filter(Boolean).join(' '))

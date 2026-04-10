@@ -45,7 +45,7 @@ export default function Educators() {
     })
 
     if (error) {
-      setError(error.message)
+      setError('Something went wrong. Please try again.')
       setLoading(false)
     } else {
       setDone(true)

@@ -45,7 +45,7 @@ export default function SignIn() {
       redirectTo: `${window.location.origin}/reset-password`,
     })
     if (error) {
-      setError(error.message)
+      setError('Could not send reset link. Check the email address and try again.')
     } else {
       setResetSent(true)
     }

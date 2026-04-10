@@ -14,7 +14,7 @@ type Source = {
   citation_count: number
 }
 
-function RequestTopic({ query, userId }: { query: string; userId: string | null }) {
+function RequestTopic({ query, userId, userDomain }: { query: string; userId: string | null; userDomain: string | null }) {
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
@@ -37,7 +37,7 @@ function RequestTopic({ query, userId }: { query: string; userId: string | null 
     if (existing) {
       ;({ error: err } = await supabase
         .from('topic_requests')
-        .update({ suggestion_count: (existing.suggestion_count || 1) + 1 })
+        .update({ suggestion_count: (existing.suggestion_count ?? 0) + 1 })
         .eq('id', existing.id))
     } else {
       ;({ error: err } = await supabase.from('topic_requests').insert({
@@ -47,6 +47,7 @@ function RequestTopic({ query, userId }: { query: string; userId: string | null 
         note: null,
         suggestion_count: 1,
         user_id: userId || null,
+        user_domain: userDomain || null,
       }))
     }
 
@@ -116,6 +117,8 @@ function HomeInner() {
   const [reportingIds, setReportingIds] = useState<Set<string>>(new Set())
   const [userId, setUserId] = useState<string | null>(null)
   const [userDomain, setUserDomain] = useState<string | null>(null)
+  const userIdRef = useRef<string | null>(null)
+  const userDomainRef = useRef<string | null>(null)
   const [visibleCount, setVisibleCount] = useState(20)
   const [topics, setTopics] = useState<string[]>([])
 
@@ -123,19 +126,21 @@ function HomeInner() {
     supabase.auth.getSession().then(({ data }) => {
       const uid = data.session?.user?.id ?? null
       const domain = data.session?.user?.email?.split('@')[1] ?? null
-      setUserId(uid)
-      setUserDomain(domain)
+      setUserId(uid); userIdRef.current = uid
+      setUserDomain(domain); userDomainRef.current = domain
       if (uid) fetchSaved(uid)
     })
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
-        setUserId(null)
-        setUserDomain(null)
+        setUserId(null); userIdRef.current = null
+        setUserDomain(null); userDomainRef.current = null
         setSavedIds(new Set())
       } else if (event === 'SIGNED_IN' && session) {
-        setUserId(session.user.id)
-        setUserDomain(session.user.email?.split('@')[1] ?? null)
-        fetchSaved(session.user.id)
+        const uid = session.user.id
+        const domain = session.user.email?.split('@')[1] ?? null
+        setUserId(uid); userIdRef.current = uid
+        setUserDomain(domain); userDomainRef.current = domain
+        fetchSaved(uid)
       }
     })
     fetchTopics()
@@ -144,7 +149,7 @@ function HomeInner() {
 
   useEffect(() => {
     const q = searchParams.get('q')
-    if (!q) {
+    if (!q || q.trim().length < 2) {
       setSearched(false)
       setResults([])
       setQuery('')
@@ -155,10 +160,10 @@ function HomeInner() {
     setSearched(true)
     setSearchError(false)
     setVisibleCount(20)
-    const esc = q.replace(/%/g, '\\%').replace(/_/g, '\\_')
+    const esc = q.replace(/%/g, '\\%').replace(/_/g, '\\_').replace(/[(),]/g, ' ')
     supabase
       .from('sources')
-      .select('*')
+      .select('id, title, url, topic, citation_count')
       .eq('status', 'approved')
       .or(`topic.ilike.%${esc}%,title.ilike.%${esc}%`)
       .order('citation_count', { ascending: false })
@@ -169,14 +174,14 @@ function HomeInner() {
         setResults(shuffled)
         setLoading(false)
         supabase.from('search_logs')
-          .insert({ query: q, result_count: results.length, is_verified: !!userId, user_domain: userDomain, user_id: userId ?? null })
+          .insert({ query: q, result_count: results.length, is_verified: !!userIdRef.current, user_domain: userDomainRef.current })
           .then(({ error }) => { if (error) console.error('search_logs:', error.message) })
           .catch(() => {})
       })
   }, [searchParams])
 
   async function fetchTopics() {
-    const { data } = await supabase.from('sources').select('topic').eq('status', 'approved')
+    const { data } = await supabase.from('sources').select('topic').eq('status', 'approved').limit(500)
     const unique = [...new Set(data?.map(r => r.topic) ?? [])].slice(0, 6)
     setTopics(unique)
   }
@@ -328,7 +333,7 @@ function HomeInner() {
                 <span style={{ fontSize: '13px', color: '#333', letterSpacing: '0.04em' }}>
                   No sources found for this topic yet.
                 </span>
-                <RequestTopic query={query} userId={userId} />
+                <RequestTopic key={query} query={query} userId={userId} userDomain={userDomain} />
               </div>
             )}
 
@@ -372,7 +377,7 @@ function HomeInner() {
                       {savedIds.has(source.id) ? 'Saved' : 'Save'}
                     </button>
                   )}
-                  {reportedIds.has(source.id) ? (
+                  {userId && (reportedIds.has(source.id) ? (
                     <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em' }}>Reported</span>
                   ) : (
                     <button
@@ -392,7 +397,7 @@ function HomeInner() {
                     >
                       Report
                     </button>
-                  )}
+                  ))}
                 </div>
               </div>
             ))}

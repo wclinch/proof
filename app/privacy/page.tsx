@@ -15,10 +15,10 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>What we collect</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Proof collects anonymous search data — the query entered, the number of results returned, and whether a result was clicked. This data is never linked to an individual user or personal identifier. No IP addresses are stored.
+            Proof collects search data — the query entered, the number of results returned, and whether a result was clicked. No IP addresses are stored.
           </p>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            For signed-in users, we also record the institutional domain associated with their account (for example, <span style={{ color: '#666' }}>university.edu</span> or <span style={{ color: '#666' }}>agency.gov</span>). This is extracted from their email address and stored as a domain suffix only — never as a full email address — and is never linked back to an individual.
+            For signed-in users, each search is associated with the institutional domain of their account (for example, <span style={{ color: '#666' }}>university.edu</span> or <span style={{ color: '#666' }}>agency.gov</span>). This is the domain suffix of the email address used to sign up — not the full address. Search records are not linked to individual user accounts, but domain-level association means searches from a small institution could be attributable to a small number of people.
           </p>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
             If you create an account, we store your email address and the sources you choose to save. Your email is used solely for account authentication and is never sold or shared.

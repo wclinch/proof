@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('topic_requests')
-    .select('id, url, suggested_title, query, note, suggestion_count, user_id, created_at')
+    .select('id, url, suggested_title, query, note, suggestion_count, user_id, user_domain, created_at')
     .eq('status', 'pending')
     .order('suggestion_count', { ascending: false })
 

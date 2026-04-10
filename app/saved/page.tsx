@@ -24,7 +24,12 @@ type SavedSource = {
 type CiteFormat = 'MLA' | 'APA' | 'Chicago'
 
 function escapeTitle(title: string): string {
-  return title.replace(/"/g, '\u201c').replace(/"/g, '\u201d')
+  let open = true
+  return title.replace(/"/g, () => {
+    const q = open ? '\u201c' : '\u201d'
+    open = !open
+    return q
+  })
 }
 
 function formatMLA(s: SavedSource['sources']): string {
@@ -71,6 +76,7 @@ function CiteModal({ source, onClose }: { source: SavedSource['sources'], onClos
   }, [onClose])
 
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current) }, [])
   function copy() {
     navigator.clipboard.writeText(citation)
     setCopied(true)
@@ -187,6 +193,7 @@ export default function Saved() {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) {
+        setLoading(false)
         router.push('/signin')
         return
       }
@@ -197,6 +204,9 @@ export default function Saved() {
         .order('created_at', { ascending: false })
       if (error) { setFetchError(true); setLoading(false); return }
       setSaved(((saved as unknown as SavedSource[]) ?? []).filter(s => s.sources != null))
+      setLoading(false)
+    }).catch(() => {
+      setFetchError(true)
       setLoading(false)
     })
   }, [router])
@@ -232,7 +242,7 @@ export default function Saved() {
             }}
           />
           <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em', flexShrink: 0 }}>
-            {loading ? '' : `${saved.length} saved`}
+            {loading ? '' : filter.trim() ? `${filtered.length} of ${saved.length}` : `${saved.length} saved`}
           </span>
         </div>
 

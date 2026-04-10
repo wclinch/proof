@@ -65,7 +65,6 @@ export default function SignUp() {
   async function handleSignUp() {
     if (!email || !password || !confirm) return
     if (submitting.current) return
-    submitting.current = true
     const parts = email.split('@')
     const domain = parts.length === 2 ? parts[1] : ''
     const validDomain = domain && (
@@ -88,6 +87,7 @@ export default function SignUp() {
       setError('Password must contain at least one uppercase letter and one number.')
       return
     }
+    submitting.current = true
     setLoading(true)
     setError('')
 
