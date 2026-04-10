@@ -241,9 +241,7 @@ export async function POST(req: NextRequest) {
   const referrer = req.headers.get('referer') ?? null
   const language = req.headers.get('accept-language')?.split(',')[0].split(';')[0].trim() ?? null
 
-  console.log('ip:', rawIp)
   const geo = rawIp ? await fetchGeo(rawIp) : { country: null, region: null, city: null, org: null }
-  console.log('geo:', JSON.stringify(geo))
   const { browser, os, device } = parseUA(ua)
 
   const sourceDomain = inputType === 'url'
