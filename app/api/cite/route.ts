@@ -5,12 +5,20 @@ import type { CitationMeta } from '@/lib/cite'
 
 export const runtime = 'nodejs'
 
+// Supabase client reused across requests
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
 // ─── DOI detection ────────────────────────────────────────────────────────────
 
 function extractDOI(input: string): string | null {
-  const doiOrg = input.match(/doi\.org\/(10\.\d{4,}\/\S+)/i)
+  // Strip query params and fragments before matching
+  const cleaned = input.split('?')[0].split('#')[0]
+  const doiOrg = cleaned.match(/doi\.org\/(10\.\d{4,}\/[^\s]+)/i)
   if (doiOrg) return doiOrg[1]
-  const raw = input.match(/(10\.\d{4,}\/\S+)/)
+  const raw = cleaned.match(/(10\.\d{4,}\/[^\s]+)/)
   if (raw) return raw[1]
   return null
 }
@@ -19,7 +27,7 @@ function extractDOI(input: string): string | null {
 
 async function fetchDOI(doi: string): Promise<CitationMeta> {
   const res = await fetch(`https://api.crossref.org/works/${encodeURIComponent(doi)}`, {
-    headers: { 'User-Agent': 'Proof/1.0 (mailto:proof_dev@protonmail.com)' },
+    headers: { 'User-Agent': 'Proof/1.0 (mailto:proof_official@protonmail.com)' },
     signal: AbortSignal.timeout(8000),
   })
   if (!res.ok) throw new Error(`CrossRef ${res.status}`)
@@ -65,7 +73,10 @@ function isSafeUrl(url: string): boolean {
     const u = new URL(url)
     if (!['http:', 'https:'].includes(u.protocol)) return false
     const h = u.hostname
-    if (h === 'localhost' || h === '127.0.0.1' || h === '::1') return false
+    // Block loopback, private, link-local, and reserved ranges
+    if (/^127\./.test(h)) return false
+    if (h === 'localhost' || h === '::1') return false
+    if (/^169\.254\./.test(h)) return false
     if (/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h)) return false
     return true
   } catch { return false }
@@ -106,31 +117,30 @@ async function fetchURL(url: string): Promise<CitationMeta> {
 
   const siteName = getMeta(html, 'og:site_name') ?? new URL(url).hostname.replace(/^www\./, '')
 
-  const authorRaw =
-    getMeta(html, 'author', 'article:author', 'citation_author') ?? null
+  const authorRaw = getMeta(html, 'author', 'article:author', 'citation_author') ?? null
   const authors = authorRaw
-    ? authorRaw.split(/[,;]/).map(a => a.trim()).filter(Boolean).map(a => {
-        // Try to convert "First Last" to "Last, First"
+    ? authorRaw.split(/;/).map(a => a.trim()).filter(Boolean).map(a => {
         const parts = a.split(/\s+/)
         return parts.length >= 2 ? `${parts[parts.length - 1]}, ${parts.slice(0, -1).join(' ')}` : a
       })
     : []
 
-  const dateRaw =
-    getMeta(html, 'article:published_time', 'citation_publication_date', 'date', 'DC.date') ?? null
+  const dateRaw = getMeta(html, 'article:published_time', 'citation_publication_date', 'date', 'DC.date') ?? null
   let year: string | null = null
   let month: string | null = null
   let day: string | null = null
   if (dateRaw) {
     const parts = dateRaw.split(/[-T]/)
-    year  = parts[0] ?? null
-    month = parts[1] ?? null
-    day   = parts[2]?.slice(0, 2) ?? null
+    year  = parts[0]?.match(/^\d{4}$/) ? parts[0] : null
+    const rawMonth = parseInt(parts[1] ?? '', 10)
+    month = rawMonth >= 1 && rawMonth <= 12 ? String(rawMonth).padStart(2, '0') : null
+    const rawDay = parseInt(parts[2]?.slice(0, 2) ?? '', 10)
+    day   = rawDay >= 1 && rawDay <= 31 ? String(rawDay).padStart(2, '0') : null
   }
 
-  const journal = getMeta(html, 'citation_journal_title') ?? null
-  const volume  = getMeta(html, 'citation_volume') ?? null
-  const issue   = getMeta(html, 'citation_issue') ?? null
+  const journal   = getMeta(html, 'citation_journal_title') ?? null
+  const volume    = getMeta(html, 'citation_volume') ?? null
+  const issue     = getMeta(html, 'citation_issue') ?? null
   const firstPage = getMeta(html, 'citation_firstpage')
   const lastPage  = getMeta(html, 'citation_lastpage')
   const pages = firstPage ? (lastPage ? `${firstPage}–${lastPage}` : firstPage) : null
@@ -175,12 +185,19 @@ async function getInstitutionDomain(ip: string): Promise<string | null> {
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  const { input } = await req.json()
+  let body: { input?: unknown }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  }
+
+  const { input } = body
   if (!input || typeof input !== 'string' || !input.trim()) {
     return NextResponse.json({ error: 'No input provided.' }, { status: 400 })
   }
 
-  const trimmed = input.trim()
+  const trimmed = input.trim().slice(0, 2000)
   const doi = extractDOI(trimmed)
 
   let meta: CitationMeta
@@ -205,10 +222,6 @@ export async function POST(req: NextRequest) {
   ;(async () => {
     const domain = ip ? await getInstitutionDomain(ip) : null
     try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
       await supabase.from('citations_log').insert({
         input: trimmed,
         input_type: inputType,
