@@ -4,26 +4,15 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
 const TAGLINES = [
-  'HUMAN CURATED',
-  'NOT GENERATED',
-  'PEER REVIEWED',
+  'MLA. APA. CHICAGO.',
   'NO ADVERTISING',
   'FREE TO USE',
-  'VERIFIED BEFORE PUBLICATION',
-  'MLA. APA. CHICAGO.',
-  'SEARCH. SAVE. CITE.',
-  'DEPTH OVER BREADTH',
-  'NO SPONSORED RESULTS',
-  'SOURCES WITH STANDARDS',
-  'BUILT FOR RESEARCH',
-  'ORGANIZED BY SUBJECT',
-  'REQUEST A TOPIC',
-  'CREDIBILITY BY DESIGN',
-  'RESEARCH-GRADE SOURCES',
-  'SOURCED. VERIFIED. CITED.',
-  'BIBLIOGRAPHY READY',
-  'INDEXED BY SUBJECT',
-  'COMMUNITY INFORMED',
+  'PASTE. CITE. DONE.',
+  'DOI TO CITATION',
+  'ZERO FRICTION',
+  'INSTANT CITATIONS',
+  'NO SIGN-UP REQUIRED',
+  'RESEARCH-GRADE',
 ]
 
 export default function Footer() {
@@ -59,31 +48,21 @@ export default function Footer() {
           {TAGLINES[index]}
         </span>
       </span>
-      <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-        <Link
-          href="/privacy"
+      <div style={{ display: 'flex', gap: '24px' }}>
+        <Link href="/privacy"
           style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}
           onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
         >
           Privacy
         </Link>
-        <a
-          href="mailto:proof_dev@protonmail.com?subject=Proof — Contact"
+        <a href="mailto:proof_dev@protonmail.com?subject=Proof — Contact"
           style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}
           onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
         >
           Contact
         </a>
-        <Link
-          href="/educators"
-          style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#555')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
-        >
-          Contribute
-        </Link>
       </div>
     </footer>
   )

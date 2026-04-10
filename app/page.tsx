@@ -1,234 +1,66 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense, useMemo } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useState, useRef } from 'react'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
-import { supabase } from '@/lib/supabase'
+import { formatMLA, formatAPA, formatChicago } from '@/lib/cite'
+import type { CitationMeta } from '@/lib/cite'
 
-type Source = {
-  id: string
-  title: string
-  url: string
-  topic: string
-  citation_count: number
-}
+type Format = 'MLA' | 'APA' | 'Chicago'
 
-function RequestTopic({ query, userId, userDomain }: { query: string; userId: string | null; userDomain: string | null }) {
-  const [sent, setSent] = useState(false)
+export default function Home() {
+  const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
-  const submitted = useRef(false)
+  const [error, setError] = useState('')
+  const [meta, setMeta] = useState<CitationMeta | null>(null)
+  const [format, setFormat] = useState<Format>('MLA')
+  const [copied, setCopied] = useState(false)
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const submitting = useRef(false)
 
-  async function request() {
-    if (submitted.current) return
-    submitted.current = true
+  async function cite() {
+    if (!input.trim() || submitting.current) return
+    submitting.current = true
     setLoading(true)
-    setError(false)
+    setError('')
+    setMeta(null)
+    setCopied(false)
 
-    const { data: existing } = await supabase
-      .from('topic_requests')
-      .select('id, suggestion_count')
-      .eq('query', query)
-      .is('url', null)
-      .maybeSingle()
-
-    let err
-    if (existing) {
-      ;({ error: err } = await supabase
-        .from('topic_requests')
-        .update({ suggestion_count: (existing.suggestion_count ?? 0) + 1 })
-        .eq('id', existing.id))
-    } else {
-      ;({ error: err } = await supabase.from('topic_requests').insert({
-        query,
-        url: null,
-        suggested_title: null,
-        note: null,
-        suggestion_count: 1,
-        user_id: userId || null,
-        user_domain: userDomain || null,
-      }))
-    }
-
-    if (err) { setError(true); submitted.current = false }
-    else setSent(true)
-    setLoading(false)
-  }
-
-  if (sent) {
-    return (
-      <span style={{ fontSize: '12px', color: '#555', letterSpacing: '0.04em' }}>
-        Requested — we'll review and add sources for this topic.
-      </span>
-    )
-  }
-
-  if (!userId) {
-    return (
-      <a
-        href="/signin"
-        style={{ fontSize: '12px', color: '#2a2a2a', letterSpacing: '0.04em', textDecoration: 'none', transition: 'color 0.15s' }}
-        onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-        onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
-      >
-        Sign in to request this topic
-      </a>
-    )
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      <button
-        onClick={request}
-        disabled={loading}
-        style={{
-          alignSelf: 'flex-start', background: 'none', border: '1px solid #1e1e1e',
-          borderRadius: '5px', color: '#444', fontSize: '12px', padding: '8px 16px',
-          cursor: 'pointer', letterSpacing: '0.04em', opacity: loading ? 0.5 : 1,
-          transition: 'color 0.15s, border-color 0.15s',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.color = '#888'; e.currentTarget.style.borderColor = '#333' }}
-        onMouseLeave={e => { e.currentTarget.style.color = '#444'; e.currentTarget.style.borderColor = '#1e1e1e' }}
-      >
-        {loading ? 'Requesting...' : 'Request this topic'}
-      </button>
-      {error && (
-        <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.02em' }}>
-          Couldn't submit. Try again.
-        </span>
-      )}
-    </div>
-  )
-}
-
-function HomeInner() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<Source[]>([])
-  const [searched, setSearched] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [searchError, setSearchError] = useState(false)
-  const [saveError, setSaveError] = useState(false)
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
-  const [savingIds, setSavingIds] = useState<Set<string>>(new Set())
-  const [reportedIds, setReportedIds] = useState<Set<string>>(new Set())
-  const [reportingIds, setReportingIds] = useState<Set<string>>(new Set())
-  const [userId, setUserId] = useState<string | null>(null)
-  const [userDomain, setUserDomain] = useState<string | null>(null)
-  const userIdRef = useRef<string | null>(null)
-  const userDomainRef = useRef<string | null>(null)
-  const [visibleCount, setVisibleCount] = useState(20)
-  const [topics, setTopics] = useState<string[]>([])
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      const uid = data.session?.user?.id ?? null
-      const domain = data.session?.user?.email?.split('@')[1] ?? null
-      setUserId(uid); userIdRef.current = uid
-      setUserDomain(domain); userDomainRef.current = domain
-      if (uid) fetchSaved(uid)
-    })
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
-        setUserId(null); userIdRef.current = null
-        setUserDomain(null); userDomainRef.current = null
-        setSavedIds(new Set())
-      } else if (event === 'SIGNED_IN' && session) {
-        const uid = session.user.id
-        const domain = session.user.email?.split('@')[1] ?? null
-        setUserId(uid); userIdRef.current = uid
-        setUserDomain(domain); userDomainRef.current = domain
-        fetchSaved(uid)
-      }
-    })
-    fetchTopics()
-    return () => listener.subscription.unsubscribe()
-  }, [])
-
-  useEffect(() => {
-    const q = searchParams.get('q')
-    if (!q || q.trim().length < 2) {
-      setSearched(false)
-      setResults([])
-      setQuery('')
-      return
-    }
-    setQuery(q)
-    setLoading(true)
-    setSearched(true)
-    setSearchError(false)
-    setVisibleCount(20)
-    const esc = q.replace(/%/g, '\\%').replace(/_/g, '\\_').replace(/[(),]/g, ' ')
-    supabase
-      .from('sources')
-      .select('id, title, url, topic, citation_count')
-      .eq('status', 'approved')
-      .or(`topic.ilike.%${esc}%,title.ilike.%${esc}%`)
-      .order('citation_count', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) { setSearchError(true); setLoading(false); return }
-        const results = data || []
-        const shuffled = weightedShuffle(results)
-        setResults(shuffled)
-        setLoading(false)
-        supabase.from('search_logs')
-          .insert({ query: q, result_count: results.length, is_verified: !!userIdRef.current, user_domain: userDomainRef.current })
-          .then(({ error }) => { if (error) console.error('search_logs:', error.message) })
-          .catch(() => {})
+    try {
+      const res = await fetch('/api/cite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: input.trim() }),
       })
-  }, [searchParams])
-
-  async function fetchTopics() {
-    const { data } = await supabase.from('sources').select('topic').eq('status', 'approved').limit(500)
-    const unique = [...new Set(data?.map(r => r.topic) ?? [])].slice(0, 6)
-    setTopics(unique)
-  }
-
-  async function fetchSaved(uid: string) {
-    const { data } = await supabase.from('saved_sources').select('source_id').eq('user_id', uid)
-    setSavedIds(new Set(data?.map(r => r.source_id) ?? []))
-  }
-
-  async function checkSession() {
-    const { data } = await supabase.auth.getSession()
-    if (!data.session) setUserId(null)
-  }
-
-  async function toggleSave(sourceId: string) {
-    if (!userId || savingIds.has(sourceId)) return
-    setSaveError(false)
-    setSavingIds(prev => new Set(prev).add(sourceId))
-    if (savedIds.has(sourceId)) {
-      const { error } = await supabase.from('saved_sources').delete().eq('user_id', userId).eq('source_id', sourceId)
-      if (error) { await checkSession(); setSaveError(true) }
-      else setSavedIds(prev => { const s = new Set(prev); s.delete(sourceId); return s })
-    } else {
-      const { error } = await supabase.from('saved_sources').insert({ user_id: userId, source_id: sourceId })
-      if (error) { await checkSession(); setSaveError(true) }
-      else setSavedIds(prev => new Set(prev).add(sourceId))
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        setError(data.error ?? 'Could not retrieve metadata. Check the DOI or URL and try again.')
+      } else {
+        setMeta(data.meta)
+      }
+    } catch {
+      setError('Something went wrong. Try again.')
     }
-    setSavingIds(prev => { const s = new Set(prev); s.delete(sourceId); return s })
+
+    setLoading(false)
+    submitting.current = false
   }
 
-  function search(q: string) {
-    if (!q.trim() || q.trim().length < 2) return
-    router.push(`/?q=${encodeURIComponent(q)}`, { scroll: false })
+  const citation = meta
+    ? format === 'MLA' ? formatMLA(meta)
+    : format === 'APA' ? formatAPA(meta)
+    : formatChicago(meta)
+    : ''
+
+  function copy() {
+    if (!citation) return
+    navigator.clipboard.writeText(citation)
+    setCopied(true)
+    if (copyTimer.current) clearTimeout(copyTimer.current)
+    copyTimer.current = setTimeout(() => setCopied(false), 2000)
   }
 
-  const visibleResults = useMemo(() => results.slice(0, visibleCount), [results, visibleCount])
-
-  function weightedShuffle(sources: Source[]) {
-    const sorted = [...sources]
-    const len = sorted.length
-    const top = sorted.slice(0, Math.ceil(len * 0.4))
-    const secondary = sorted.slice(Math.ceil(len * 0.4), Math.ceil(len * 0.7))
-    const recent = sorted.slice(Math.ceil(len * 0.7), Math.ceil(len * 0.9))
-    const random = sorted.slice(Math.ceil(len * 0.9))
-    const shuffle = (arr: Source[]) => arr.sort(() => Math.random() - 0.5)
-    return [...shuffle(top), ...shuffle(secondary), ...shuffle(recent), ...shuffle(random)]
-  }
+  const hasResult = !!meta
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
@@ -239,202 +71,147 @@ function HomeInner() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: searched ? 'flex-start' : 'center',
-        padding: searched ? '48px 20px' : '40px 20px',
-        gap: '20px',
+        justifyContent: hasResult ? 'flex-start' : 'center',
+        padding: hasResult ? '48px 20px' : '40px 20px',
+        gap: '32px',
       }}>
-        {!searched && (
-          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <h1 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, margin: 0 }}>
-              Research, verified.
+
+        {!hasResult && (
+          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <h1 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+              Cite anything.
             </h1>
-            <p style={{ fontSize: '15px', color: '#555', letterSpacing: '0.02em', margin: 0 }}>
-              Curated academic sources, organized by subject.
+            <p style={{ fontSize: '15px', color: '#555', letterSpacing: '0.02em' }}>
+              Paste a DOI or URL — get MLA, APA, or Chicago instantly.
             </p>
           </div>
         )}
 
-        <div style={{ width: '100%', maxWidth: '620px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {/* Input */}
+        <div style={{ width: '100%', maxWidth: '680px', display: 'flex', gap: '10px' }}>
           <div style={{
+            flex: 1,
             display: 'flex',
             alignItems: 'center',
             background: '#111',
             border: '1px solid #222',
             borderRadius: '8px',
             padding: '0 20px',
-            gap: '12px',
           }}>
             <input
               type="text"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && search(query)}
-              placeholder="Search a topic, subject, or keyword..."
-              maxLength={200}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && cite()}
+              placeholder="https://doi.org/10.1038/... or any URL"
               style={{
                 flex: 1, background: 'none', border: 'none', outline: 'none',
                 color: '#f0f0f0', fontSize: '15px', padding: '18px 0',
               }}
             />
-            {searched && (
+            {input && (
               <button
-                onClick={() => { router.replace('/'); router.refresh() }}
-                style={{
-                  background: 'none', border: 'none', color: '#333',
-                  fontSize: '18px', cursor: 'pointer', padding: '0 4px',
-                  lineHeight: 1, flexShrink: 0,
-                }}
+                onClick={() => { setInput(''); setMeta(null); setError('') }}
+                style={{ background: 'none', border: 'none', color: '#333', fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}
               >
                 ×
               </button>
             )}
-            <button
-              onClick={() => search(query)}
-              style={{
-                background: '#f0f0f0', color: '#0a0a0a', border: 'none',
-                borderRadius: '5px', padding: '8px 18px', fontSize: '13px',
-                fontWeight: 600, cursor: 'pointer', letterSpacing: '0.03em', flexShrink: 0,
-              }}
-            >
-              Search
-            </button>
           </div>
+          <button
+            onClick={cite}
+            disabled={loading}
+            style={{
+              background: '#f0f0f0', color: '#0a0a0a', border: 'none',
+              borderRadius: '8px', padding: '0 24px', fontSize: '13px',
+              fontWeight: 600, cursor: loading ? 'default' : 'pointer',
+              letterSpacing: '0.04em', opacity: loading ? 0.6 : 1,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {loading ? 'Loading...' : 'Cite'}
+          </button>
+        </div>
 
-          {!searched && (
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {topics.map(topic => (
+        {error && (
+          <p style={{ fontSize: '13px', color: '#555', letterSpacing: '0.02em', maxWidth: '680px', width: '100%' }}>
+            {error}
+          </p>
+        )}
+
+        {/* Result */}
+        {meta && (
+          <div style={{ width: '100%', maxWidth: '680px', display: 'flex', flexDirection: 'column', gap: '0', border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
+
+            {/* Source info */}
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #1a1a1a' }}>
+              <p style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', marginBottom: '4px', lineHeight: 1.4 }}>
+                {meta.title}
+              </p>
+              <p style={{ fontSize: '11px', color: '#333', letterSpacing: '0.04em' }}>
+                {[
+                  meta.authors[0] ?? null,
+                  meta.journal ?? meta.siteName ?? null,
+                  meta.year ?? null,
+                ].filter(Boolean).join(' · ')}
+              </p>
+            </div>
+
+            {/* Format tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid #1a1a1a' }}>
+              {(['MLA', 'APA', 'Chicago'] as Format[]).map(f => (
                 <button
-                  key={topic}
-                  onClick={() => { setQuery(topic); search(topic) }}
+                  key={f}
+                  onClick={() => { setFormat(f); setCopied(false) }}
                   style={{
-                    background: '#111', border: '1px solid #1e1e1e', color: '#444',
-                    fontSize: '12px', padding: '6px 14px', borderRadius: '4px',
-                    cursor: 'pointer', letterSpacing: '0.03em',
+                    flex: 1, background: format === f ? '#141414' : 'none',
+                    border: 'none', borderRight: f !== 'Chicago' ? '1px solid #1a1a1a' : 'none',
+                    color: format === f ? '#f0f0f0' : '#333',
+                    fontSize: '11px', fontWeight: format === f ? 600 : 400,
+                    padding: '12px', cursor: 'pointer',
+                    letterSpacing: '0.08em', textTransform: 'uppercase',
+                    transition: 'color 0.15s',
                   }}
                 >
-                  {topic}
+                  {f}
                 </button>
               ))}
             </div>
-          )}
-        </div>
 
-        {searched && (
-          <div style={{ width: '100%', maxWidth: '680px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{
-              fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.1em',
-              textTransform: 'uppercase', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a',
-            }}>
-              {loading ? 'Searching...' : searchError ? 'Something went wrong. Try again.' : `${results.length} sources found`}
+            {/* Citation text */}
+            <div style={{ padding: '24px', background: '#0d0d0d' }}>
+              <p style={{
+                fontSize: '14px', color: '#aaa', lineHeight: 1.85,
+                fontFamily: 'Georgia, serif', letterSpacing: '0.01em',
+              }}>
+                {citation}
+              </p>
             </div>
 
-            {!loading && !searchError && results.length === 0 && (
-              <div style={{ padding: '32px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <span style={{ fontSize: '13px', color: '#333', letterSpacing: '0.04em' }}>
-                  No sources found for this topic yet.
-                </span>
-                <RequestTopic key={query} query={query} userId={userId} userDomain={userDomain} />
-              </div>
-            )}
-
-            {visibleResults.map(source => (
-              <div
-                key={source.id}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: '24px', padding: '11px 0', borderBottom: '1px solid #141414',
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
-                  <a
-                    href={source.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: '13px', fontWeight: 500, color: '#e8e8e8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none', transition: 'color 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#e8e8e8')}
-                    onClick={() => supabase.from('source_clicks').insert({ source_id: source.id, query, is_verified: !!userId, user_domain: userDomain }).then(({ error }) => { if (error) console.error('source_clicks:', error.message) }).catch(() => {})}
-                  >
-                    {source.title}
-                  </a>
-                  <span style={{ fontSize: '11px', color: '#2a2a2a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {source.url}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
-                  <span style={{ fontSize: '10px', color: '#222', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{source.topic}</span>
-                  {userId && (
-                    <button
-                      onClick={() => toggleSave(source.id)}
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                        fontSize: '11px', color: savedIds.has(source.id) ? '#888' : '#2a2a2a',
-                        letterSpacing: '0.04em', transition: 'color 0.15s',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-                      onMouseLeave={e => (e.currentTarget.style.color = savedIds.has(source.id) ? '#888' : '#2a2a2a')}
-                    >
-                      {savedIds.has(source.id) ? 'Saved' : 'Save'}
-                    </button>
-                  )}
-                  {userId && (reportedIds.has(source.id) ? (
-                    <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em' }}>Reported</span>
-                  ) : (
-                    <button
-                      onClick={async () => {
-                        if (reportingIds.has(source.id)) return
-                        setReportingIds(prev => new Set(prev).add(source.id))
-                        const { error } = await supabase.from('source_reports').insert({ source_id: source.id, query })
-                        if (!error) setReportedIds(prev => new Set(prev).add(source.id))
-                        setReportingIds(prev => { const s = new Set(prev); s.delete(source.id); return s })
-                      }}
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                        fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em', transition: 'color 0.15s',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-                      onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
-                    >
-                      Report
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            {saveError && (
-              <div style={{ padding: '10px 0', fontSize: '12px', color: '#555', letterSpacing: '0.04em' }}>
-                Couldn't save. Try again.
-              </div>
-            )}
-
-            {results.length > visibleCount && (
+            {/* Copy + note */}
+            <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #1a1a1a' }}>
+              <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em' }}>
+                Italicize journal/book titles before submitting.
+              </span>
               <button
-                onClick={() => setVisibleCount(c => c + 20)}
+                onClick={copy}
                 style={{
-                  alignSelf: 'flex-start', background: 'none', border: 'none',
-                  color: '#2a2a2a', fontSize: '11px', cursor: 'pointer',
-                  letterSpacing: '0.06em', padding: '16px 0 4px', transition: 'color 0.15s',
+                  background: copied ? 'none' : '#f0f0f0',
+                  color: copied ? '#555' : '#0a0a0a',
+                  border: copied ? '1px solid #1e1e1e' : 'none',
+                  borderRadius: '6px', padding: '8px 20px',
+                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
               >
-                Load more ({results.length - visibleCount} remaining)
+                {copied ? 'Copied' : 'Copy'}
               </button>
-            )}
+            </div>
           </div>
         )}
       </main>
 
       <Footer />
     </div>
-  )
-}
-
-export default function Home() {
-  return (
-    <Suspense fallback={null}>
-      <HomeInner />
-    </Suspense>
   )
 }

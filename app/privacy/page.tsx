@@ -15,38 +15,32 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>What we collect</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Proof collects search data — the query entered, the number of results returned, and whether a result was clicked. No IP addresses are stored.
+            Each citation request logs the DOI or URL submitted and the title of the source retrieved. No account, email address, or personal identifier is required or stored.
           </p>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            For signed-in users, each search is associated with the institutional domain of their account (for example, <span style={{ color: '#666' }}>university.edu</span> or <span style={{ color: '#666' }}>agency.gov</span>). This is the domain suffix of the email address used to sign up — not the full address. Search records are not linked to individual user accounts, but domain-level association means searches from a small institution could be attributable to a small number of people.
-          </p>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            If you create an account, we store your email address and the sources you choose to save. Your email is used solely for account authentication and is never sold or shared.
+            We attempt to identify the institutional domain of the network you're on (for example, <span style={{ color: '#666' }}>university.edu</span> or <span style={{ color: '#666' }}>agency.gov</span>) using a reverse DNS lookup on your IP address. Your IP address itself is not stored — only the derived domain, if one is found. If you're on a home or mobile network, nothing is recorded.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>Why we collect it</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Aggregate search data helps us understand what subjects are being researched and where the database has gaps. Institutional domain data lets us understand which academic communities are using Proof and where coverage is most needed. This informs which topics are prioritized next.
-          </p>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            We may share anonymized, aggregate trend reports derived from this data — for example, the most-searched topics across all users, or subject areas with high search volume and few results. These reports contain no personal information and cannot be used to identify any individual.
+            Aggregate data helps us understand which sources and subject areas are being cited most, and which institutional communities use Proof. This informs how the tool is developed. We may publish anonymized trend reports — for example, the most-cited journals across all users. These contain no personal information.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>What we do not do</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            We do not sell personal data. We do not sell or share individual email addresses. We do not serve advertising. We do not track users across other websites. We do not share individual search history with any third party.
+            We do not store IP addresses. We do not require sign-up. We do not serve advertising. We do not sell data. We do not track users across other websites.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>Contact</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Questions about this policy can be directed to{' '}
-            <a href="mailto:proof_dev@protonmail.com" style={{ color: '#555', textDecoration: 'none' }}>proof_dev@protonmail.com</a>.
+            Questions about this policy:{' '}
+            <a href="mailto:proof_dev@protonmail.com" style={{ color: '#555', textDecoration: 'none' }}>proof_dev@protonmail.com</a>
           </p>
         </div>
 
