@@ -216,21 +216,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 422 })
   }
 
+  // Bypass SDK — direct REST call to isolate DNS/network issue
+  const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+  const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+  console.log('sbUrl repr:', JSON.stringify(sbUrl))
   try {
-    const { error: logError } = await supabase.from('citations_log').insert({
-      input: trimmed,
-      input_type: inputType,
-      title: meta.title,
-      institution_domain: null,
+    const insertRes = await fetch(`${sbUrl.trim()}/rest/v1/citations_log`, {
+      method: 'POST',
+      headers: {
+        'apikey': sbKey.trim(),
+        'Authorization': `Bearer ${sbKey.trim()}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        input: trimmed,
+        input_type: inputType,
+        title: meta.title,
+        institution_domain: null,
+      }),
     })
-    if (logError) {
-      console.error('insert failed:', logError.message, logError.code, logError.details, logError.hint)
-    } else {
-      console.log('insert ok')
-    }
+    console.log('insert status:', insertRes.status, await insertRes.text())
   } catch (e: unknown) {
     const err = e as Error & { cause?: unknown }
-    console.error('insert threw:', err.message, 'cause:', JSON.stringify(err.cause))
+    console.error('direct fetch threw:', err.message, 'cause:', JSON.stringify(err.cause))
   }
 
   return NextResponse.json({ meta })
