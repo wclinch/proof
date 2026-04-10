@@ -113,7 +113,7 @@ export default function Home() {
               Cite anything.
             </h1>
             <p style={{ fontSize: '15px', color: '#555', letterSpacing: '0.02em' }}>
-              Paste a DOI or URL — build your works cited instantly.
+              MLA. APA. Chicago. No ads, no sign-up, no friction.
             </p>
           </div>
         )}
