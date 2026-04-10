@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 const TAGLINES = [
   'MLA. APA. CHICAGO.',
@@ -16,6 +17,7 @@ const TAGLINES = [
 ]
 
 export default function Footer() {
+  const pathname = usePathname()
   const [index, setIndex] = useState(0)
   const [opacity, setOpacity] = useState(1)
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -50,13 +52,18 @@ export default function Footer() {
       </span>
       <div style={{ display: 'flex', gap: '24px' }}>
         <Link href="/privacy"
-          style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
+          style={{
+            fontSize: '11px', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s',
+            color: pathname === '/privacy' ? '#888' : '#2a2a2a',
+            borderBottom: pathname === '/privacy' ? '1px solid #333' : '1px solid transparent',
+            paddingBottom: '2px',
+          }}
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+          onMouseLeave={e => (e.currentTarget.style.color = pathname === '/privacy' ? '#888' : '#2a2a2a')}
         >
           Privacy
         </Link>
-        <a href="mailto:proof_dev@protonmail.com?subject=Proof — Contact"
+        <a href="mailto:proof_official@protonmail.com?subject=Proof — Contact"
           style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}
           onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
