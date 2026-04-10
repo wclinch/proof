@@ -26,18 +26,6 @@ export default function Nav() {
         </span>
       </Link>
 
-      {!isHome && (
-        <Link href="/" style={{
-          fontSize: '12px', color: '#444', textDecoration: 'none',
-          letterSpacing: '0.06em', textTransform: 'uppercase',
-          transition: 'color 0.15s',
-        }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
-        >
-          ← Home
-        </Link>
-      )}
     </nav>
   )
 }

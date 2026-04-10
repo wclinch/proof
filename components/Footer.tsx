@@ -51,15 +51,19 @@ export default function Footer() {
         </span>
       </span>
       <div style={{ display: 'flex', gap: '24px' }}>
+        {pathname !== '/' && (
+          <Link href="/"
+            style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#555')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+          >
+            ← Home
+          </Link>
+        )}
         <Link href="/privacy"
-          style={{
-            fontSize: '11px', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s',
-            color: pathname === '/privacy' ? '#888' : '#2a2a2a',
-            borderBottom: pathname === '/privacy' ? '1px solid #333' : '1px solid transparent',
-            paddingBottom: '2px',
-          }}
+          style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}
-          onMouseLeave={e => (e.currentTarget.style.color = pathname === '/privacy' ? '#888' : '#2a2a2a')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
         >
           Privacy
         </Link>
