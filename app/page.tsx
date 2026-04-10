@@ -17,6 +17,7 @@ export default function Home() {
   const [copied, setCopied] = useState(false)
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const submitting = useRef(false)
+  const logId = useRef<string | null>(null)
 
   async function cite() {
     if (!input.trim() || submitting.current) return
@@ -25,6 +26,7 @@ export default function Home() {
     setError('')
     setMeta(null)
     setCopied(false)
+    logId.current = null
 
     try {
       const res = await fetch('/api/cite', {
@@ -37,6 +39,7 @@ export default function Home() {
         setError(data.error ?? 'Could not retrieve metadata. Check the DOI or URL and try again.')
       } else {
         setMeta(data.meta)
+        logId.current = data.logId ?? null
       }
     } catch {
       setError('Something went wrong. Try again.')
@@ -58,6 +61,13 @@ export default function Home() {
     setCopied(true)
     if (copyTimer.current) clearTimeout(copyTimer.current)
     copyTimer.current = setTimeout(() => setCopied(false), 2000)
+    if (logId.current) {
+      fetch('/api/log-copy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logId: logId.current, format }),
+      }).catch(() => {})
+    }
   }
 
   const hasResult = !!meta

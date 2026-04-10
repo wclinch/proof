@@ -182,6 +182,23 @@ async function getInstitutionDomain(ip: string): Promise<string | null> {
   return null
 }
 
+// ─── Geo ──────────────────────────────────────────────────────────────────────
+
+async function fetchGeo(ip: string): Promise<{ country: string | null; region: string | null }> {
+  try {
+    const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
+      headers: { 'User-Agent': 'Proof/1.0 (mailto:proof_official@protonmail.com)' },
+      signal: AbortSignal.timeout(3000),
+    })
+    if (!res.ok) return { country: null, region: null }
+    const data = await res.json()
+    return {
+      country: typeof data.country_name === 'string' ? data.country_name : null,
+      region: typeof data.region === 'string' ? data.region : null,
+    }
+  } catch { return { country: null, region: null } }
+}
+
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -216,13 +233,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 422 })
   }
 
-  const { error: logError } = await supabase.from('citations_log').insert({
-    input: trimmed,
-    input_type: inputType,
-    title: meta.title,
-    institution_domain: null,
-  })
+  const rawIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? ''
+  const userAgent = req.headers.get('user-agent') ?? null
+  const geo = rawIp ? await fetchGeo(rawIp) : { country: null, region: null }
+
+  const { data: logRow, error: logError } = await supabase
+    .from('citations_log')
+    .insert({
+      input: trimmed,
+      input_type: inputType,
+      title: meta.title,
+      institution_domain: null,
+      country: geo.country,
+      region: geo.region,
+      user_agent: userAgent,
+    })
+    .select('id')
+    .single()
+
   if (logError) console.error('cite log error:', logError.message)
 
-  return NextResponse.json({ meta })
+  return NextResponse.json({ meta, logId: logRow?.id ?? null })
 }
