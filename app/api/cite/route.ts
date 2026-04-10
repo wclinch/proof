@@ -221,14 +221,13 @@ export async function POST(req: NextRequest) {
   const ip = forwarded ? forwarded.split(',')[0].trim() : null
   ;(async () => {
     const domain = ip ? await getInstitutionDomain(ip) : null
-    try {
-      await supabase.from('citations_log').insert({
-        input: trimmed,
-        input_type: inputType,
-        title: meta.title,
-        institution_domain: domain,
-      })
-    } catch { /* logging is best-effort */ }
+    const { error } = await supabase.from('citations_log').insert({
+      input: trimmed,
+      input_type: inputType,
+      title: meta.title,
+      institution_domain: domain,
+    })
+    if (error) console.error('citations_log insert failed:', error.message)
   })()
 
   return NextResponse.json({ meta })
