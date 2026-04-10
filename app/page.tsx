@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
 import { formatMLA, formatAPA, formatChicago, formatMLAHtml, formatAPAHtml, formatChicagoHtml } from '@/lib/cite'
@@ -25,11 +25,18 @@ export default function Home() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [sources, setSources] = useState<Source[]>([])
+  const [sources, setSources] = useState<Source[]>(() => {
+    if (typeof window === 'undefined') return []
+    try { return JSON.parse(localStorage.getItem('proof_sources') ?? '[]') } catch { return [] }
+  })
   const [format, setFormat] = useState<Format>('MLA')
   const [copied, setCopied] = useState(false)
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const submitting = useRef(false)
+
+  useEffect(() => {
+    try { localStorage.setItem('proof_sources', JSON.stringify(sources)) } catch {}
+  }, [sources])
 
   async function cite() {
     if (!input.trim() || submitting.current) return
