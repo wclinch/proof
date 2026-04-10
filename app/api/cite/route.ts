@@ -216,19 +216,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 422 })
   }
 
-  // Log asynchronously — don't block the response
+  // Log before returning — fire-and-forget gets killed on Render
   const forwarded = req.headers.get('x-forwarded-for')
   const ip = forwarded ? forwarded.split(',')[0].trim() : null
-  ;(async () => {
-    const domain = ip ? await getInstitutionDomain(ip) : null
-    const { error } = await supabase.from('citations_log').insert({
-      input: trimmed,
-      input_type: inputType,
-      title: meta.title,
-      institution_domain: domain,
-    })
-    if (error) console.error('citations_log insert failed:', error.message)
-  })()
+  const domain = ip ? await getInstitutionDomain(ip) : null
+  const { error: logError } = await supabase.from('citations_log').insert({
+    input: trimmed,
+    input_type: inputType,
+    title: meta.title,
+    institution_domain: domain,
+  })
+  if (logError) console.error('citations_log insert failed:', logError.message)
 
   return NextResponse.json({ meta })
 }
