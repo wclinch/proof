@@ -216,16 +216,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 422 })
   }
 
-  // Log — skip DNS for now to isolate issue
-  console.log('attempting insert, url:', process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 30))
-  const { error: logError } = await supabase.from('citations_log').insert({
-    input: trimmed,
-    input_type: inputType,
-    title: meta.title,
-    institution_domain: null,
-  })
-  if (logError) console.error('insert failed:', logError.message, logError.code)
-  else console.log('insert ok')
+  try {
+    const { error: logError } = await supabase.from('citations_log').insert({
+      input: trimmed,
+      input_type: inputType,
+      title: meta.title,
+      institution_domain: null,
+    })
+    if (logError) {
+      console.error('insert failed:', logError.message, logError.code, logError.details, logError.hint)
+    } else {
+      console.log('insert ok')
+    }
+  } catch (e: unknown) {
+    const err = e as Error & { cause?: unknown }
+    console.error('insert threw:', err.message, 'cause:', JSON.stringify(err.cause))
+  }
 
   return NextResponse.json({ meta })
 }
