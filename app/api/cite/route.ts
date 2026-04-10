@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import dns from 'dns/promises'
 import type { CitationMeta } from '@/lib/cite'
 
 export const runtime = 'nodejs'
@@ -163,40 +162,44 @@ async function fetchURL(url: string): Promise<CitationMeta> {
   }
 }
 
-// ─── Institution from IP ──────────────────────────────────────────────────────
-
-async function getInstitutionDomain(ip: string): Promise<string | null> {
-  try {
-    const hostnames = await dns.reverse(ip)
-    for (const h of hostnames) {
-      for (const suffix of ['.edu', '.gov', '.ac.uk', '.edu.au']) {
-        if (h.endsWith(suffix)) {
-          const parts = h.split('.')
-          return suffix === '.ac.uk' || suffix === '.edu.au'
-            ? parts.slice(-3).join('.')
-            : parts.slice(-2).join('.')
-        }
-      }
-    }
-  } catch { /* not an institutional IP */ }
-  return null
-}
-
 // ─── Geo ──────────────────────────────────────────────────────────────────────
 
-async function fetchGeo(ip: string): Promise<{ country: string | null; region: string | null }> {
+async function fetchGeo(ip: string): Promise<{ country: string | null; region: string | null; city: string | null; org: string | null }> {
   try {
     const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
       headers: { 'User-Agent': 'Proof/1.0 (mailto:proof_official@protonmail.com)' },
       signal: AbortSignal.timeout(3000),
     })
-    if (!res.ok) return { country: null, region: null }
+    if (!res.ok) return { country: null, region: null, city: null, org: null }
     const data = await res.json()
     return {
       country: typeof data.country_name === 'string' ? data.country_name : null,
       region: typeof data.region === 'string' ? data.region : null,
+      city: typeof data.city === 'string' ? data.city : null,
+      org: typeof data.org === 'string' ? data.org : null,
     }
-  } catch { return { country: null, region: null } }
+  } catch { return { country: null, region: null, city: null, org: null } }
+}
+
+// ─── UA parsing ───────────────────────────────────────────────────────────────
+
+function parseUA(ua: string): { browser: string | null; os: string | null; device: string } {
+  const browser =
+    /Edg\//.test(ua) ? 'Edge' :
+    /Chrome\//.test(ua) ? 'Chrome' :
+    /Firefox\//.test(ua) ? 'Firefox' :
+    /Safari\//.test(ua) ? 'Safari' : null
+
+  const os =
+    /iPhone|iPad/.test(ua) ? 'iOS' :
+    /Android/.test(ua) ? 'Android' :
+    /Windows/.test(ua) ? 'Windows' :
+    /Macintosh/.test(ua) ? 'macOS' :
+    /Linux/.test(ua) ? 'Linux' : null
+
+  const device = /iPhone|iPad|Android/.test(ua) ? 'mobile' : 'desktop'
+
+  return { browser, os, device }
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -234,8 +237,16 @@ export async function POST(req: NextRequest) {
   }
 
   const rawIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? ''
-  const userAgent = req.headers.get('user-agent') ?? null
-  const geo = rawIp ? await fetchGeo(rawIp) : { country: null, region: null }
+  const ua = req.headers.get('user-agent') ?? ''
+  const referrer = req.headers.get('referer') ?? null
+  const language = req.headers.get('accept-language')?.split(',')[0].split(';')[0].trim() ?? null
+
+  const geo = rawIp ? await fetchGeo(rawIp) : { country: null, region: null, city: null, org: null }
+  const { browser, os, device } = parseUA(ua)
+
+  const sourceDomain = inputType === 'url'
+    ? (() => { try { return new URL(trimmed.startsWith('http') ? trimmed : `https://${trimmed}`).hostname.replace(/^www\./, '') } catch { return null } })()
+    : null
 
   const { data: logRow, error: logError } = await supabase
     .from('citations_log')
@@ -243,10 +254,16 @@ export async function POST(req: NextRequest) {
       input: trimmed,
       input_type: inputType,
       title: meta.title,
-      institution_domain: null,
       country: geo.country,
       region: geo.region,
-      user_agent: userAgent,
+      city: geo.city,
+      org: geo.org,
+      browser,
+      os,
+      device,
+      referrer,
+      language,
+      source_domain: sourceDomain,
     })
     .select('id')
     .single()
