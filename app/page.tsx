@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
-import { formatMLA, formatAPA, formatChicago } from '@/lib/cite'
+import { formatMLA, formatAPA, formatChicago, formatMLAHtml, formatAPAHtml, formatChicagoHtml } from '@/lib/cite'
 import type { CitationMeta } from '@/lib/cite'
 
 type Format = 'MLA' | 'APA' | 'Chicago'
@@ -73,10 +73,29 @@ export default function Home() {
     : formatChicago(s.meta)
   )
 
-  function copyAll() {
+  async function copyAll() {
     if (!allCitations.length) return
-    const text = `${listTitle}\n\n` + allCitations.join('\n\n')
-    navigator.clipboard.writeText(text)
+
+    const plainText = `${listTitle}\n\n` + allCitations.join('\n\n')
+
+    const htmlCitations = sorted.map(s =>
+      format === 'MLA' ? formatMLAHtml(s.meta)
+      : format === 'APA' ? formatAPAHtml(s.meta)
+      : formatChicagoHtml(s.meta)
+    )
+    const htmlContent = `<html><body><p><strong>${listTitle}</strong></p>${htmlCitations.map(c => `<p style="margin-left:2em;text-indent:-2em;font-family:Georgia,serif;">${c}</p>`).join('')}</body></html>`
+
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/plain': new Blob([plainText], { type: 'text/plain' }),
+          'text/html': new Blob([htmlContent], { type: 'text/html' }),
+        }),
+      ])
+    } catch {
+      await navigator.clipboard.writeText(plainText)
+    }
+
     setCopied(true)
     if (copyTimer.current) clearTimeout(copyTimer.current)
     copyTimer.current = setTimeout(() => setCopied(false), 2000)

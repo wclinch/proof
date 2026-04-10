@@ -29,6 +29,16 @@ function invert(a: string) {
   return first ? `${first} ${last}` : last
 }
 
+// ─── HTML helpers ─────────────────────────────────────────────────────────────
+
+function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function em(s: string): string {
+  return `<em>${esc(s)}</em>`
+}
+
 // ─── MLA 9th ──────────────────────────────────────────────────────────────────
 
 function mlaAuthors(authors: string[]): string {
@@ -159,4 +169,95 @@ export function formatChicago(m: CitationMeta): string {
   const pub = m.publisher ? m.publisher + ', ' : ''
   const doi = m.doi ? ` https://doi.org/${m.doi}.` : ''
   return `${byline}${title} ${pub}${year}.${doi}`
+}
+
+// ─── HTML formatters (for rich-text clipboard copy) ───────────────────────────
+
+export function formatMLAHtml(m: CitationMeta): string {
+  const author = mlaAuthors(m.authors)
+  const byline = author ? esc(author) + '. ' : ''
+  const title  = `"${esc(m.title)}."`
+  const year   = m.year ?? 'n.d.'
+
+  if (m.type === 'journal-article' && m.journal) {
+    const parts: string[] = [byline + title, em(m.journal) + ',']
+    if (m.volume) parts.push(`vol. ${esc(m.volume)},`)
+    if (m.issue)  parts.push(`no. ${esc(m.issue)},`)
+    parts.push(esc(year) + ',')
+    if (m.pages) parts.push(`pp. ${esc(m.pages)}.`)
+    parts.push(m.doi ? `doi:${esc(m.doi)}.` : esc(m.url) + '.')
+    return parts.join(' ')
+  }
+
+  if (m.type === 'website') {
+    const site = m.siteName ? em(m.siteName) + ', ' : ''
+    let date = ''
+    if (m.year) {
+      date = m.day && m.month
+        ? `${parseInt(m.day)} ${shortMonth(m.month)} ${esc(m.year)}, `
+        : esc(year) + ', '
+    }
+    return `${byline}${title} ${site}${date}${esc(m.url)}.`
+  }
+
+  const pub = m.publisher ? esc(m.publisher) + ', ' : ''
+  const doi = m.doi ? ` doi:${esc(m.doi)}.` : ''
+  return `${byline}${em(m.title)} ${pub}${esc(year)}.${doi}`
+}
+
+export function formatAPAHtml(m: CitationMeta): string {
+  const author = apaAuthors(m.authors)
+  const byline = author ? esc(author) + '. ' : ''
+  const year   = m.year
+    ? (m.month
+        ? `(${m.year}, ${longMonth(m.month)}${m.day ? ' ' + parseInt(m.day) : ''}).`
+        : `(${m.year}).`)
+    : '(n.d.).'
+
+  if (m.type === 'journal-article' && m.journal) {
+    const volPart = m.volume
+      ? (m.issue ? `, <em>${esc(m.volume)}</em>(${esc(m.issue)})` : `, <em>${esc(m.volume)}</em>`)
+      : ''
+    const journalFull = em(m.journal) + volPart + (m.pages ? `, ${esc(m.pages)}` : '') + '.'
+    const doi = m.doi ? `https://doi.org/${esc(m.doi)}` : esc(m.url)
+    return [byline + esc(year), esc(m.title) + '.', journalFull, doi].join(' ')
+  }
+
+  if (m.type === 'website') {
+    const site = m.siteName ? esc(m.siteName) + '. ' : ''
+    return `${byline}${esc(year)} ${em(m.title)}. ${site}${esc(m.url)}`
+  }
+
+  const pub = m.publisher ? esc(m.publisher) + '. ' : ''
+  const doi = m.doi ? `https://doi.org/${esc(m.doi)}` : esc(m.url)
+  return `${byline}${esc(year)} ${em(m.title)}. ${pub}${doi}`
+}
+
+export function formatChicagoHtml(m: CitationMeta): string {
+  const author = chicagoAuthors(m.authors)
+  const byline = author ? esc(author) + '. ' : ''
+  const title  = `"${esc(m.title)}."`
+  const year   = m.year ?? 'n.d.'
+
+  if (m.type === 'journal-article' && m.journal) {
+    const vi = m.volume ? (m.issue ? `${m.volume}, no. ${m.issue}` : m.volume) : ''
+    const doi = m.doi ? ` https://doi.org/${esc(m.doi)}.` : m.url ? ` ${esc(m.url)}.` : ''
+    const pages = m.pages ? `: ${esc(m.pages)}.` : '.'
+    return `${byline}${title} ${em(m.journal)}${vi ? ' ' + esc(vi) : ''} (${esc(year)})${pages}${doi}`
+  }
+
+  if (m.type === 'website') {
+    const site = m.siteName ? em(m.siteName) + '. ' : ''
+    let date = ''
+    if (m.year) {
+      date = m.month
+        ? `${longMonth(m.month)}${m.day ? ' ' + parseInt(m.day) + ',' : ','} ${esc(m.year)}. `
+        : esc(year) + '. '
+    }
+    return `${byline}${title} ${site}${date}${esc(m.url)}.`
+  }
+
+  const pub = m.publisher ? esc(m.publisher) + ', ' : ''
+  const doi = m.doi ? ` https://doi.org/${esc(m.doi)}.` : ''
+  return `${byline}${title} ${pub}${esc(year)}.${doi}`
 }
