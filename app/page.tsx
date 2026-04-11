@@ -68,7 +68,11 @@ export default function Home() {
     setLoading(true)
     setError('')
 
-    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean)
+    const lines = raw
+      .split(/[\n,]+/)
+      .flatMap(segment => segment.split(/(?=https?:\/\/)/))
+      .map(l => l.trim())
+      .filter(Boolean)
 
     if (lines.length > 1) {
       const errors = (await Promise.all(lines.map(citeOne))).filter(e => e && e !== 'duplicate') as string[]
@@ -298,7 +302,9 @@ export default function Home() {
               onKeyDown={e => e.key === 'Enter' && cite()}
               onPaste={e => {
                 const text = e.clipboardData.getData('text')
-                if (text.includes('\n')) {
+                const hasMultiple = text.includes('\n') || text.includes(',') ||
+                  (text.match(/https?:\/\//g) ?? []).length > 1
+                if (hasMultiple) {
                   e.preventDefault()
                   citeRaw(text.trim())
                 }
