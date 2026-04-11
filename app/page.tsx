@@ -246,9 +246,9 @@ export default function Home() {
                 </div>
                 <button
                   onClick={() => handleRemoveClick(i)}
-                  style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: confirmDelete === i ? '11px' : '16px', cursor: 'pointer', flexShrink: 0, lineHeight: 1, letterSpacing: confirmDelete === i ? '0.06em' : 0, textTransform: 'uppercase', width: '54px', textAlign: 'right' }}
+                  style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '11px', cursor: 'pointer', flexShrink: 0, lineHeight: 1, letterSpacing: '0.06em', textTransform: 'uppercase', width: '54px', textAlign: 'right' }}
                 >
-                  {confirmDelete === i ? 'confirm?' : '×'}
+                  {confirmDelete === i ? 'confirm?' : '✕'}
                 </button>
               </div>
             ))}
