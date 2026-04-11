@@ -339,6 +339,10 @@ export default function Home() {
           </button>
         </div>
 
+        <p style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em', maxWidth: '680px', width: '100%', marginTop: '-24px', paddingLeft: '4px' }}>
+          URLs or DOIs — one per line, comma-separated, or pasted together
+        </p>
+
         {error && (
           <p style={{ fontSize: '13px', color: '#555', letterSpacing: '0.02em', maxWidth: '680px', width: '100%', marginTop: '-20px', marginBottom: '-20px', paddingLeft: '4px' }}>
             {error}
