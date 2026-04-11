@@ -31,7 +31,10 @@ export default function Home() {
   })
   const [format, setFormat] = useState<Format>('MLA')
   const [copied, setCopied] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
+  const [confirmClear, setConfirmClear] = useState(false)
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const submitting = useRef(false)
 
   useEffect(() => {
@@ -66,9 +69,32 @@ export default function Home() {
     submitting.current = false
   }
 
-  function removeSource(index: number) {
-    setSources(prev => prev.filter((_, i) => i !== index))
-    setCopied(false)
+  function handleRemoveClick(index: number) {
+    if (confirmDelete === index) {
+      setSources(prev => prev.filter((_, i) => i !== index))
+      setConfirmDelete(null)
+      setCopied(false)
+      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+    } else {
+      setConfirmDelete(index)
+      setConfirmClear(false)
+      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+      confirmTimer.current = setTimeout(() => setConfirmDelete(null), 2000)
+    }
+  }
+
+  function handleClearClick() {
+    if (confirmClear) {
+      setSources([])
+      setConfirmClear(false)
+      setCopied(false)
+      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+    } else {
+      setConfirmClear(true)
+      setConfirmDelete(null)
+      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+      confirmTimer.current = setTimeout(() => setConfirmClear(false), 2000)
+    }
   }
 
   const sorted = sortSources(sources)
@@ -219,12 +245,10 @@ export default function Home() {
                   </p>
                 </div>
                 <button
-                  onClick={() => removeSource(i)}
-                  style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '16px', cursor: 'pointer', flexShrink: 0, lineHeight: 1, transition: 'color 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#666')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+                  onClick={() => handleRemoveClick(i)}
+                  style={{ background: 'none', border: 'none', color: confirmDelete === i ? '#c0392b' : '#2a2a2a', fontSize: confirmDelete === i ? '11px' : '16px', cursor: 'pointer', flexShrink: 0, lineHeight: 1, letterSpacing: confirmDelete === i ? '0.04em' : 0, transition: 'color 0.15s, font-size 0.15s' }}
                 >
-                  ×
+                  {confirmDelete === i ? 'confirm?' : '×'}
                 </button>
               </div>
             ))}
@@ -279,12 +303,10 @@ export default function Home() {
                   {sources.length} source{sources.length !== 1 ? 's' : ''}
                 </span>
                 <button
-                  onClick={() => { setSources([]); setCopied(false) }}
-                  style={{ background: 'none', border: 'none', fontSize: '11px', color: '#2a2a2a', cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase', padding: 0, transition: 'color 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#666')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+                  onClick={handleClearClick}
+                  style={{ background: 'none', border: 'none', fontSize: '11px', color: confirmClear ? '#c0392b' : '#2a2a2a', cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase', padding: 0, transition: 'color 0.15s' }}
                 >
-                  Clear
+                  {confirmClear ? 'Confirm?' : 'Clear All'}
                 </button>
               </div>
               <button
