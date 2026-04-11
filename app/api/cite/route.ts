@@ -239,8 +239,6 @@ export async function POST(req: NextRequest) {
   const rawIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? ''
   const ua = req.headers.get('user-agent') ?? ''
   const referrer = req.headers.get('referer') ?? null
-  const language = req.headers.get('accept-language')?.split(',')[0].split(';')[0].trim() ?? null
-
   const geo = rawIp ? await fetchGeo(rawIp) : { country: null, region: null, city: null, org: null }
   const { browser, os, device } = parseUA(ua)
 
@@ -256,13 +254,11 @@ export async function POST(req: NextRequest) {
       title: meta.title,
       country: geo.country,
       region: geo.region,
-      city: geo.city,
       org: geo.org,
       browser,
       os,
       device,
       referrer,
-      language,
       source_domain: sourceDomain,
     })
     .select('id')

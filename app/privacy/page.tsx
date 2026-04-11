@@ -25,7 +25,7 @@ export default function Privacy() {
             When you submit a source, we log the URL or DOI you entered, the title of the source retrieved, and the citation format you used. We do not collect your name, email address, or any other information that identifies you as an individual.
           </p>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            We also collect anonymous technical information associated with each request: your approximate geographic location (country, region, and city), the name of your internet service provider or institution, your browser and operating system, your device type, the referring page that brought you to Proof, and your browser language setting. Your IP address is used only to derive this information and is never stored.
+            We also collect anonymous technical information associated with each request: your approximate geographic location (country and region), the name of your internet service provider or institution, your browser and operating system, your device type, and the referring page that brought you to Proof. Your IP address is used only to derive this information and is never stored.
           </p>
         </div>
 
