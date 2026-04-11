@@ -1,15 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap');
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { color-scheme: dark; }
 
+html, body, nav, footer, main, div, span, p, h1, h2, h3, h4, h5, h6, a, button, input, textarea, select {
+  font-family: 'DM Mono', monospace;
+}
+
 body {
   background: #0a0a0a;
   color: #f0f0f0;
-  font-family: 'DM Mono', monospace;
   -webkit-font-smoothing: antialiased;
 }
-
-input, button, textarea { font-family: inherit; }
 
 ::selection {
   background: #2a2a2a;
