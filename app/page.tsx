@@ -92,10 +92,13 @@ export default function Home() {
       if (!lines.length) return
 
       if (lines.length > 1) {
-        const errors = (await Promise.all(lines.map(citeOne))).filter(e => e && e !== 'duplicate') as string[]
+        const results = await Promise.all(lines.map(citeOne))
+        const duplicates = results.filter(e => e === 'duplicate').length
+        const errors = results.filter(e => e && e !== 'duplicate') as string[]
         setInput('')
         setCopied(false)
         if (errors.length) setError(`${errors.length} source${errors.length > 1 ? 's' : ''} couldn't be added.`)
+        else if (duplicates === lines.length) setError('Already in your list.')
       } else {
         const err = await citeOne(lines[0])
         if (err === 'duplicate') {
@@ -330,7 +333,7 @@ export default function Home() {
               onKeyDown={e => e.key === 'Enter' && cite()}
               onPaste={e => {
                 const text = e.clipboardData.getData('text')
-                if (text.includes(',')) {
+                if (text.includes(',') && (text.match(/https?:\/\//g) ?? []).length > 1) {
                   e.preventDefault()
                   citeRaw(text.trim())
                 }
