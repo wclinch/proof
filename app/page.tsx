@@ -440,7 +440,7 @@ export default function Home() {
                       </p>
                       <button
                         onClick={() => handleRemoveClick(origIndex)}
-                        style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '11px', cursor: 'pointer', flexShrink: 0, letterSpacing: '0.06em', textTransform: 'uppercase', paddingTop: '4px' }}
+                        style={{ background: 'none', border: 'none', color: '#333', fontSize: '13px', cursor: 'pointer', flexShrink: 0, letterSpacing: '0.06em', textTransform: 'uppercase', paddingTop: '2px', width: '60px', textAlign: 'right' }}
                       >
                         {confirmDelete === origIndex ? 'confirm?' : '✕'}
                       </button>
@@ -465,7 +465,7 @@ export default function Home() {
                       </div>
                       <button
                         onClick={() => handleRemoveClick(origIndex)}
-                        style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '11px', cursor: 'pointer', flexShrink: 0, letterSpacing: '0.06em', textTransform: 'uppercase', paddingTop: '4px' }}
+                        style={{ background: 'none', border: 'none', color: '#333', fontSize: '13px', cursor: 'pointer', flexShrink: 0, letterSpacing: '0.06em', textTransform: 'uppercase', paddingTop: '2px', width: '60px', textAlign: 'right' }}
                       >
                         {confirmDelete === origIndex ? 'confirm?' : '✕'}
                       </button>
