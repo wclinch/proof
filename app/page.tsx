@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
-import { formatMLA, formatAPA, formatChicago, formatMLAHtml, formatAPAHtml, formatChicagoHtml } from '@/lib/cite'
+import { formatMLA, formatAPA, formatChicago, formatMLAHtml, formatAPAHtml, formatChicagoHtml, inTextMLA, inTextAPA, inTextChicago } from '@/lib/cite'
 import type { CitationMeta } from '@/lib/cite'
 
 type Format = 'MLA' | 'APA' | 'Chicago'
@@ -46,6 +46,14 @@ export default function Home() {
     submitting.current = true
     setLoading(true)
     setError('')
+
+    const isDuplicate = sources.some(s => s.meta.url === input.trim() || s.meta.doi === input.trim())
+    if (isDuplicate) {
+      setError('This source is already in your list.')
+      setLoading(false)
+      submitting.current = false
+      return
+    }
 
     try {
       const res = await fetch('/api/cite', {
@@ -282,18 +290,25 @@ export default function Home() {
             </div>
 
             {/* Citations */}
-            <div style={{ padding: '16px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {allCitations.map((c, i) => (
-                <p key={i} style={{
-                  fontSize: '14px', color: '#aaa', lineHeight: 1.85,
-                  fontFamily: 'Georgia, serif', letterSpacing: '0.01em',
-                  margin: 0,
-                  paddingLeft: '2em',
-                  textIndent: '-2em',
-                }}>
-                  {c}
-                </p>
-              ))}
+            <div style={{ padding: '16px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {allCitations.map((c, i) => {
+                const s = sorted[i]
+                const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
+                return (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <p style={{
+                      fontSize: '14px', color: '#aaa', lineHeight: 1.85,
+                      fontFamily: 'Georgia, serif', letterSpacing: '0.01em',
+                      margin: 0, paddingLeft: '2em', textIndent: '-2em',
+                    }}>
+                      {c}
+                    </p>
+                    <p style={{ fontSize: '11px', color: '#2a2a2a', margin: 0, letterSpacing: '0.04em', paddingLeft: '2em' }}>
+                      In-text: {inText}
+                    </p>
+                  </div>
+                )
+              })}
             </div>
 
             {/* Copy all */}

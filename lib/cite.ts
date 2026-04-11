@@ -171,6 +171,33 @@ export function formatChicago(m: CitationMeta): string {
   return `${byline}${title} ${pub}${year}.${doi}`
 }
 
+// ─── In-text citations ────────────────────────────────────────────────────────
+
+function shortTitle(m: CitationMeta): string {
+  const words = m.title.split(' ').slice(0, 4).join(' ')
+  return `"${words}${m.title.split(' ').length > 4 ? '...' : ''}"`
+}
+
+export function inTextMLA(m: CitationMeta): string {
+  const last = m.authors[0] ? lastName(m.authors[0]) : null
+  return last ? `(${last})` : `(${shortTitle(m)})`
+}
+
+export function inTextAPA(m: CitationMeta): string {
+  const year = m.year ?? 'n.d.'
+  if (!m.authors.length) return `(${shortTitle(m)}, ${year})`
+  const last = lastName(m.authors[0])
+  if (m.authors.length === 2) return `(${last} & ${lastName(m.authors[1])}, ${year})`
+  if (m.authors.length > 2) return `(${last} et al., ${year})`
+  return `(${last}, ${year})`
+}
+
+export function inTextChicago(m: CitationMeta): string {
+  const year = m.year ?? 'n.d.'
+  const last = m.authors[0] ? lastName(m.authors[0]) : null
+  return last ? `(${last} ${year})` : `(${shortTitle(m)} ${year})`
+}
+
 // ─── HTML formatters (for rich-text clipboard copy) ───────────────────────────
 
 export function formatMLAHtml(m: CitationMeta): string {
