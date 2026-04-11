@@ -117,14 +117,20 @@ export default function Home() {
   async function copyAll() {
     if (!allCitations.length) return
 
-    const plainText = `${listTitle}\n\n` + allCitations.join('\n\n')
+    const inTextLines = sorted.map(s => {
+      const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
+      return `${inText} — ${s.meta.title}`
+    })
+
+    const plainText = `${listTitle}\n\n` + allCitations.join('\n\n') + `\n\n\n— In-text references (do not submit) —\n` + inTextLines.join('\n')
 
     const htmlCitations = sorted.map(s =>
       format === 'MLA' ? formatMLAHtml(s.meta)
       : format === 'APA' ? formatAPAHtml(s.meta)
       : formatChicagoHtml(s.meta)
     )
-    const htmlContent = `<html><body><p><strong>${listTitle}</strong></p>${htmlCitations.map(c => `<p style="margin-left:2em;text-indent:-2em;font-family:Georgia,serif;">${c}</p>`).join('')}</body></html>`
+    const htmlInText = inTextLines.map(l => `<p style="font-family:sans-serif;font-size:12px;color:#888;">${l}</p>`).join('')
+    const htmlContent = `<html><body><p><strong>${listTitle}</strong></p>${htmlCitations.map(c => `<p style="margin-left:2em;text-indent:-2em;font-family:Georgia,serif;">${c}</p>`).join('')}<br><p style="font-family:sans-serif;font-size:11px;color:#aaa;">— In-text references (do not submit) —</p>${htmlInText}</body></html>`
 
     try {
       await navigator.clipboard.write([
@@ -304,7 +310,7 @@ export default function Home() {
                       {c}
                     </p>
                     <p style={{ fontSize: '11px', color: '#2a2a2a', margin: 0, letterSpacing: '0.04em', paddingLeft: '2em' }}>
-                      In-text: {inText}
+                      In-text: {inText} — included in Copy All for reference
                     </p>
                   </div>
                 )
