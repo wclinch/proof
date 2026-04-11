@@ -21,7 +21,7 @@ export default function Nav() {
           fontSize: '15px', fontWeight: 600, letterSpacing: '0.15em',
           textTransform: 'uppercase', color: '#f0f0f0',
         }}>
-          <span style={{ fontFamily: 'monospace', fontSize: '15px', fontWeight: 300, letterSpacing: '-1px' }}>{'{'}</span>
+          <span style={{ fontSize: '15px', fontWeight: 300, letterSpacing: '-1px' }}>{'{'}</span>
           Proof
         </span>
       </Link>
