@@ -5,6 +5,7 @@ import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
 import { formatMLA, formatAPA, formatChicago, formatMLAHtml, formatAPAHtml, formatChicagoHtml, inTextMLA, inTextAPA, inTextChicago } from '@/lib/cite'
 import type { CitationMeta } from '@/lib/cite'
+import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx'
 
 type Format = 'MLA' | 'APA' | 'Chicago'
 
@@ -161,6 +162,53 @@ export default function Home() {
         }).catch(() => {})
       }
     })
+  }
+
+  function htmlToRuns(html: string): TextRun[] {
+    return html.split(/(<em>.*?<\/em>)/g).filter(Boolean).map(part => {
+      const isItalic = part.startsWith('<em>')
+      const text = part
+        .replace(/<\/?em>/g, '')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+      return new TextRun({ text, italics: isItalic, font: 'Times New Roman', size: 24 })
+    })
+  }
+
+  async function downloadDocx() {
+    if (!sorted.length) return
+    const doc = new Document({
+      sections: [{
+        properties: { page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { line: 480, after: 0 },
+            children: [new TextRun({ text: listTitle, font: 'Times New Roman', size: 24 })],
+          }),
+          ...sorted.map(s => {
+            const html = format === 'MLA' ? formatMLAHtml(s.meta)
+              : format === 'APA' ? formatAPAHtml(s.meta)
+              : formatChicagoHtml(s.meta)
+            return new Paragraph({
+              spacing: { line: 480, before: 0, after: 0 },
+              indent: { left: 720, hanging: 720 },
+              children: htmlToRuns(html),
+            })
+          }),
+        ],
+      }],
+    })
+    const blob = await Packer.toBlob(doc)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${listTitle.toLowerCase().replace(/ /g, '-')}.docx`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   const hasSources = sources.length > 0
@@ -358,19 +406,33 @@ export default function Home() {
                   {confirmClear ? 'Confirm?' : 'Clear All'}
                 </button>
               </div>
-              <button
-                onClick={copyAll}
-                style={{
-                  background: copied ? 'none' : '#f0f0f0',
-                  color: copied ? '#555' : '#0a0a0a',
-                  border: copied ? '1px solid #1e1e1e' : 'none',
-                  borderRadius: '6px', padding: '8px 20px',
-                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                  letterSpacing: '0.06em', textTransform: 'uppercase',
-                }}
-              >
-                {copied ? 'Copied' : 'Copy All'}
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={downloadDocx}
+                  style={{
+                    background: 'none', color: '#555',
+                    border: '1px solid #1e1e1e',
+                    borderRadius: '6px', padding: '8px 20px',
+                    fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                  }}
+                >
+                  Export .docx
+                </button>
+                <button
+                  onClick={copyAll}
+                  style={{
+                    background: copied ? 'none' : '#f0f0f0',
+                    color: copied ? '#555' : '#0a0a0a',
+                    border: copied ? '1px solid #1e1e1e' : 'none',
+                    borderRadius: '6px', padding: '8px 20px',
+                    fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                  }}
+                >
+                  {copied ? 'Copied' : 'Copy All'}
+                </button>
+              </div>
             </div>
 
           </div>
