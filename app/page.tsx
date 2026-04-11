@@ -30,6 +30,7 @@ export default function Home() {
     try { return JSON.parse(localStorage.getItem('proof_sources') ?? '[]') } catch { return [] }
   })
   const [format, setFormat] = useState<Format>('MLA')
+  const [view, setView] = useState<'works-cited' | 'in-text'>('works-cited')
   const [copied, setCopied] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
@@ -117,20 +118,25 @@ export default function Home() {
   async function copyAll() {
     if (!allCitations.length) return
 
-    const inTextLines = sorted.map(s => {
-      const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
-      return `${inText} — ${s.meta.title}`
-    })
+    let plainText: string
+    let htmlContent: string
 
-    const plainText = `${listTitle}\n\n` + allCitations.join('\n\n') + `\n\n\n— In-text references (do not submit) —\n` + inTextLines.join('\n')
-
-    const htmlCitations = sorted.map(s =>
-      format === 'MLA' ? formatMLAHtml(s.meta)
-      : format === 'APA' ? formatAPAHtml(s.meta)
-      : formatChicagoHtml(s.meta)
-    )
-    const htmlInText = inTextLines.map(l => `<p style="font-family:sans-serif;font-size:12px;color:#888;">${l}</p>`).join('')
-    const htmlContent = `<html><body><p><strong>${listTitle}</strong></p>${htmlCitations.map(c => `<p style="margin-left:2em;text-indent:-2em;font-family:Georgia,serif;">${c}</p>`).join('')}<br><p style="font-family:sans-serif;font-size:11px;color:#aaa;">— In-text references (do not submit) —</p>${htmlInText}</body></html>`
+    if (view === 'works-cited') {
+      const htmlCitations = sorted.map(s =>
+        format === 'MLA' ? formatMLAHtml(s.meta)
+        : format === 'APA' ? formatAPAHtml(s.meta)
+        : formatChicagoHtml(s.meta)
+      )
+      plainText = `${listTitle}\n\n` + allCitations.join('\n\n')
+      htmlContent = `<html><body><p><strong>${listTitle}</strong></p>${htmlCitations.map(c => `<p style="margin-left:2em;text-indent:-2em;font-family:Georgia,serif;">${c}</p>`).join('')}</body></html>`
+    } else {
+      const inTextLines = sorted.map(s => {
+        const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
+        return `${inText} — ${s.meta.title}`
+      })
+      plainText = `In-Text Citations\n\n` + inTextLines.join('\n')
+      htmlContent = `<html><body><p><strong>In-Text Citations</strong></p>${inTextLines.map(l => `<p style="font-family:Georgia,serif;">${l}</p>`).join('')}</body></html>`
+    }
 
     try {
       await navigator.clipboard.write([
@@ -288,34 +294,56 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Works cited label */}
-            <div style={{ padding: '20px 24px 0', background: '#0d0d0d' }}>
-              <p style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
-                {listTitle}
-              </p>
+            {/* View tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid #1a1a1a' }}>
+              {(['works-cited', 'in-text'] as const).map(v => (
+                <button
+                  key={v}
+                  onClick={() => { setView(v); setCopied(false) }}
+                  style={{
+                    flex: 1, background: view === v ? '#0d0d0d' : 'none',
+                    border: 'none', borderRight: v === 'works-cited' ? '1px solid #1a1a1a' : 'none',
+                    color: view === v ? '#555' : '#222',
+                    fontSize: '11px', fontWeight: 400,
+                    padding: '10px', cursor: 'pointer',
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                    transition: 'color 0.15s',
+                  }}
+                >
+                  {v === 'works-cited' ? listTitle : 'In-Text'}
+                </button>
+              ))}
             </div>
 
-            {/* Citations */}
-            <div style={{ padding: '16px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {allCitations.map((c, i) => {
-                const s = sorted[i]
-                const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
-                return (
-                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <p style={{
-                      fontSize: '14px', color: '#aaa', lineHeight: 1.85,
-                      fontFamily: 'Georgia, serif', letterSpacing: '0.01em',
-                      margin: 0, paddingLeft: '2em', textIndent: '-2em',
-                    }}>
-                      {c}
-                    </p>
-                    <p style={{ fontSize: '11px', color: '#2a2a2a', margin: 0, letterSpacing: '0.04em', paddingLeft: '2em' }}>
-                      In-text: {inText} — included in Copy All for reference
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
+            {view === 'works-cited' ? (
+              <div style={{ padding: '20px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {allCitations.map((c, i) => (
+                  <p key={i} style={{
+                    fontSize: '14px', color: '#aaa', lineHeight: 1.85,
+                    fontFamily: 'Georgia, serif', letterSpacing: '0.01em',
+                    margin: 0, paddingLeft: '2em', textIndent: '-2em',
+                  }}>
+                    {c}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: '20px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {sorted.map((s, i) => {
+                  const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
+                  return (
+                    <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <p style={{ fontSize: '14px', color: '#aaa', fontFamily: 'Georgia, serif', margin: 0, letterSpacing: '0.01em', lineHeight: 1.6 }}>
+                        {inText}
+                      </p>
+                      <p style={{ fontSize: '11px', color: '#333', margin: 0, letterSpacing: '0.03em' }}>
+                        {s.meta.title}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
 
             {/* Copy all */}
             <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #1a1a1a' }}>
