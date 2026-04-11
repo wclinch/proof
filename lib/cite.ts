@@ -286,5 +286,5 @@ export function formatChicagoHtml(m: CitationMeta): string {
 
   const pub = m.publisher ? esc(m.publisher) + ', ' : ''
   const doi = m.doi ? ` https://doi.org/${esc(m.doi)}.` : ''
-  return `${byline}${title} ${pub}${esc(year)}.${doi}`
+  return `${byline}${em(m.title)}. ${pub}${esc(year)}.${doi}`
 }
