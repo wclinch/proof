@@ -138,6 +138,20 @@ export default function Home() {
   const sorted = sortSources(sources)
   const listTitle = format === 'MLA' ? 'Works Cited' : format === 'APA' ? 'References' : 'Bibliography'
 
+  const currentYear = new Date().getFullYear()
+  const peerReviewed = sorted.filter(s => s.meta.doi && (s.meta.type === 'journal-article' || s.meta.type === 'book-chapter')).length
+  const recent = sorted.filter(s => s.meta.year && parseInt(s.meta.year) >= currentYear - 5).length
+  const typeBreakdown = (() => {
+    const journals = sorted.filter(s => s.meta.type === 'journal-article').length
+    const books = sorted.filter(s => s.meta.type === 'book' || s.meta.type === 'book-chapter').length
+    const websites = sorted.filter(s => s.meta.type === 'website' || s.meta.type === 'other').length
+    return [
+      journals ? `${journals} journal${journals !== 1 ? 's' : ''}` : null,
+      books    ? `${books} book${books !== 1 ? 's' : ''}` : null,
+      websites ? `${websites} website${websites !== 1 ? 's' : ''}` : null,
+    ].filter(Boolean).join(', ')
+  })()
+
   const allCitations = sorted.map(s =>
     format === 'MLA' ? formatMLA(s.meta)
     : format === 'APA' ? formatAPA(s.meta)
@@ -468,6 +482,25 @@ export default function Home() {
                 })}
               </div>
             )}
+
+            {/* Source quality */}
+            <div style={{ padding: '10px 24px', borderTop: '1px solid #1a1a1a', display: 'flex', gap: '16px' }}>
+              {peerReviewed > 0 && (
+                <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em' }}>
+                  {peerReviewed}/{sorted.length} peer-reviewed
+                </span>
+              )}
+              {recent > 0 && (
+                <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em' }}>
+                  {recent}/{sorted.length} last 5 yrs
+                </span>
+              )}
+              {typeBreakdown && (
+                <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em' }}>
+                  {typeBreakdown}
+                </span>
+              )}
+            </div>
 
             {/* Copy all */}
             <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #1a1a1a' }}>
