@@ -14,6 +14,7 @@ export default function Nav() {
       justifyContent: 'space-between',
       alignItems: 'center',
       borderBottom: '1px solid #1a1a1a',
+      fontFamily: "'DM Mono', monospace",
     }}>
       <Link href="/" style={{ textDecoration: 'none' }}>
         <span style={{
