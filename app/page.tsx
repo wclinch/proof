@@ -79,27 +79,30 @@ export default function Home() {
     setLoading(true)
     setError('')
 
-    const lines = raw.split(',').map(l => l.trim()).filter(Boolean)
+    try {
+      const lines = raw.split(',').map(l => l.trim()).filter(Boolean)
+      if (!lines.length) return
 
-    if (lines.length > 1) {
-      const errors = (await Promise.all(lines.map(citeOne))).filter(e => e && e !== 'duplicate') as string[]
-      setInput('')
-      setCopied(false)
-      if (errors.length) setError(`${errors.length} source${errors.length > 1 ? 's' : ''} couldn't be added.`)
-    } else {
-      const err = await citeOne(lines[0])
-      if (err === 'duplicate') {
-        setError('This source is already in your list.')
-      } else if (err) {
-        setError(err)
-      } else {
+      if (lines.length > 1) {
+        const errors = (await Promise.all(lines.map(citeOne))).filter(e => e && e !== 'duplicate') as string[]
         setInput('')
         setCopied(false)
+        if (errors.length) setError(`${errors.length} source${errors.length > 1 ? 's' : ''} couldn't be added.`)
+      } else {
+        const err = await citeOne(lines[0])
+        if (err === 'duplicate') {
+          setError('This source is already in your list.')
+        } else if (err) {
+          setError(err)
+        } else {
+          setInput('')
+          setCopied(false)
+        }
       }
+    } finally {
+      setLoading(false)
+      submitting.current = false
     }
-
-    setLoading(false)
-    submitting.current = false
   }
 
   function cite() { citeRaw(input) }
@@ -172,7 +175,12 @@ export default function Home() {
         }),
       ])
     } catch {
-      await navigator.clipboard.writeText(plainText)
+      try {
+        await navigator.clipboard.writeText(plainText)
+      } catch {
+        setError('Clipboard access denied.')
+        return
+      }
     }
 
     setCopied(true)
@@ -203,6 +211,7 @@ export default function Home() {
 
   async function downloadDocx() {
     if (!sorted.length) return
+    try {
 
     let children: Paragraph[]
     let filename: string
@@ -262,6 +271,9 @@ export default function Home() {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+    } catch {
+      setError('Failed to generate .docx file.')
+    }
   }
 
   const hasSources = sources.length > 0
