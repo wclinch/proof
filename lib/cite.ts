@@ -70,6 +70,13 @@ export function formatMLA(m: CitationMeta): string {
     return parts.join(' ')
   }
 
+  if (m.type === 'book-chapter' && m.journal) {
+    const pub = m.publisher ? m.publisher + ', ' : ''
+    const pages = m.pages ? `, pp. ${m.pages}` : ''
+    const doi = m.doi ? ` doi:${m.doi}.` : ''
+    return `${byline}${title} ${m.journal}${pages}. ${pub}${year}.${doi}`
+  }
+
   if (m.type === 'website') {
     const site = m.siteName ? m.siteName + ', ' : ''
     let date = ''
@@ -122,6 +129,13 @@ export function formatAPA(m: CitationMeta): string {
     ].join(' ')
   }
 
+  if (m.type === 'book-chapter' && m.journal) {
+    const pub = m.publisher ? m.publisher + '. ' : ''
+    const pages = m.pages ? `, pp. ${m.pages}` : ''
+    const doi = m.doi ? `https://doi.org/${m.doi}` : m.url
+    return `${byline}${year} ${m.title}. In ${m.journal}${pages}. ${pub}${doi}`
+  }
+
   if (m.type === 'website') {
     const site = m.siteName ? m.siteName + '. ' : ''
     return `${byline}${year} ${m.title}. ${site}${m.url}`
@@ -153,6 +167,13 @@ export function formatChicago(m: CitationMeta): string {
     const doi = m.doi ? ` https://doi.org/${m.doi}.` : m.url ? ` ${m.url}.` : ''
     const pages = m.pages ? `: ${m.pages}.` : '.'
     return `${byline}${title} ${m.journal}${vi ? ' ' + vi : ''} (${year})${pages}${doi}`
+  }
+
+  if (m.type === 'book-chapter' && m.journal) {
+    const pub = m.publisher ? m.publisher + ', ' : ''
+    const pages = m.pages ? `, ${m.pages}` : ''
+    const doi = m.doi ? ` https://doi.org/${m.doi}.` : ''
+    return `${byline}${title} In ${m.journal}${pages}. ${pub}${year}.${doi}`
   }
 
   if (m.type === 'website') {
@@ -216,6 +237,13 @@ export function formatMLAHtml(m: CitationMeta): string {
     return parts.join(' ')
   }
 
+  if (m.type === 'book-chapter' && m.journal) {
+    const pub = m.publisher ? esc(m.publisher) + ', ' : ''
+    const pages = m.pages ? `, pp. ${esc(m.pages)}` : ''
+    const doi = m.doi ? ` doi:${esc(m.doi)}.` : ''
+    return `${byline}${title} ${em(m.journal)}${pages}. ${pub}${esc(year)}.${doi}`
+  }
+
   if (m.type === 'website') {
     const site = m.siteName ? em(m.siteName) + ', ' : ''
     let date = ''
@@ -250,6 +278,13 @@ export function formatAPAHtml(m: CitationMeta): string {
     return [byline + esc(year), esc(m.title) + '.', journalFull, doi].join(' ')
   }
 
+  if (m.type === 'book-chapter' && m.journal) {
+    const pub = m.publisher ? esc(m.publisher) + '. ' : ''
+    const pages = m.pages ? `, pp. ${esc(m.pages)}` : ''
+    const doi = m.doi ? `https://doi.org/${esc(m.doi)}` : esc(m.url)
+    return `${byline}${esc(year)} ${esc(m.title)}. In ${em(m.journal)}${pages}. ${pub}${doi}`
+  }
+
   if (m.type === 'website') {
     const site = m.siteName ? esc(m.siteName) + '. ' : ''
     return `${byline}${esc(year)} ${em(m.title)}. ${site}${esc(m.url)}`
@@ -271,6 +306,13 @@ export function formatChicagoHtml(m: CitationMeta): string {
     const doi = m.doi ? ` https://doi.org/${esc(m.doi)}.` : m.url ? ` ${esc(m.url)}.` : ''
     const pages = m.pages ? `: ${esc(m.pages)}.` : '.'
     return `${byline}${title} ${em(m.journal)}${vi ? ' ' + esc(vi) : ''} (${esc(year)})${pages}${doi}`
+  }
+
+  if (m.type === 'book-chapter' && m.journal) {
+    const pub = m.publisher ? esc(m.publisher) + ', ' : ''
+    const pages = m.pages ? `, ${esc(m.pages)}` : ''
+    const doi = m.doi ? ` https://doi.org/${esc(m.doi)}.` : ''
+    return `${byline}${title} In ${em(m.journal)}${pages}. ${pub}${esc(year)}.${doi}`
   }
 
   if (m.type === 'website') {
