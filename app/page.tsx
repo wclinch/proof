@@ -250,7 +250,7 @@ export default function Home() {
             {sources.map((s, i) => (
               <div key={i} style={{
                 padding: '14px 20px',
-                borderBottom: '1px solid #141414',
+                borderBottom: '1px solid #1a1a1a',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -266,7 +266,7 @@ export default function Home() {
                 </div>
                 <button
                   onClick={() => handleRemoveClick(i)}
-                  style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '11px', cursor: 'pointer', flexShrink: 0, lineHeight: 1, letterSpacing: '0.06em', textTransform: 'uppercase', width: '54px', textAlign: 'right' }}
+                  style={{ background: 'none', border: 'none', color: '#333', fontSize: '11px', cursor: 'pointer', flexShrink: 0, lineHeight: 1, letterSpacing: '0.06em', textTransform: 'uppercase', width: '54px', textAlign: 'right' }}
                 >
                   {confirmDelete === i ? 'confirm?' : '✕'}
                 </button>
@@ -301,12 +301,12 @@ export default function Home() {
                   key={v}
                   onClick={() => { setView(v); setCopied(false) }}
                   style={{
-                    flex: 1, background: view === v ? '#0d0d0d' : 'none',
+                    flex: 1, background: view === v ? '#141414' : 'none',
                     border: 'none', borderRight: v === 'works-cited' ? '1px solid #1a1a1a' : 'none',
-                    color: view === v ? '#555' : '#222',
-                    fontSize: '11px', fontWeight: 400,
-                    padding: '10px', cursor: 'pointer',
-                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                    color: view === v ? '#aaa' : '#2a2a2a',
+                    fontSize: '11px', fontWeight: view === v ? 600 : 400,
+                    padding: '12px', cursor: 'pointer',
+                    letterSpacing: '0.08em', textTransform: 'uppercase',
                     transition: 'color 0.15s',
                   }}
                 >
@@ -336,7 +336,7 @@ export default function Home() {
                       <p style={{ fontSize: '14px', color: '#aaa', fontFamily: 'Georgia, serif', margin: 0, letterSpacing: '0.01em', lineHeight: 1.85 }}>
                         {inText}
                       </p>
-                      <p style={{ fontSize: '11px', color: '#2a2a2a', margin: 0, letterSpacing: '0.03em' }}>
+                      <p style={{ fontSize: '11px', color: '#333', margin: 0, letterSpacing: '0.03em' }}>
                         {s.meta.title}
                       </p>
                     </div>
@@ -348,12 +348,12 @@ export default function Home() {
             {/* Copy all */}
             <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #1a1a1a' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em' }}>
+                <span style={{ fontSize: '11px', color: '#333', letterSpacing: '0.03em' }}>
                   {sources.length} source{sources.length !== 1 ? 's' : ''}
                 </span>
                 <button
                   onClick={handleClearClick}
-                  style={{ background: 'none', border: 'none', fontSize: '11px', color: '#2a2a2a', cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase', padding: 0 }}
+                  style={{ background: 'none', border: 'none', fontSize: '11px', color: '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: 0 }}
                 >
                   {confirmClear ? 'Confirm?' : 'Clear All'}
                 </button>
