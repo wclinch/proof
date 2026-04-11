@@ -79,7 +79,7 @@ export default function Home() {
       setConfirmDelete(index)
       setConfirmClear(false)
       if (confirmTimer.current) clearTimeout(confirmTimer.current)
-      confirmTimer.current = setTimeout(() => setConfirmDelete(null), 2000)
+      confirmTimer.current = setTimeout(() => setConfirmDelete(null), 3000)
     }
   }
 
@@ -93,7 +93,7 @@ export default function Home() {
       setConfirmClear(true)
       setConfirmDelete(null)
       if (confirmTimer.current) clearTimeout(confirmTimer.current)
-      confirmTimer.current = setTimeout(() => setConfirmClear(false), 2000)
+      confirmTimer.current = setTimeout(() => setConfirmClear(false), 3000)
     }
   }
 
@@ -246,7 +246,7 @@ export default function Home() {
                 </div>
                 <button
                   onClick={() => handleRemoveClick(i)}
-                  style={{ background: 'none', border: 'none', color: confirmDelete === i ? '#c0392b' : '#2a2a2a', fontSize: confirmDelete === i ? '11px' : '16px', cursor: 'pointer', flexShrink: 0, lineHeight: 1, letterSpacing: confirmDelete === i ? '0.04em' : 0, transition: 'color 0.15s, font-size 0.15s' }}
+                  style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: confirmDelete === i ? '11px' : '16px', cursor: 'pointer', flexShrink: 0, lineHeight: 1, letterSpacing: confirmDelete === i ? '0.04em' : 0, transition: 'font-size 0.15s' }}
                 >
                   {confirmDelete === i ? 'confirm?' : '×'}
                 </button>
@@ -304,7 +304,7 @@ export default function Home() {
                 </span>
                 <button
                   onClick={handleClearClick}
-                  style={{ background: 'none', border: 'none', fontSize: '11px', color: confirmClear ? '#c0392b' : '#2a2a2a', cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase', padding: 0, transition: 'color 0.15s' }}
+                  style={{ background: 'none', border: 'none', fontSize: '11px', color: '#2a2a2a', cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase', padding: 0 }}
                 >
                   {confirmClear ? 'Confirm?' : 'Clear All'}
                 </button>
