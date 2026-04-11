@@ -219,6 +219,35 @@ export function inTextChicago(m: CitationMeta): string {
   return last ? `(${last} ${year})` : `(${shortTitle(m)} ${year})`
 }
 
+// ─── Source quality stats ─────────────────────────────────────────────────────
+
+export interface SourceStats {
+  peerReviewed: number
+  recent: number
+  total: number
+  typeBreakdown: string
+}
+
+export function computeSourceStats(sources: CitationMeta[], currentYear: number): SourceStats {
+  const total = sources.length
+  const peerReviewed = sources.filter(s =>
+    s.doi && (s.type === 'journal-article' || s.type === 'book-chapter')
+  ).length
+  const recent = sources.filter(s => {
+    const y = parseInt(s.year ?? '', 10)
+    return Number.isFinite(y) && y >= currentYear - 5
+  }).length
+  const journals = sources.filter(s => s.type === 'journal-article').length
+  const books    = sources.filter(s => s.type === 'book' || s.type === 'book-chapter').length
+  const websites = sources.filter(s => s.type === 'website' || s.type === 'other').length
+  const typeBreakdown = [
+    journals ? `${journals} journal${journals !== 1 ? 's' : ''}` : null,
+    books    ? `${books} book${books !== 1 ? 's' : ''}` : null,
+    websites ? `${websites} website${websites !== 1 ? 's' : ''}` : null,
+  ].filter(Boolean).join(', ')
+  return { peerReviewed, recent, total, typeBreakdown }
+}
+
 // ─── HTML formatters (for rich-text clipboard copy) ───────────────────────────
 
 export function formatMLAHtml(m: CitationMeta): string {
