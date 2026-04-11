@@ -299,21 +299,10 @@ export default function Home() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: hasSources ? 'flex-start' : 'center',
-        padding: hasSources ? '48px 20px' : '40px 20px',
+        justifyContent: 'flex-start',
+        padding: '48px 20px',
         gap: '32px',
       }}>
-
-        {!hasSources && (
-          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <h1 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
-              Cite anything.
-            </h1>
-            <p style={{ fontSize: '15px', color: '#555', letterSpacing: '0.02em' }}>
-              MLA. APA. Chicago. No ads, no sign-up, no friction.
-            </p>
-          </div>
-        )}
 
         {/* Input */}
         <div style={{ width: '100%', maxWidth: '680px', display: 'flex', gap: '10px' }}>
@@ -338,7 +327,7 @@ export default function Home() {
                   citeRaw(text.trim())
                 }
               }}
-              placeholder={hasSources ? 'Add sources... (paste multiple links at once)' : 'Paste one or more source links or DOIs...'}
+              placeholder="Paste a source link or DOI..."
               style={{
                 flex: 1, background: 'none', border: 'none', outline: 'none',
                 color: '#f0f0f0', fontSize: '15px', padding: '18px 0',
