@@ -178,33 +178,61 @@ export default function Home() {
 
   async function downloadDocx() {
     if (!sorted.length) return
+
+    let children: Paragraph[]
+    let filename: string
+
+    if (view === 'works-cited') {
+      children = [
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { line: 480, after: 0 },
+          children: [new TextRun({ text: listTitle, font: 'Times New Roman', size: 24 })],
+        }),
+        ...sorted.map(s => {
+          const html = format === 'MLA' ? formatMLAHtml(s.meta)
+            : format === 'APA' ? formatAPAHtml(s.meta)
+            : formatChicagoHtml(s.meta)
+          return new Paragraph({
+            spacing: { line: 480, before: 0, after: 0 },
+            indent: { left: 720, hanging: 720 },
+            children: htmlToRuns(html),
+          })
+        }),
+      ]
+      filename = `${listTitle.toLowerCase().replace(/ /g, '-')}.docx`
+    } else {
+      children = [
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { line: 480, after: 0 },
+          children: [new TextRun({ text: 'In-Text Citations', font: 'Times New Roman', size: 24 })],
+        }),
+        ...sorted.map(s => {
+          const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
+          return new Paragraph({
+            spacing: { line: 480, before: 0, after: 0 },
+            children: [
+              new TextRun({ text: inText, font: 'Times New Roman', size: 24 }),
+              new TextRun({ text: `  —  ${s.meta.title}`, font: 'Times New Roman', size: 24, color: '888888' }),
+            ],
+          })
+        }),
+      ]
+      filename = 'in-text-citations.docx'
+    }
+
     const doc = new Document({
       sections: [{
         properties: { page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
-        children: [
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { line: 480, after: 0 },
-            children: [new TextRun({ text: listTitle, font: 'Times New Roman', size: 24 })],
-          }),
-          ...sorted.map(s => {
-            const html = format === 'MLA' ? formatMLAHtml(s.meta)
-              : format === 'APA' ? formatAPAHtml(s.meta)
-              : formatChicagoHtml(s.meta)
-            return new Paragraph({
-              spacing: { line: 480, before: 0, after: 0 },
-              indent: { left: 720, hanging: 720 },
-              children: htmlToRuns(html),
-            })
-          }),
-        ],
+        children,
       }],
     })
     const blob = await Packer.toBlob(doc)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${listTitle.toLowerCase().replace(/ /g, '-')}.docx`
+    a.download = filename
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
