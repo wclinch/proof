@@ -454,7 +454,7 @@ export default function Home() {
         )}
 
         {/* Project bar */}
-        <div style={{ width: '100%', maxWidth: '980px', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '-16px' }}>
+        <div style={{ width: '100%', maxWidth: '980px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '-16px' }}>
           <input
             value={projectName}
             onChange={e => setProjectName(e.target.value)}
