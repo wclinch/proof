@@ -454,37 +454,38 @@ export default function Home() {
         )}
 
         {/* Project bar */}
-        <div style={{ width: '100%', maxWidth: '980px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', marginTop: '-16px' }}>
+        <div style={{ width: '100%', maxWidth: '980px', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '-16px' }}>
           <input
             value={projectName}
             onChange={e => setProjectName(e.target.value)}
+            onFocus={e => e.currentTarget.select()}
             style={{
-              background: '#111', border: '1px solid #1e1e1e', borderRadius: '8px',
+              background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px',
               outline: 'none', fontSize: '11px', color: '#444',
               letterSpacing: '0.03em', padding: '8px 14px', width: '160px',
             }}
           />
           <button
             onClick={saveProject}
-            style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '8px', fontSize: '11px', color: saved ? '#555' : '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
+            style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', fontSize: '11px', color: saved ? '#555' : '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
           >
             {saved ? 'Saved' : 'Save'}
           </button>
           <button
             onClick={newProject}
-            style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '8px', fontSize: '11px', color: confirmNew ? '#555' : '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
+            style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', fontSize: '11px', color: confirmNew ? '#555' : '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
           >
             {confirmNew ? 'Confirm?' : 'New'}
           </button>
           <div ref={projectListRef} style={{ position: 'relative' }}>
             <button
               onClick={() => setShowProjectList(v => !v)}
-              style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '8px', fontSize: '11px', color: showProjectList ? '#555' : '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
+              style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', fontSize: '11px', color: showProjectList ? '#555' : '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
             >
               Projects
             </button>
             {showProjectList && (
-              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '10px', minWidth: '220px', zIndex: 10, overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '10px', minWidth: '220px', zIndex: 10, overflow: 'hidden' }}>
                 {projects.length === 0 ? (
                   <p style={{ padding: '16px', fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em', margin: 0 }}>No saved projects.</p>
                 ) : (
@@ -492,10 +493,10 @@ export default function Home() {
                     <div
                       key={p.id}
                       onClick={() => { loadProject(p); setShowProjectList(false) }}
-                      style={{ padding: '12px 16px', cursor: 'pointer', fontSize: '12px', color: '#555', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1a1a1a' }}
+                      style={{ padding: '12px 16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1a1a1a' }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                        <span style={{ color: '#555', letterSpacing: '0.02em' }}>{p.name}</span>
+                        <span style={{ fontSize: '12px', color: '#444', letterSpacing: '0.02em' }}>{p.name}</span>
                         <span style={{ fontSize: '10px', color: '#2a2a2a', letterSpacing: '0.02em' }}>{p.sources.length} source{p.sources.length !== 1 ? 's' : ''} · {new Date(p.savedAt).toLocaleDateString()}</span>
                       </div>
                       <button
