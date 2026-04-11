@@ -383,33 +383,6 @@ export default function Home() {
           <div style={{ width: '100%', maxWidth: '980px', display: 'flex', gap: '12px', alignItems: 'stretch' }}>
           <div style={{ flex: 1, minWidth: 0, border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
 
-            {/* Source list */}
-            {sources.map((s, i) => (
-              <div key={s.meta.doi ?? s.meta.url} style={{
-                padding: '14px 20px',
-                borderBottom: '1px solid #1a1a1a',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-              }}>
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: '13px', color: '#e8e8e8', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {s.meta.title}
-                  </p>
-                  <p style={{ fontSize: '11px', color: '#333', margin: 0, letterSpacing: '0.03em' }}>
-                    {[s.meta.authors[0] ?? null, s.meta.year ?? null].filter(Boolean).join(' · ')}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleRemoveClick(i)}
-                  style={{ background: 'none', border: 'none', color: '#333', fontSize: '11px', cursor: 'pointer', flexShrink: 0, lineHeight: 1, letterSpacing: '0.06em', textTransform: 'uppercase', width: '54px', textAlign: 'right' }}
-                >
-                  {confirmDelete === i ? 'confirm?' : '✕'}
-                </button>
-              </div>
-            ))}
-
             {/* Format tabs */}
             <div style={{ display: 'flex', borderBottom: '1px solid #1a1a1a' }}>
               {(['MLA', 'APA', 'Chicago'] as Format[]).map(f => (
@@ -454,28 +427,48 @@ export default function Home() {
 
             {view === 'works-cited' ? (
               <div style={{ padding: '20px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {allCitations.map((c, i) => (
-                  <p key={sorted[i].meta.doi ?? sorted[i].meta.url} style={{
-                    fontSize: '14px', color: '#aaa', lineHeight: 1.85,
-                    fontFamily: 'Georgia, serif', letterSpacing: '0.01em',
-                    margin: 0, paddingLeft: '2em', textIndent: '-2em',
-                  }}>
-                    {c}
-                  </p>
-                ))}
+                {allCitations.map((c, i) => {
+                  const origIndex = sources.findIndex(src => src === sorted[i])
+                  return (
+                    <div key={sorted[i].meta.doi ?? sorted[i].meta.url} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                      <p style={{
+                        flex: 1, fontSize: '14px', color: '#aaa', lineHeight: 1.85,
+                        fontFamily: 'Georgia, serif', letterSpacing: '0.01em',
+                        margin: 0, paddingLeft: '2em', textIndent: '-2em',
+                      }}>
+                        {c}
+                      </p>
+                      <button
+                        onClick={() => handleRemoveClick(origIndex)}
+                        style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '11px', cursor: 'pointer', flexShrink: 0, letterSpacing: '0.06em', textTransform: 'uppercase', paddingTop: '4px' }}
+                      >
+                        {confirmDelete === origIndex ? 'confirm?' : '✕'}
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             ) : (
               <div style={{ padding: '20px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {sorted.map((s, i) => {
                   const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
+                  const origIndex = sources.findIndex(src => src === s)
                   return (
-                    <div key={s.meta.doi ?? s.meta.url} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <p style={{ fontSize: '14px', color: '#aaa', fontFamily: 'Georgia, serif', margin: 0, letterSpacing: '0.01em', lineHeight: 1.85 }}>
-                        {inText}
-                      </p>
-                      <p style={{ fontSize: '11px', color: '#333', margin: '0 0 2px', letterSpacing: '0.03em' }}>
-                        {s.meta.title}
-                      </p>
+                    <div key={s.meta.doi ?? s.meta.url} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <p style={{ fontSize: '14px', color: '#aaa', fontFamily: 'Georgia, serif', margin: 0, letterSpacing: '0.01em', lineHeight: 1.85 }}>
+                          {inText}
+                        </p>
+                        <p style={{ fontSize: '11px', color: '#333', margin: 0, letterSpacing: '0.03em' }}>
+                          {s.meta.title}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveClick(origIndex)}
+                        style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '11px', cursor: 'pointer', flexShrink: 0, letterSpacing: '0.06em', textTransform: 'uppercase', paddingTop: '4px' }}
+                      >
+                        {confirmDelete === origIndex ? 'confirm?' : '✕'}
+                      </button>
                     </div>
                   )
                 })}
