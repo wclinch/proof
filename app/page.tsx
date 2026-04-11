@@ -248,7 +248,7 @@ export default function Home() {
 
             {/* Source list */}
             {sources.map((s, i) => (
-              <div key={i} style={{
+              <div key={s.meta.doi ?? s.meta.url} style={{
                 padding: '14px 20px',
                 borderBottom: '1px solid #1a1a1a',
                 display: 'flex',
@@ -318,7 +318,7 @@ export default function Home() {
             {view === 'works-cited' ? (
               <div style={{ padding: '20px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {allCitations.map((c, i) => (
-                  <p key={i} style={{
+                  <p key={sorted[i].meta.doi ?? sorted[i].meta.url} style={{
                     fontSize: '14px', color: '#aaa', lineHeight: 1.85,
                     fontFamily: 'Georgia, serif', letterSpacing: '0.01em',
                     margin: 0, paddingLeft: '2em', textIndent: '-2em',
@@ -332,7 +332,7 @@ export default function Home() {
                 {sorted.map((s, i) => {
                   const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
                   return (
-                    <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div key={s.meta.doi ?? s.meta.url} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <p style={{ fontSize: '14px', color: '#aaa', fontFamily: 'Georgia, serif', margin: 0, letterSpacing: '0.01em', lineHeight: 1.85 }}>
                         {inText}
                       </p>

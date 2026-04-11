@@ -48,7 +48,7 @@ async function fetchDOI(doi: string): Promise<CitationMeta> {
     rawType === 'book-chapter' ? 'book-chapter' : 'other'
 
   return {
-    title: w.title?.[0] ?? 'Untitled',
+    title: w.title?.[0]?.trim() ?? 'Untitled',
     authors,
     year,
     month,

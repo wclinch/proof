@@ -24,10 +24,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({}, { status: 400 })
   }
 
-  await supabase
+  const { error } = await supabase
     .from('citations_log')
     .update({ format_copied: format })
     .eq('id', logId)
+
+  if (error) console.error('log-copy error:', error.message)
 
   return NextResponse.json({})
 }
