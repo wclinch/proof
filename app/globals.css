@@ -5,7 +5,7 @@ html { color-scheme: dark; }
 body {
   background: #0a0a0a;
   color: #f0f0f0;
-  font-family: inherit;
+  font-family: 'DM Mono', monospace;
   -webkit-font-smoothing: antialiased;
 }
 
