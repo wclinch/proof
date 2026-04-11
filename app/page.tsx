@@ -169,14 +169,14 @@ export default function Home() {
         : formatChicagoHtml(s.meta)
       )
       plainText = `${listTitle}\n\n` + allCitations.join('\n\n')
-      htmlContent = `<html><body><p><strong>${listTitle}</strong></p>${htmlCitations.map(c => `<p style="margin-left:2em;text-indent:-2em;font-family:Georgia,serif;">${c}</p>`).join('')}</body></html>`
+      htmlContent = `<html><body><p style="text-align:center;font-family:'Times New Roman',serif;font-size:12pt;">${listTitle}</p>${htmlCitations.map(c => `<p style="margin-left:2em;text-indent:-2em;font-family:'Times New Roman',serif;font-size:12pt;">${c}</p>`).join('')}</body></html>`
     } else {
       const inTextLines = sorted.map(s => {
         const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
         return `${inText} — ${s.meta.title}`
       })
       plainText = `In-Text Citations\n\n` + inTextLines.join('\n')
-      htmlContent = `<html><body><p><strong>In-Text Citations</strong></p>${inTextLines.map(l => `<p style="font-family:Georgia,serif;">${l}</p>`).join('')}</body></html>`
+      htmlContent = `<html><body><p style="text-align:center;font-family:'Times New Roman',serif;font-size:12pt;">In-Text Citations</p>${inTextLines.map(l => `<p style="font-family:'Times New Roman',serif;font-size:12pt;">${l}</p>`).join('')}</body></html>`
     }
 
     try {
