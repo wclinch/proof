@@ -43,36 +43,49 @@ export default function Home() {
     try { localStorage.setItem('proof_sources', JSON.stringify(sources)) } catch {}
   }, [sources])
 
+  async function citeOne(raw: string): Promise<string | null> {
+    const trimmed = raw.trim()
+    if (!trimmed) return null
+    const isDuplicate = sources.some(s => s.meta.url === trimmed || s.meta.doi === trimmed)
+    if (isDuplicate) return 'duplicate'
+    try {
+      const res = await fetch('/api/cite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: trimmed }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) return data.error ?? 'Could not retrieve metadata.'
+      setSources(prev => [...prev, { meta: data.meta, logId: data.logId ?? null }])
+      return null
+    } catch {
+      return 'Something went wrong.'
+    }
+  }
+
   async function cite() {
     if (!input.trim() || submitting.current) return
     submitting.current = true
     setLoading(true)
     setError('')
 
-    const isDuplicate = sources.some(s => s.meta.url === input.trim() || s.meta.doi === input.trim())
-    if (isDuplicate) {
-      setError('This source is already in your list.')
-      setLoading(false)
-      submitting.current = false
-      return
-    }
+    const lines = input.split('\n').map(l => l.trim()).filter(Boolean)
 
-    try {
-      const res = await fetch('/api/cite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: input.trim() }),
-      })
-      const data = await res.json()
-      if (!res.ok || data.error) {
-        setError(data.error ?? 'Could not retrieve metadata. Check the DOI or URL and try again.')
+    if (lines.length > 1) {
+      const errors = (await Promise.all(lines.map(citeOne))).filter(e => e && e !== 'duplicate') as string[]
+      setInput('')
+      setCopied(false)
+      if (errors.length) setError(`${errors.length} source${errors.length > 1 ? 's' : ''} couldn't be added.`)
+    } else {
+      const err = await citeOne(lines[0])
+      if (err === 'duplicate') {
+        setError('This source is already in your list.')
+      } else if (err) {
+        setError(err)
       } else {
-        setSources(prev => [...prev, { meta: data.meta, logId: data.logId ?? null }])
         setInput('')
         setCopied(false)
       }
-    } catch {
-      setError('Something went wrong. Try again.')
     }
 
     setLoading(false)
@@ -408,11 +421,11 @@ export default function Home() {
                 {sorted.map((s, i) => {
                   const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
                   return (
-                    <div key={s.meta.doi ?? s.meta.url} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div key={s.meta.doi ?? s.meta.url} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <p style={{ fontSize: '14px', color: '#aaa', fontFamily: 'Georgia, serif', margin: 0, letterSpacing: '0.01em', lineHeight: 1.85 }}>
                         {inText}
                       </p>
-                      <p style={{ fontSize: '11px', color: '#333', margin: 0, letterSpacing: '0.03em' }}>
+                      <p style={{ fontSize: '11px', color: '#333', margin: '0 0 2px', letterSpacing: '0.03em' }}>
                         {s.meta.title}
                       </p>
                     </div>
