@@ -43,8 +43,7 @@ export default function Home() {
     try { localStorage.setItem('proof_sources', JSON.stringify(sources)) } catch {}
   }, [sources])
 
-  async function citeOne(raw: string): Promise<string | null> {
-    const trimmed = raw.trim()
+  async function citeOne(trimmed: string): Promise<string | null> {
     if (!trimmed) return null
     const isDuplicate = sources.some(s => s.meta.url === trimmed || s.meta.doi === trimmed)
     if (isDuplicate) return 'duplicate'
@@ -63,13 +62,13 @@ export default function Home() {
     }
   }
 
-  async function cite() {
-    if (!input.trim() || submitting.current) return
+  async function citeRaw(raw: string) {
+    if (!raw.trim() || submitting.current) return
     submitting.current = true
     setLoading(true)
     setError('')
 
-    const lines = input.split('\n').map(l => l.trim()).filter(Boolean)
+    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean)
 
     if (lines.length > 1) {
       const errors = (await Promise.all(lines.map(citeOne))).filter(e => e && e !== 'duplicate') as string[]
@@ -91,6 +90,8 @@ export default function Home() {
     setLoading(false)
     submitting.current = false
   }
+
+  function cite() { citeRaw(input) }
 
   function handleRemoveClick(index: number) {
     if (confirmDelete === index) {
@@ -295,7 +296,14 @@ export default function Home() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && cite()}
-              placeholder={hasSources ? 'Add another source...' : 'Paste a source link or DOI...'}
+              onPaste={e => {
+                const text = e.clipboardData.getData('text')
+                if (text.includes('\n')) {
+                  e.preventDefault()
+                  citeRaw(text.trim())
+                }
+              }}
+              placeholder={hasSources ? 'Add sources... (paste multiple links at once)' : 'Paste one or more source links or DOIs...'}
               style={{
                 flex: 1, background: 'none', border: 'none', outline: 'none',
                 color: '#f0f0f0', fontSize: '15px', padding: '18px 0',
