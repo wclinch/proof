@@ -63,6 +63,7 @@ export default function Home() {
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const submitting = useRef(false)
   const inProgress = useRef(new Set<string>())
+  const projectListRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     return () => {
@@ -71,6 +72,17 @@ export default function Home() {
       if (savedTimer.current) clearTimeout(savedTimer.current)
     }
   }, [])
+
+  useEffect(() => {
+    if (!showProjectList) return
+    function handleClick(e: MouseEvent) {
+      if (projectListRef.current && !projectListRef.current.contains(e.target as Node)) {
+        setShowProjectList(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showProjectList])
 
   useEffect(() => {
     try { localStorage.setItem('proof_sources', JSON.stringify(sources)) } catch {}
@@ -442,45 +454,60 @@ export default function Home() {
         )}
 
         {/* Project bar */}
-        <div style={{ width: '100%', maxWidth: '980px', display: 'flex', alignItems: 'center', gap: '12px', marginTop: '-16px' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
-            <input
-              value={projectName}
-              onChange={e => setProjectName(e.target.value)}
-              onFocus={() => setShowProjectList(true)}
-              onBlur={() => setTimeout(() => setShowProjectList(false), 150)}
-              style={{ background: 'none', border: 'none', outline: 'none', fontSize: '11px', color: '#333', letterSpacing: '0.03em', width: '100%', cursor: 'text' }}
-            />
-            {showProjectList && projects.length > 0 && (
-              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', minWidth: '200px', zIndex: 10, overflow: 'hidden' }}>
-                {projects.map(p => (
-                  <div
-                    key={p.id}
-                    onMouseDown={() => loadProject(p)}
-                    style={{ padding: '10px 14px', cursor: 'pointer', fontSize: '12px', color: '#555', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1a1a1a' }}
-                  >
-                    <span>{p.name}</span>
-                    <button
-                      onMouseDown={e => deleteProject(p.id, e)}
-                      style={{ background: 'none', border: 'none', color: '#2a2a2a', cursor: 'pointer', fontSize: '10px', padding: '0 0 0 8px' }}
-                    >✕</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        <div style={{ width: '100%', maxWidth: '980px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', marginTop: '-16px' }}>
+          <input
+            value={projectName}
+            onChange={e => setProjectName(e.target.value)}
+            style={{
+              background: '#111', border: '1px solid #1e1e1e', borderRadius: '8px',
+              outline: 'none', fontSize: '11px', color: '#444',
+              letterSpacing: '0.03em', padding: '8px 14px', width: '160px',
+            }}
+          />
           <button
             onClick={saveProject}
-            style={{ background: 'none', border: 'none', fontSize: '11px', color: saved ? '#555' : '#2a2a2a', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: 0, flexShrink: 0 }}
+            style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '8px', fontSize: '11px', color: saved ? '#555' : '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
           >
             {saved ? 'Saved' : 'Save'}
           </button>
           <button
             onClick={newProject}
-            style={{ background: 'none', border: 'none', fontSize: '11px', color: confirmNew ? '#555' : '#2a2a2a', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: 0, flexShrink: 0 }}
+            style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '8px', fontSize: '11px', color: confirmNew ? '#555' : '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
           >
             {confirmNew ? 'Confirm?' : 'New'}
           </button>
+          <div ref={projectListRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowProjectList(v => !v)}
+              style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '8px', fontSize: '11px', color: showProjectList ? '#555' : '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
+            >
+              Projects
+            </button>
+            {showProjectList && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '10px', minWidth: '220px', zIndex: 10, overflow: 'hidden' }}>
+                {projects.length === 0 ? (
+                  <p style={{ padding: '16px', fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em', margin: 0 }}>No saved projects.</p>
+                ) : (
+                  projects.map(p => (
+                    <div
+                      key={p.id}
+                      onClick={() => { loadProject(p); setShowProjectList(false) }}
+                      style={{ padding: '12px 16px', cursor: 'pointer', fontSize: '12px', color: '#555', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1a1a1a' }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <span style={{ color: '#555', letterSpacing: '0.02em' }}>{p.name}</span>
+                        <span style={{ fontSize: '10px', color: '#2a2a2a', letterSpacing: '0.02em' }}>{p.sources.length} source{p.sources.length !== 1 ? 's' : ''} · {new Date(p.savedAt).toLocaleDateString()}</span>
+                      </div>
+                      <button
+                        onClick={e => deleteProject(p.id, e)}
+                        style={{ background: 'none', border: 'none', color: '#2a2a2a', cursor: 'pointer', fontSize: '11px', padding: '0 0 0 12px', flexShrink: 0 }}
+                      >✕</button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Sources + output */}
