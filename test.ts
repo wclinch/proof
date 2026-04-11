@@ -104,6 +104,28 @@ const twoAuthors: CitationMeta = {
   authors: ['Smith, John', 'Doe, Jane'],
 }
 
+const bookChapter: CitationMeta = {
+  title: 'Neural Networks in Practice',
+  authors: ['Patel, Raj'],
+  year: '2021',
+  month: null,
+  day: null,
+  journal: 'Handbook of Machine Learning',
+  publisher: 'MIT Press',
+  volume: null,
+  issue: null,
+  pages: '45–78',
+  doi: '10.7551/ml/chapter3',
+  url: 'https://doi.org/10.7551/ml/chapter3',
+  siteName: null,
+  type: 'book-chapter',
+}
+
+const noFirstName: CitationMeta = {
+  ...journal,
+  authors: ['Aristotle'],
+}
+
 // ─── MLA ─────────────────────────────────────────────────────────────────────
 
 describe('formatMLA', () => {
@@ -312,5 +334,63 @@ describe('HTML formatters produce valid HTML strings', () => {
     assert.ok(!result.includes('<script>'), `unescaped in: ${result}`)
     assert.ok(result.includes('&lt;script&gt;'), `not escaped in: ${result}`)
     assert.ok(result.includes('&amp;'), `& not escaped in: ${result}`)
+  })
+
+  it('MLA HTML book-chapter has em tag for book title', () => {
+    const result = formatMLAHtml(bookChapter)
+    assert.ok(result.includes('<em>Handbook of Machine Learning</em>'), `got: ${result}`)
+    assert.ok(result.includes('"Neural Networks in Practice."'), `got: ${result}`)
+  })
+
+  it('APA HTML book-chapter has em tag for book title', () => {
+    const result = formatAPAHtml(bookChapter)
+    assert.ok(result.includes('<em>Handbook of Machine Learning</em>'), `got: ${result}`)
+  })
+
+  it('Chicago HTML book-chapter has em tag for book title', () => {
+    const result = formatChicagoHtml(bookChapter)
+    assert.ok(result.includes('<em>Handbook of Machine Learning</em>'), `got: ${result}`)
+    assert.ok(result.includes('"Neural Networks in Practice."'), `got: ${result}`)
+  })
+})
+
+// ─── Book chapter plain text ──────────────────────────────────────────────────
+
+describe('book-chapter formatting', () => {
+  it('MLA — chapter in quotes, book plain, pages, doi', () => {
+    const result = formatMLA(bookChapter)
+    assert.ok(result.includes('"Neural Networks in Practice."'), `got: ${result}`)
+    assert.ok(result.includes('Handbook of Machine Learning'), `got: ${result}`)
+    assert.ok(result.includes('pp. 45–78'), `got: ${result}`)
+    assert.ok(result.includes('doi:10.7551/ml/chapter3'), `got: ${result}`)
+    assert.ok(!result.includes('undefined'), `got: ${result}`)
+  })
+
+  it('APA — chapter plain, In book italicized (plain text has no italics), pages, doi', () => {
+    const result = formatAPA(bookChapter)
+    assert.ok(result.includes('Neural Networks in Practice'), `got: ${result}`)
+    assert.ok(result.includes('In Handbook of Machine Learning'), `got: ${result}`)
+    assert.ok(result.includes('pp. 45–78'), `got: ${result}`)
+    assert.ok(result.includes('https://doi.org/10.7551/ml/chapter3'), `got: ${result}`)
+    assert.ok(!result.includes('undefined'), `got: ${result}`)
+  })
+
+  it('Chicago — chapter in quotes, In book, pages, doi', () => {
+    const result = formatChicago(bookChapter)
+    assert.ok(result.includes('"Neural Networks in Practice."'), `got: ${result}`)
+    assert.ok(result.includes('In Handbook of Machine Learning'), `got: ${result}`)
+    assert.ok(result.includes('45–78'), `got: ${result}`)
+    assert.ok(result.includes('https://doi.org/10.7551/ml/chapter3'), `got: ${result}`)
+    assert.ok(!result.includes('undefined'), `got: ${result}`)
+  })
+})
+
+// ─── APA author edge cases ────────────────────────────────────────────────────
+
+describe('APA author with no first name', () => {
+  it('no trailing comma when initials are empty', () => {
+    const result = formatAPA(noFirstName)
+    assert.ok(!result.includes('Aristotle,'), `trailing comma in: ${result}`)
+    assert.ok(result.includes('Aristotle'), `got: ${result}`)
   })
 })
