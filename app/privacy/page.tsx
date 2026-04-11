@@ -22,7 +22,7 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #141414', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>Information we collect</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            When you submit a source, we log the URL or DOI you entered, the title of the source retrieved, and the citation format you used. We do not collect your name, email address, or any other information that identifies you as an individual.
+            When you submit a source, we log the URL or DOI you entered, the title of the source retrieved, the publisher of academic sources (where available), and the citation format you copied. We do not collect your name, email address, or any other information that identifies you as an individual.
           </p>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
             We also collect anonymous technical information associated with each request: your approximate geographic location (country and region), the name of your internet service provider or institution, your browser and operating system, your device type, and the referring page that brought you to Proof. Your IP address is used only to derive this information and is never stored.
@@ -43,6 +43,9 @@ export default function Privacy() {
           <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>Information we do not collect</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
             Proof does not require an account. We do not collect passwords, payment information, or contact details. We do not use cookies or any cross-site tracking technologies. We do not track your activity across other websites or between sessions on Proof.
+          </p>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+            Your sources, notes, and saved projects are stored locally in your browser using localStorage. This data never leaves your device and is never sent to our servers.
           </p>
         </div>
 

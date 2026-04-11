@@ -14,6 +14,14 @@ interface Source {
   logId: string | null
 }
 
+interface SavedProject {
+  id: string
+  name: string
+  sources: Source[]
+  notes: string
+  savedAt: number
+}
+
 function sortSources(sources: Source[]): Source[] {
   return [...sources].sort((a, b) => {
     const keyA = a.meta.authors[0]?.split(',')[0].trim() || a.meta.title
@@ -36,11 +44,23 @@ export default function Home() {
     if (typeof window === 'undefined') return ''
     return localStorage.getItem('proof_notes') ?? ''
   })
+  const [projects, setProjects] = useState<SavedProject[]>(() => {
+    if (typeof window === 'undefined') return []
+    try { return JSON.parse(localStorage.getItem('proof_projects') ?? '[]') } catch { return [] }
+  })
+  const [projectName, setProjectName] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'Untitled'
+    return localStorage.getItem('proof_project_name') ?? 'Untitled'
+  })
+  const [showProjectList, setShowProjectList] = useState(false)
+  const [confirmNew, setConfirmNew] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [copied, setCopied] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const submitting = useRef(false)
   const inProgress = useRef(new Set<string>())
 
@@ -48,6 +68,7 @@ export default function Home() {
     return () => {
       if (copyTimer.current) clearTimeout(copyTimer.current)
       if (confirmTimer.current) clearTimeout(confirmTimer.current)
+      if (savedTimer.current) clearTimeout(savedTimer.current)
     }
   }, [])
 
@@ -58,6 +79,60 @@ export default function Home() {
   useEffect(() => {
     try { localStorage.setItem('proof_notes', notes) } catch {}
   }, [notes])
+
+  useEffect(() => {
+    try { localStorage.setItem('proof_projects', JSON.stringify(projects)) } catch {}
+  }, [projects])
+
+  useEffect(() => {
+    try { localStorage.setItem('proof_project_name', projectName) } catch {}
+  }, [projectName])
+
+  function saveProject() {
+    const name = projectName.trim() || 'Untitled'
+    setProjectName(name)
+    const project: SavedProject = {
+      id: projects.find(p => p.name === name)?.id ?? crypto.randomUUID(),
+      name,
+      sources,
+      notes,
+      savedAt: Date.now(),
+    }
+    setProjects(prev => {
+      const idx = prev.findIndex(p => p.name === name)
+      return idx >= 0 ? prev.map((p, i) => i === idx ? project : p) : [...prev, project]
+    })
+    setSaved(true)
+    if (savedTimer.current) clearTimeout(savedTimer.current)
+    savedTimer.current = setTimeout(() => setSaved(false), 2000)
+  }
+
+  function loadProject(p: SavedProject) {
+    setSources(p.sources)
+    setNotes(p.notes)
+    setProjectName(p.name)
+    setShowProjectList(false)
+    setConfirmNew(false)
+  }
+
+  function newProject() {
+    if (confirmNew) {
+      setSources([])
+      setNotes('')
+      setProjectName('Untitled')
+      setConfirmNew(false)
+      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+    } else {
+      setConfirmNew(true)
+      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+      confirmTimer.current = setTimeout(() => setConfirmNew(false), 3000)
+    }
+  }
+
+  function deleteProject(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    setProjects(prev => prev.filter(p => p.id !== id))
+  }
 
   async function citeOne(trimmed: string): Promise<string | null> {
     if (!trimmed) return null
@@ -365,6 +440,48 @@ export default function Home() {
             {error}
           </p>
         )}
+
+        {/* Project bar */}
+        <div style={{ width: '100%', maxWidth: '980px', display: 'flex', alignItems: 'center', gap: '12px', marginTop: '-16px' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <input
+              value={projectName}
+              onChange={e => setProjectName(e.target.value)}
+              onFocus={() => setShowProjectList(true)}
+              onBlur={() => setTimeout(() => setShowProjectList(false), 150)}
+              style={{ background: 'none', border: 'none', outline: 'none', fontSize: '11px', color: '#333', letterSpacing: '0.03em', width: '100%', cursor: 'text' }}
+            />
+            {showProjectList && projects.length > 0 && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', minWidth: '200px', zIndex: 10, overflow: 'hidden' }}>
+                {projects.map(p => (
+                  <div
+                    key={p.id}
+                    onMouseDown={() => loadProject(p)}
+                    style={{ padding: '10px 14px', cursor: 'pointer', fontSize: '12px', color: '#555', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1a1a1a' }}
+                  >
+                    <span>{p.name}</span>
+                    <button
+                      onMouseDown={e => deleteProject(p.id, e)}
+                      style={{ background: 'none', border: 'none', color: '#2a2a2a', cursor: 'pointer', fontSize: '10px', padding: '0 0 0 8px' }}
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={saveProject}
+            style={{ background: 'none', border: 'none', fontSize: '11px', color: saved ? '#555' : '#2a2a2a', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: 0, flexShrink: 0 }}
+          >
+            {saved ? 'Saved' : 'Save'}
+          </button>
+          <button
+            onClick={newProject}
+            style={{ background: 'none', border: 'none', fontSize: '11px', color: confirmNew ? '#555' : '#2a2a2a', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: 0, flexShrink: 0 }}
+          >
+            {confirmNew ? 'Confirm?' : 'New'}
+          </button>
+        </div>
 
         {/* Sources + output */}
         <div style={{ width: '100%', maxWidth: '980px', display: 'flex', gap: '12px', alignItems: 'stretch' }}>
