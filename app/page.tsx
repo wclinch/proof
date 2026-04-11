@@ -274,9 +274,19 @@ export default function Home() {
 
             {/* Copy all */}
             <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #1a1a1a' }}>
-              <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em' }}>
-                {sources.length} source{sources.length !== 1 ? 's' : ''}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em' }}>
+                  {sources.length} source{sources.length !== 1 ? 's' : ''}
+                </span>
+                <button
+                  onClick={() => { setSources([]); setCopied(false) }}
+                  style={{ background: 'none', border: 'none', fontSize: '11px', color: '#2a2a2a', cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase', padding: 0, transition: 'color 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#666')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+                >
+                  Clear
+                </button>
+              </div>
               <button
                 onClick={copyAll}
                 style={{
