@@ -60,6 +60,13 @@ export default function Footer() {
             ← Home
           </Link>
         )}
+        <Link href="/about"
+          style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#555')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+        >
+          About
+        </Link>
         <Link href="/privacy"
           style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}
