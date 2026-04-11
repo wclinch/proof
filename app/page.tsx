@@ -368,9 +368,15 @@ export default function Home() {
         )}
 
         {/* Sources + output */}
-        {hasSources && (
-          <div style={{ width: '100%', maxWidth: '980px', display: 'flex', gap: '12px', alignItems: 'stretch' }}>
+        <div style={{ width: '100%', maxWidth: '980px', display: 'flex', gap: '12px', alignItems: 'stretch' }}>
           <div style={{ flex: 1, minWidth: 0, border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
+
+          {!hasSources && (
+            <div style={{ padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <p style={{ fontSize: '13px', color: '#2a2a2a', letterSpacing: '0.02em' }}>Nothing here yet.</p>
+              <p style={{ fontSize: '11px', color: '#222', letterSpacing: '0.02em' }}>Paste a source above to get started.</p>
+            </div>
+          )}
 
             {/* Format tabs */}
             <div style={{ display: 'flex', borderBottom: '1px solid #1a1a1a' }}>
@@ -528,7 +534,6 @@ export default function Home() {
           </div>
 
           </div>
-        )}
       </main>
 
       <Footer />
