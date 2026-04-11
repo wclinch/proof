@@ -22,6 +22,13 @@ interface SavedProject {
   savedAt: number
 }
 
+function nextProjectName(projects: SavedProject[]): string {
+  const existing = new Set(projects.map(p => p.name))
+  let n = 1
+  while (existing.has(`your-proof-${n}`)) n++
+  return `your-proof-${n}`
+}
+
 function sortSources(sources: Source[]): Source[] {
   return [...sources].sort((a, b) => {
     const keyA = a.meta.authors[0]?.split(',')[0].trim() || a.meta.title
@@ -49,8 +56,13 @@ export default function Home() {
     try { return JSON.parse(localStorage.getItem('proof_projects') ?? '[]') } catch { return [] }
   })
   const [projectName, setProjectName] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'Untitled'
-    return localStorage.getItem('proof_project_name') ?? 'Untitled'
+    if (typeof window === 'undefined') return 'your-proof-1'
+    const saved = localStorage.getItem('proof_project_name')
+    if (saved) return saved
+    try {
+      const projs: SavedProject[] = JSON.parse(localStorage.getItem('proof_projects') ?? '[]')
+      return nextProjectName(projs)
+    } catch { return 'your-proof-1' }
   })
   const [showProjectList, setShowProjectList] = useState(false)
   const [confirmNew, setConfirmNew] = useState(false)
@@ -101,7 +113,7 @@ export default function Home() {
   }, [projectName])
 
   function saveProject() {
-    const name = projectName.trim() || 'Untitled'
+    const name = projectName.trim() || nextProjectName(projects)
     setProjectName(name)
     const project: SavedProject = {
       id: projects.find(p => p.name === name)?.id ?? crypto.randomUUID(),
@@ -131,7 +143,7 @@ export default function Home() {
     if (confirmNew) {
       setSources([])
       setNotes('')
-      setProjectName('Untitled')
+      setProjectName(nextProjectName(projects))
       setConfirmNew(false)
       if (confirmTimer.current) clearTimeout(confirmTimer.current)
     } else {
@@ -333,7 +345,7 @@ export default function Home() {
           })
         }),
       ]
-      filename = `${listTitle.toLowerCase().replace(/ /g, '-')}.docx`
+      filename = `${projectName.trim().toLowerCase().replace(/\s+/g, '-') || 'your-proof'}.docx`
     } else {
       children = [
         new Paragraph({
@@ -352,7 +364,7 @@ export default function Home() {
           })
         }),
       ]
-      filename = 'in-text-citations.docx'
+      filename = `${projectName.trim().toLowerCase().replace(/\s+/g, '-') || 'your-proof'}-in-text.docx`
     }
 
     const doc = new Document({
