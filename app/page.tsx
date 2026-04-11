@@ -217,7 +217,7 @@ export default function Home() {
         </div>
 
         {error && (
-          <p style={{ fontSize: '13px', color: '#555', letterSpacing: '0.02em', maxWidth: '680px', width: '100%' }}>
+          <p style={{ fontSize: '13px', color: '#555', letterSpacing: '0.02em', maxWidth: '680px', width: '100%', marginTop: '-16px' }}>
             {error}
           </p>
         )}
