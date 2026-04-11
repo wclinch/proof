@@ -371,7 +371,7 @@ export default function Home() {
           <div style={{ flex: 1, minWidth: 0, border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
 
           {!sources.length && (
-            <div style={{ padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ borderBottom: '1px solid #1a1a1a', padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <p style={{ fontSize: '13px', color: '#2a2a2a', letterSpacing: '0.02em' }}>Nothing here yet.</p>
               <p style={{ fontSize: '11px', color: '#222', letterSpacing: '0.02em' }}>Paste a source above to get started.</p>
             </div>
