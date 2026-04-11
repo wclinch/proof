@@ -68,11 +68,7 @@ export default function Home() {
     setLoading(true)
     setError('')
 
-    const lines = raw
-      .split(/[\n,]+/)
-      .flatMap(segment => segment.split(/(?=https?:\/\/)/))
-      .map(l => l.trim())
-      .filter(Boolean)
+    const lines = raw.split(',').map(l => l.trim()).filter(Boolean)
 
     if (lines.length > 1) {
       const errors = (await Promise.all(lines.map(citeOne))).filter(e => e && e !== 'duplicate') as string[]
@@ -302,9 +298,7 @@ export default function Home() {
               onKeyDown={e => e.key === 'Enter' && cite()}
               onPaste={e => {
                 const text = e.clipboardData.getData('text')
-                const hasMultiple = text.includes('\n') || text.includes(',') ||
-                  (text.match(/https?:\/\//g) ?? []).length > 1
-                if (hasMultiple) {
+                if (text.includes(',')) {
                   e.preventDefault()
                   citeRaw(text.trim())
                 }
@@ -340,7 +334,7 @@ export default function Home() {
         </div>
 
         <p style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em', maxWidth: '680px', width: '100%', marginTop: '-24px', paddingLeft: '4px' }}>
-          URLs or DOIs — one per line, comma-separated, or pasted together
+          Supports CSV bulk paste
         </p>
 
         {error && (
