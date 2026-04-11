@@ -328,15 +328,15 @@ export default function Home() {
                 ))}
               </div>
             ) : (
-              <div style={{ padding: '20px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ padding: '20px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {sorted.map((s, i) => {
                   const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
                   return (
-                    <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <p style={{ fontSize: '14px', color: '#aaa', fontFamily: 'Georgia, serif', margin: 0, letterSpacing: '0.01em', lineHeight: 1.6 }}>
+                    <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <p style={{ fontSize: '14px', color: '#aaa', fontFamily: 'Georgia, serif', margin: 0, letterSpacing: '0.01em', lineHeight: 1.85 }}>
                         {inText}
                       </p>
-                      <p style={{ fontSize: '11px', color: '#333', margin: 0, letterSpacing: '0.03em' }}>
+                      <p style={{ fontSize: '11px', color: '#2a2a2a', margin: 0, letterSpacing: '0.03em' }}>
                         {s.meta.title}
                       </p>
                     </div>
