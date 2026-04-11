@@ -2,15 +2,14 @@
 
 html { color-scheme: dark; }
 
-html, body, nav, footer, main, div, span, p, h1, h2, h3, h4, h5, h6, a, button, input, textarea, select {
-  font-family: var(--font-dm-mono), monospace;
-}
-
 body {
   background: #0a0a0a;
   color: #f0f0f0;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Browsers don't inherit font on form elements by default */
+input, button, textarea, select { font-family: inherit; }
 
 ::selection {
   background: #2a2a2a;

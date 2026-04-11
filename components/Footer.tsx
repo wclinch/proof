@@ -43,7 +43,6 @@ export default function Footer() {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      fontFamily: "'DM Mono', monospace",
     }}>
       <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
         Proof —{' '}
