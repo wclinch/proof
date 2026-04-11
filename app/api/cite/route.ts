@@ -29,7 +29,7 @@ async function fetchDOI(doi: string): Promise<CitationMeta> {
     headers: { 'User-Agent': 'Proof/1.0 (mailto:proof_official@protonmail.com)' },
     signal: AbortSignal.timeout(8000),
   })
-  if (!res.ok) throw new Error(`CrossRef ${res.status}`)
+  if (!res.ok) throw new Error(res.status === 404 ? 'DOI not found.' : 'Metadata service unavailable.')
   const { message: w } = await res.json()
 
   const authors = (w.author || []).map((a: { family?: string; given?: string }) =>
@@ -107,7 +107,7 @@ async function fetchURL(url: string): Promise<CitationMeta> {
     headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Proof/1.0)' },
     signal: AbortSignal.timeout(8000),
   })
-  if (!res.ok) throw new Error(`Fetch ${res.status}`)
+  if (!res.ok) throw new Error(res.status === 404 ? 'Page not found.' : 'Could not load that page.')
   const html = await res.text()
 
   const title =
@@ -232,7 +232,9 @@ export async function POST(req: NextRequest) {
       inputType = 'url'
     }
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Failed to fetch metadata.'
+    const msg = e instanceof Error
+      ? (e.name === 'TimeoutError' ? 'Request timed out.' : e.message)
+      : 'Failed to fetch metadata.'
     return NextResponse.json({ error: msg }, { status: 422 })
   }
 

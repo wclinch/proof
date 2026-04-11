@@ -38,6 +38,14 @@ export default function Home() {
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const submitting = useRef(false)
+  const inProgress = useRef(new Set<string>())
+
+  useEffect(() => {
+    return () => {
+      if (copyTimer.current) clearTimeout(copyTimer.current)
+      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+    }
+  }, [])
 
   useEffect(() => {
     try { localStorage.setItem('proof_sources', JSON.stringify(sources)) } catch {}
@@ -46,7 +54,8 @@ export default function Home() {
   async function citeOne(trimmed: string): Promise<string | null> {
     if (!trimmed) return null
     const isDuplicate = sources.some(s => s.meta.url === trimmed || s.meta.doi === trimmed)
-    if (isDuplicate) return 'duplicate'
+    if (isDuplicate || inProgress.current.has(trimmed)) return 'duplicate'
+    inProgress.current.add(trimmed)
     try {
       const res = await fetch('/api/cite', {
         method: 'POST',
@@ -59,6 +68,8 @@ export default function Home() {
       return null
     } catch {
       return 'Something went wrong.'
+    } finally {
+      inProgress.current.delete(trimmed)
     }
   }
 

@@ -21,7 +21,7 @@ function lastName(a: string) { return a.split(', ')[0] ?? a }
 function firstName(a: string) { return a.split(', ')[1] ?? '' }
 
 function initials(a: string) {
-  return firstName(a).split(/\s+/).filter(Boolean).map(p => p[0] + '.').join(' ')
+  return firstName(a).split(/\s+/).filter(Boolean).map(p => p[0] + '.').join(' ') || null
 }
 
 function invert(a: string) {
@@ -84,14 +84,14 @@ export function formatMLA(m: CitationMeta): string {
   // book / other
   const pub = m.publisher ? m.publisher + ', ' : ''
   const doi = m.doi ? ` doi:${m.doi}.` : ''
-  return `${byline}${title} ${pub}${year}.${doi}`
+  return `${byline}${m.title}. ${pub}${year}.${doi}`
 }
 
 // ─── APA 7th ─────────────────────────────────────────────────────────────────
 
 function apaAuthors(authors: string[]): string {
   if (!authors.length) return ''
-  const fmt = (a: string) => `${lastName(a)}, ${initials(a)}`
+  const fmt = (a: string) => { const ini = initials(a); return ini ? `${lastName(a)}, ${ini}` : lastName(a) }
   if (authors.length === 1) return fmt(authors[0])
   if (authors.length === 2) return `${fmt(authors[0])}, & ${fmt(authors[1])}`
   if (authors.length <= 20) {
@@ -168,7 +168,7 @@ export function formatChicago(m: CitationMeta): string {
 
   const pub = m.publisher ? m.publisher + ', ' : ''
   const doi = m.doi ? ` https://doi.org/${m.doi}.` : ''
-  return `${byline}${title} ${pub}${year}.${doi}`
+  return `${byline}${m.title}. ${pub}${year}.${doi}`
 }
 
 // ─── In-text citations ────────────────────────────────────────────────────────
