@@ -32,6 +32,10 @@ export default function Home() {
   })
   const [format, setFormat] = useState<Format>('MLA')
   const [view, setView] = useState<'works-cited' | 'in-text'>('works-cited')
+  const [notes, setNotes] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('proof_notes') ?? ''
+  })
   const [copied, setCopied] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
@@ -50,6 +54,10 @@ export default function Home() {
   useEffect(() => {
     try { localStorage.setItem('proof_sources', JSON.stringify(sources)) } catch {}
   }, [sources])
+
+  useEffect(() => {
+    try { localStorage.setItem('proof_notes', notes) } catch {}
+  }, [notes])
 
   async function citeOne(trimmed: string): Promise<string | null> {
     if (!trimmed) return null
@@ -369,7 +377,8 @@ export default function Home() {
 
         {/* Sources + output */}
         {hasSources && (
-          <div style={{ width: '100%', maxWidth: '680px', border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ width: '100%', maxWidth: '980px', display: 'flex', gap: '12px', alignItems: 'stretch' }}>
+          <div style={{ flex: 1, minWidth: 0, border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
 
             {/* Source list */}
             {sources.map((s, i) => (
@@ -511,6 +520,27 @@ export default function Home() {
                 </button>
               </div>
             </div>
+
+          </div>
+
+          {/* Notes panel */}
+          <div style={{
+            width: '260px', flexShrink: 0,
+            border: '1px solid #1a1a1a', borderRadius: '10px',
+            overflow: 'hidden', display: 'flex', flexDirection: 'column',
+          }}>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Notes..."
+              style={{
+                flex: 1, width: '100%', minHeight: '200px',
+                background: 'none', border: 'none', outline: 'none', resize: 'none',
+                color: '#aaa', fontSize: '13px', lineHeight: 1.7,
+                padding: '16px 20px', letterSpacing: '0.01em',
+              }}
+            />
+          </div>
 
           </div>
         )}
