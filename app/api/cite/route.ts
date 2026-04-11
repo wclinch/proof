@@ -262,6 +262,7 @@ export async function POST(req: NextRequest) {
       device,
       referrer,
       source_domain: sourceDomain,
+      publisher: meta.publisher ?? null,
     })
     .select('id')
     .single()
