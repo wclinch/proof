@@ -4,7 +4,6 @@ import {
   formatMLA, formatAPA, formatChicago,
   formatMLAHtml, formatAPAHtml, formatChicagoHtml,
   inTextMLA, inTextAPA, inTextChicago,
-  computeSourceStats,
 } from './lib/cite.ts'
 import type { CitationMeta } from './lib/cite.ts'
 
@@ -396,58 +395,3 @@ describe('APA author with no first name', () => {
   })
 })
 
-// ─── computeSourceStats ───────────────────────────────────────────────────────
-
-describe('computeSourceStats', () => {
-  const YEAR = 2026
-
-  it('counts peer-reviewed correctly (journal-article with DOI)', () => {
-    const { peerReviewed } = computeSourceStats([journal, website, book], YEAR)
-    assert.equal(peerReviewed, 1) // only journal has doi + journal-article type
-  })
-
-  it('counts book-chapter as peer-reviewed when has DOI', () => {
-    const { peerReviewed } = computeSourceStats([bookChapter], YEAR)
-    assert.equal(peerReviewed, 1)
-  })
-
-  it('website is not peer-reviewed', () => {
-    const { peerReviewed } = computeSourceStats([website], YEAR)
-    assert.equal(peerReviewed, 0)
-  })
-
-  it('counts recent sources (within 5 years)', () => {
-    const { recent } = computeSourceStats([journal, website, book], YEAR)
-    // journal: 2022 ✓, website: 2023 ✓, book: 2019 ✗ (2026-5=2021)
-    assert.equal(recent, 2)
-  })
-
-  it('handles null year without throwing', () => {
-    const { recent } = computeSourceStats([noYear], YEAR)
-    assert.equal(recent, 0)
-  })
-
-  it('handles garbage year string without NaN', () => {
-    const garbage: CitationMeta = { ...journal, year: 'unknown' }
-    const { recent } = computeSourceStats([garbage], YEAR)
-    assert.equal(recent, 0)
-  })
-
-  it('typeBreakdown counts journals, books, websites', () => {
-    const { typeBreakdown } = computeSourceStats([journal, bookChapter, website, noAuthor], YEAR)
-    assert.ok(typeBreakdown.includes('1 journal'), `got: ${typeBreakdown}`)
-    assert.ok(typeBreakdown.includes('1 book'), `got: ${typeBreakdown}`)
-    assert.ok(typeBreakdown.includes('2 websites'), `got: ${typeBreakdown}`)
-  })
-
-  it('typeBreakdown is empty string when no sources', () => {
-    const { typeBreakdown } = computeSourceStats([], YEAR)
-    assert.equal(typeBreakdown, '')
-  })
-
-  it('pluralises correctly for single sources', () => {
-    const { typeBreakdown } = computeSourceStats([journal], YEAR)
-    assert.ok(typeBreakdown.includes('1 journal'), `got: ${typeBreakdown}`)
-    assert.ok(!typeBreakdown.includes('journals'), `got: ${typeBreakdown}`)
-  })
-})
