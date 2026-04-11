@@ -566,6 +566,11 @@ export default function Home() {
 
             {view === 'works-cited' ? (
               <div style={{ padding: '20px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {!sources.length && (
+                  <p style={{ fontSize: '13px', color: '#222', letterSpacing: '0.02em', textAlign: 'center', margin: '12px 0', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
+                    Your {listTitle} will appear here.
+                  </p>
+                )}
                 {allCitations.map((c, i) => {
                   const origIndex = sources.findIndex(src => src === sorted[i])
                   return (
@@ -589,6 +594,11 @@ export default function Home() {
               </div>
             ) : (
               <div style={{ padding: '20px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {!sources.length && (
+                  <p style={{ fontSize: '13px', color: '#222', letterSpacing: '0.02em', textAlign: 'center', margin: '12px 0', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
+                    In-text citations will appear here.
+                  </p>
+                )}
                 {sorted.map((s, i) => {
                   const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
                   const origIndex = sources.findIndex(src => src === s)
