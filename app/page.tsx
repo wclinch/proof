@@ -538,7 +538,7 @@ export default function Home() {
                   style={{
                     flex: 1, background: view === v ? '#141414' : 'none',
                     border: 'none', borderRight: v === 'works-cited' ? '1px solid #1a1a1a' : 'none',
-                    color: view === v ? '#aaa' : '#555',
+                    color: view === v ? '#f0f0f0' : '#555',
                     fontSize: '11px', fontWeight: view === v ? 600 : 400,
                     padding: '12px', cursor: 'pointer',
                     letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -663,7 +663,7 @@ export default function Home() {
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="Notes..."
+              placeholder="Quotes, reminders, thoughts on your sources..."
               style={{
                 flex: 1, width: '100%', minHeight: '200px',
                 background: 'none', border: 'none', outline: 'none', resize: 'none',
