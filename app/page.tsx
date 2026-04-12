@@ -65,6 +65,7 @@ export default function Home() {
     } catch { return 'your-proof-1' }
   })
   const [showProjectList, setShowProjectList] = useState(false)
+  const [confirmDeleteProject, setConfirmDeleteProject] = useState<string | null>(null)
   const [confirmNew, setConfirmNew] = useState(false)
   const [saved, setSaved] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -144,7 +145,14 @@ export default function Home() {
 
   function deleteProject(id: string, e: React.MouseEvent) {
     e.stopPropagation()
-    setProjects(prev => prev.filter(p => p.id !== id))
+    if (confirmDeleteProject === id) {
+      setProjects(prev => prev.filter(p => p.id !== id))
+      setConfirmDeleteProject(null)
+    } else {
+      setConfirmDeleteProject(id)
+      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+      confirmTimer.current = setTimeout(() => setConfirmDeleteProject(null), 3000)
+    }
   }
 
   async function citeOne(trimmed: string): Promise<string | null> {
@@ -424,30 +432,6 @@ export default function Home() {
             </button>
           </div>
 
-          {showProjectList && (
-            <div style={{ width: '100%', maxWidth: '480px', background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
-              {projects.length === 0 ? (
-                <p style={{ padding: '16px', fontSize: '11px', color: '#444', letterSpacing: '0.03em', margin: 0, textAlign: 'center' }}>No saved projects.</p>
-              ) : (
-                projects.map(p => (
-                  <div
-                    key={p.id}
-                    onClick={() => { loadProject(p); setShowProjectList(false) }}
-                    style={{ padding: '12px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1a1a1a' }}
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <span style={{ fontSize: '12px', color: '#555', letterSpacing: '0.02em' }}>{p.name}</span>
-                      <span style={{ fontSize: '10px', color: '#444', letterSpacing: '0.02em' }}>{p.sources.length} source{p.sources.length !== 1 ? 's' : ''} · {new Date(p.savedAt).toLocaleDateString()}</span>
-                    </div>
-                    <button
-                      onClick={e => deleteProject(p.id, e)}
-                      style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', fontSize: '11px', padding: '0 0 0 12px', flexShrink: 0 }}
-                    >✕</button>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
         </div>
 
         {/* Input */}
@@ -691,6 +675,46 @@ export default function Home() {
 
           </div>
       </main>
+
+      {/* Projects overlay */}
+      {showProjectList && (
+        <div
+          onClick={() => { setShowProjectList(false); setConfirmDeleteProject(null) }}
+          style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '12px', width: '100%', maxWidth: '400px', margin: '0 20px', overflow: 'hidden' }}
+          >
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Saved Projects</span>
+              <button onClick={() => { setShowProjectList(false); setConfirmDeleteProject(null) }} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', fontSize: '16px', lineHeight: 1, padding: 0 }}>×</button>
+            </div>
+            {projects.length === 0 ? (
+              <p style={{ padding: '24px', fontSize: '12px', color: '#444', letterSpacing: '0.03em', margin: 0, textAlign: 'center' }}>No saved projects.</p>
+            ) : (
+              projects.map(p => (
+                <div
+                  key={p.id}
+                  onClick={() => { loadProject(p); setShowProjectList(false); setConfirmDeleteProject(null) }}
+                  style={{ padding: '14px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1a1a1a' }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <span style={{ fontSize: '13px', color: '#555', letterSpacing: '0.02em' }}>{p.name}</span>
+                    <span style={{ fontSize: '10px', color: '#444', letterSpacing: '0.02em' }}>{p.sources.length} source{p.sources.length !== 1 ? 's' : ''} · {new Date(p.savedAt).toLocaleDateString()}</span>
+                  </div>
+                  <button
+                    onClick={e => deleteProject(p.id, e)}
+                    style={{ background: 'none', border: 'none', color: confirmDeleteProject === p.id ? '#888' : '#444', cursor: 'pointer', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '0 0 0 12px', flexShrink: 0 }}
+                  >
+                    {confirmDeleteProject === p.id ? 'Confirm?' : '✕'}
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
