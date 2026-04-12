@@ -76,6 +76,13 @@ export default function Home() {
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function setErrorTemp(msg: string) {
+    setError(msg)
+    if (errorTimer.current) clearTimeout(errorTimer.current)
+    errorTimer.current = setTimeout(() => setError(''), 4000)
+  }
   const submitting = useRef(false)
   const inProgress = useRef(new Set<string>())
 
@@ -84,6 +91,7 @@ export default function Home() {
       if (copyTimer.current) clearTimeout(copyTimer.current)
       if (confirmTimer.current) clearTimeout(confirmTimer.current)
       if (savedTimer.current) clearTimeout(savedTimer.current)
+      if (errorTimer.current) clearTimeout(errorTimer.current)
     }
   }, [])
 
@@ -195,14 +203,14 @@ export default function Home() {
         const errors = results.filter(e => e && e !== 'duplicate') as string[]
         setInput('')
         setCopied(false)
-        if (errors.length) setError(`${errors.length} source${errors.length > 1 ? 's' : ''} couldn't be added.`)
-        else if (duplicates === lines.length) setError('Already in your list.')
+        if (errors.length) setErrorTemp(`${errors.length} source${errors.length > 1 ? 's' : ''} couldn't be added.`)
+        else if (duplicates === lines.length) setErrorTemp('Already in your list.')
       } else {
         const err = await citeOne(lines[0])
         if (err === 'duplicate') {
-          setError('This source is already in your list.')
+          setErrorTemp('This source is already in your list.')
         } else if (err) {
-          setError(err)
+          setErrorTemp(err)
         } else {
           setInput('')
           setCopied(false)
@@ -288,7 +296,7 @@ export default function Home() {
       try {
         await navigator.clipboard.writeText(plainText)
       } catch {
-        setError('Clipboard access denied.')
+        setErrorTemp('Clipboard access denied.')
         return
       }
     }
@@ -382,7 +390,7 @@ export default function Home() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
     } catch {
-      setError('Failed to generate .docx file.')
+      setErrorTemp('Failed to generate .docx file.')
     }
   }
 
