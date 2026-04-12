@@ -29,12 +29,14 @@ function nextProjectName(projects: SavedProject[]): string {
   return `your-proof-${n}`
 }
 
-function sortSources(sources: Source[]): Source[] {
-  return [...sources].sort((a, b) => {
-    const keyA = a.meta.authors[0]?.split(',')[0].trim() || a.meta.title
-    const keyB = b.meta.authors[0]?.split(',')[0].trim() || b.meta.title
-    return keyA.localeCompare(keyB)
-  })
+function sortSources(sources: Source[]): { src: Source; origIndex: number }[] {
+  return sources
+    .map((src, origIndex) => ({ src, origIndex }))
+    .sort((a, b) => {
+      const keyA = a.src.meta.authors[0]?.split(',')[0].trim() || a.src.meta.title
+      const keyB = b.src.meta.authors[0]?.split(',')[0].trim() || b.src.meta.title
+      return keyA.localeCompare(keyB)
+    })
 }
 
 export default function Home() {
@@ -246,10 +248,10 @@ export default function Home() {
   const listTitle = format === 'MLA' ? 'Works Cited' : format === 'APA' ? 'References' : 'Bibliography'
 
 
-  const allCitations = sorted.map(s =>
-    format === 'MLA' ? formatMLA(s.meta)
-    : format === 'APA' ? formatAPA(s.meta)
-    : formatChicago(s.meta)
+  const allCitations = sorted.map(({ src }) =>
+    format === 'MLA' ? formatMLA(src.meta)
+    : format === 'APA' ? formatAPA(src.meta)
+    : formatChicago(src.meta)
   )
 
   async function copyAll() {
@@ -259,17 +261,17 @@ export default function Home() {
     let htmlContent: string
 
     if (view === 'works-cited') {
-      const htmlCitations = sorted.map(s =>
-        format === 'MLA' ? formatMLAHtml(s.meta)
-        : format === 'APA' ? formatAPAHtml(s.meta)
-        : formatChicagoHtml(s.meta)
+      const htmlCitations = sorted.map(({ src }) =>
+        format === 'MLA' ? formatMLAHtml(src.meta)
+        : format === 'APA' ? formatAPAHtml(src.meta)
+        : formatChicagoHtml(src.meta)
       )
       plainText = `${listTitle}\n\n` + allCitations.join('\n\n')
       htmlContent = `<html><body><p style="text-align:center;font-family:'Times New Roman',serif;font-size:12pt;">${listTitle}</p>${htmlCitations.map(c => `<p style="margin-left:2em;text-indent:-2em;font-family:'Times New Roman',serif;font-size:12pt;">${c}</p>`).join('')}</body></html>`
     } else {
-      const inTextLines = sorted.map(s => {
-        const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
-        return `${inText} — ${s.meta.title}`
+      const inTextLines = sorted.map(({ src }) => {
+        const inText = format === 'MLA' ? inTextMLA(src.meta) : format === 'APA' ? inTextAPA(src.meta) : inTextChicago(src.meta)
+        return `${inText} — ${src.meta.title}`
       })
       plainText = `In-Text Citations\n\n` + inTextLines.join('\n')
       htmlContent = `<html><body><p style="text-align:center;font-family:'Times New Roman',serif;font-size:12pt;">In-Text Citations</p>${inTextLines.map(l => `<p style="font-family:'Times New Roman',serif;font-size:12pt;">${l}</p>`).join('')}</body></html>`
@@ -294,12 +296,12 @@ export default function Home() {
     setCopied(true)
     if (copyTimer.current) clearTimeout(copyTimer.current)
     copyTimer.current = setTimeout(() => setCopied(false), 2000)
-    sorted.forEach(s => {
-      if (s.logId) {
+    sorted.forEach(({ src }) => {
+      if (src.logId) {
         fetch('/api/log-copy', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ logId: s.logId, format }),
+          body: JSON.stringify({ logId: src.logId, format }),
         }).catch(() => {})
       }
     })
@@ -331,10 +333,10 @@ export default function Home() {
           spacing: { line: 480, after: 0 },
           children: [new TextRun({ text: listTitle, font: 'Times New Roman', size: 24 })],
         }),
-        ...sorted.map(s => {
-          const html = format === 'MLA' ? formatMLAHtml(s.meta)
-            : format === 'APA' ? formatAPAHtml(s.meta)
-            : formatChicagoHtml(s.meta)
+        ...sorted.map(({ src }) => {
+          const html = format === 'MLA' ? formatMLAHtml(src.meta)
+            : format === 'APA' ? formatAPAHtml(src.meta)
+            : formatChicagoHtml(src.meta)
           return new Paragraph({
             spacing: { line: 480, before: 0, after: 0 },
             indent: { left: 720, hanging: 720 },
@@ -350,13 +352,13 @@ export default function Home() {
           spacing: { line: 480, after: 0 },
           children: [new TextRun({ text: 'In-Text Citations', font: 'Times New Roman', size: 24 })],
         }),
-        ...sorted.map(s => {
-          const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
+        ...sorted.map(({ src }) => {
+          const inText = format === 'MLA' ? inTextMLA(src.meta) : format === 'APA' ? inTextAPA(src.meta) : inTextChicago(src.meta)
           return new Paragraph({
             spacing: { line: 480, before: 0, after: 0 },
             children: [
               new TextRun({ text: inText, font: 'Times New Roman', size: 24 }),
-              new TextRun({ text: `  —  ${s.meta.title}`, font: 'Times New Roman', size: 24, color: '888888' }),
+              new TextRun({ text: `  —  ${src.meta.title}`, font: 'Times New Roman', size: 24, color: '888888' }),
             ],
           })
         }),
@@ -452,7 +454,9 @@ export default function Home() {
               onKeyDown={e => e.key === 'Enter' && cite()}
               onPaste={e => {
                 const text = e.clipboardData.getData('text')
-                if (text.includes(',') && (text.match(/https?:\/\//g) ?? []).length > 1) {
+                const parts = text.split(',').map(s => s.trim()).filter(Boolean)
+                const allUrlish = parts.length > 1 && parts.every(p => /^https?:\/\/|^10\.\d{4,}\//.test(p))
+                if (allUrlish) {
                   e.preventDefault()
                   citeRaw(text.trim())
                 }
@@ -558,9 +562,9 @@ export default function Home() {
                   </p>
                 )}
                 {allCitations.map((c, i) => {
-                  const origIndex = sources.findIndex(src => src === sorted[i])
+                  const { src, origIndex } = sorted[i]
                   return (
-                    <div key={sorted[i].meta.doi ?? sorted[i].meta.url} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <div key={src.meta.doi ?? src.meta.url} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                       <p style={{
                         flex: 1, fontSize: '14px', color: '#aaa', lineHeight: 1.85,
                         fontFamily: 'Georgia, serif', letterSpacing: '0.01em',
@@ -585,17 +589,16 @@ export default function Home() {
                     In-text citations will appear here.
                   </p>
                 )}
-                {sorted.map((s, i) => {
-                  const inText = format === 'MLA' ? inTextMLA(s.meta) : format === 'APA' ? inTextAPA(s.meta) : inTextChicago(s.meta)
-                  const origIndex = sources.findIndex(src => src === s)
+                {sorted.map(({ src, origIndex }) => {
+                  const inText = format === 'MLA' ? inTextMLA(src.meta) : format === 'APA' ? inTextAPA(src.meta) : inTextChicago(src.meta)
                   return (
-                    <div key={s.meta.doi ?? s.meta.url} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <div key={src.meta.doi ?? src.meta.url} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <p style={{ fontSize: '14px', color: '#aaa', fontFamily: 'Georgia, serif', margin: 0, letterSpacing: '0.01em', lineHeight: 1.85 }}>
                           {inText}
                         </p>
                         <p style={{ fontSize: '11px', color: '#555', margin: 0, letterSpacing: '0.03em' }}>
-                          {s.meta.title}
+                          {src.meta.title}
                         </p>
                       </div>
                       <button
