@@ -705,7 +705,7 @@ export default function Home() {
                   </div>
                   <button
                     onClick={e => deleteProject(p.id, e)}
-                    style={{ background: 'none', border: 'none', color: confirmDeleteProject === p.id ? '#888' : '#444', cursor: 'pointer', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '0 0 0 12px', flexShrink: 0 }}
+                    style={{ background: 'none', border: 'none', color: confirmDeleteProject === p.id ? '#888' : '#444', cursor: 'pointer', fontSize: confirmDeleteProject === p.id ? '11px' : '16px', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '0 0 0 12px', flexShrink: 0, lineHeight: 1 }}
                   >
                     {confirmDeleteProject === p.id ? 'Confirm?' : '✕'}
                   </button>
