@@ -416,20 +416,20 @@ export default function Home() {
           />
           <button
             onClick={saveProject}
-            style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', fontSize: '11px', color: saved ? '#555' : '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
+            style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', fontSize: '11px', color: saved ? '#666' : '#555', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
           >
             {saved ? 'Saved' : 'Save'}
           </button>
           <button
             onClick={newProject}
-            style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', fontSize: '11px', color: confirmNew ? '#555' : '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
+            style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', fontSize: '11px', color: confirmNew ? '#666' : '#555', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
           >
             {confirmNew ? 'Confirm?' : 'New'}
           </button>
           <div ref={projectListRef} style={{ position: 'relative' }}>
             <button
               onClick={() => setShowProjectList(v => !v)}
-              style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', fontSize: '11px', color: showProjectList ? '#555' : '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
+              style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', fontSize: '11px', color: showProjectList ? '#666' : '#555', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
             >
               Projects
             </button>
@@ -492,7 +492,7 @@ export default function Home() {
             {input && (
               <button
                 onClick={() => { setInput(''); setError('') }}
-                style={{ background: 'none', border: 'none', color: '#333', fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}
+                style={{ background: 'none', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}
               >
                 ×
               </button>
@@ -513,7 +513,7 @@ export default function Home() {
           </button>
         </div>
 
-        <p style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.03em', maxWidth: '680px', width: '100%', marginTop: '-24px', paddingLeft: '4px' }}>
+        <p style={{ fontSize: '11px', color: '#444', letterSpacing: '0.03em', maxWidth: '680px', width: '100%', marginTop: '-24px', paddingLeft: '4px' }}>
           Supports CSV bulk paste
         </p>
 
@@ -529,8 +529,8 @@ export default function Home() {
 
           {!sources.length && (
             <div style={{ borderBottom: '1px solid #1a1a1a', padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <p style={{ fontSize: '13px', color: '#2a2a2a', letterSpacing: '0.02em' }}>Nothing here yet.</p>
-              <p style={{ fontSize: '11px', color: '#222', letterSpacing: '0.02em' }}>Paste a source above to get started.</p>
+              <p style={{ fontSize: '13px', color: '#555', letterSpacing: '0.02em' }}>Nothing here yet.</p>
+              <p style={{ fontSize: '11px', color: '#444', letterSpacing: '0.02em' }}>Paste a source above to get started.</p>
             </div>
           )}
 
@@ -543,7 +543,7 @@ export default function Home() {
                   style={{
                     flex: 1, background: format === f ? '#141414' : 'none',
                     border: 'none', borderRight: f !== 'Chicago' ? '1px solid #1a1a1a' : 'none',
-                    color: format === f ? '#f0f0f0' : '#333',
+                    color: format === f ? '#f0f0f0' : '#555',
                     fontSize: '11px', fontWeight: format === f ? 600 : 400,
                     padding: '12px', cursor: 'pointer',
                     letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -564,7 +564,7 @@ export default function Home() {
                   style={{
                     flex: 1, background: view === v ? '#141414' : 'none',
                     border: 'none', borderRight: v === 'works-cited' ? '1px solid #1a1a1a' : 'none',
-                    color: view === v ? '#aaa' : '#2a2a2a',
+                    color: view === v ? '#aaa' : '#555',
                     fontSize: '11px', fontWeight: view === v ? 600 : 400,
                     padding: '12px', cursor: 'pointer',
                     letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -579,7 +579,7 @@ export default function Home() {
             {view === 'works-cited' ? (
               <div style={{ padding: '20px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {!sources.length && (
-                  <p style={{ fontSize: '13px', color: '#222', letterSpacing: '0.02em', textAlign: 'center', margin: '12px 0', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
+                  <p style={{ fontSize: '13px', color: '#444', letterSpacing: '0.02em', textAlign: 'center', margin: '12px 0', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
                     Your {listTitle} will appear here.
                   </p>
                 )}
@@ -596,7 +596,7 @@ export default function Home() {
                       </p>
                       <button
                         onClick={() => handleRemoveClick(origIndex)}
-                        style={{ background: 'none', border: 'none', color: '#333', fontSize: '13px', cursor: 'pointer', flexShrink: 0, letterSpacing: '0.06em', textTransform: 'uppercase', paddingTop: '2px', width: '60px', textAlign: 'right' }}
+                        style={{ background: 'none', border: 'none', color: '#555', fontSize: '13px', cursor: 'pointer', flexShrink: 0, letterSpacing: '0.06em', textTransform: 'uppercase', paddingTop: '2px', width: '60px', textAlign: 'right' }}
                       >
                         {confirmDelete === origIndex ? 'confirm?' : '✕'}
                       </button>
@@ -607,7 +607,7 @@ export default function Home() {
             ) : (
               <div style={{ padding: '20px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {!sources.length && (
-                  <p style={{ fontSize: '13px', color: '#222', letterSpacing: '0.02em', textAlign: 'center', margin: '12px 0', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
+                  <p style={{ fontSize: '13px', color: '#444', letterSpacing: '0.02em', textAlign: 'center', margin: '12px 0', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
                     In-text citations will appear here.
                   </p>
                 )}
@@ -620,13 +620,13 @@ export default function Home() {
                         <p style={{ fontSize: '14px', color: '#aaa', fontFamily: 'Georgia, serif', margin: 0, letterSpacing: '0.01em', lineHeight: 1.85 }}>
                           {inText}
                         </p>
-                        <p style={{ fontSize: '11px', color: '#333', margin: 0, letterSpacing: '0.03em' }}>
+                        <p style={{ fontSize: '11px', color: '#555', margin: 0, letterSpacing: '0.03em' }}>
                           {s.meta.title}
                         </p>
                       </div>
                       <button
                         onClick={() => handleRemoveClick(origIndex)}
-                        style={{ background: 'none', border: 'none', color: '#333', fontSize: '13px', cursor: 'pointer', flexShrink: 0, letterSpacing: '0.06em', textTransform: 'uppercase', paddingTop: '2px', width: '60px', textAlign: 'right' }}
+                        style={{ background: 'none', border: 'none', color: '#555', fontSize: '13px', cursor: 'pointer', flexShrink: 0, letterSpacing: '0.06em', textTransform: 'uppercase', paddingTop: '2px', width: '60px', textAlign: 'right' }}
                       >
                         {confirmDelete === origIndex ? 'confirm?' : '✕'}
                       </button>
@@ -639,12 +639,12 @@ export default function Home() {
             {/* Copy all */}
             <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #1a1a1a' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <span style={{ fontSize: '11px', color: '#333', letterSpacing: '0.03em' }}>
+                <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.03em' }}>
                   {sources.length} source{sources.length !== 1 ? 's' : ''}
                 </span>
                 <button
                   onClick={handleClearClick}
-                  style={{ background: 'none', border: 'none', fontSize: '11px', color: '#333', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: 0 }}
+                  style={{ background: 'none', border: 'none', fontSize: '11px', color: '#555', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: 0 }}
                 >
                   {confirmClear ? 'Confirm?' : 'Clear All'}
                 </button>

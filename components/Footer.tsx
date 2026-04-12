@@ -44,7 +44,7 @@ export default function Footer() {
       justifyContent: 'space-between',
       alignItems: 'center',
     }}>
-      <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+      <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
         Proof —{' '}
         <span style={{ opacity, transition: 'opacity 0.3s ease' }}>
           {TAGLINES[index]}
@@ -53,31 +53,31 @@ export default function Footer() {
       <div style={{ display: 'flex', gap: '24px' }}>
         {pathname !== '/' && (
           <Link href="/"
-            style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
+            style={{ fontSize: '11px', color: '#444', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#555')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#444')}
           >
             ← Home
           </Link>
         )}
         <Link href="/about"
-          style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
+          style={{ fontSize: '11px', color: '#444', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
         >
           About
         </Link>
         <Link href="/privacy"
-          style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
+          style={{ fontSize: '11px', color: '#444', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
         >
           Privacy
         </Link>
         <a href="mailto:proof_official@protonmail.com?subject=Proof — Contact"
-          style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
+          style={{ fontSize: '11px', color: '#444', textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.15s' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#555')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
         >
           Contact
         </a>
