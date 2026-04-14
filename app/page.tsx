@@ -160,6 +160,7 @@ export default function Home() {
   } | null>(null);
   const [highlightText, setHighlightText] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const draftTitleRef = useRef<HTMLInputElement>(null);
@@ -1292,35 +1293,63 @@ export default function Home() {
               >
                 <span>{draft.split(/\s+/).filter(Boolean).length} words</span>
                 {draft.trim() && (
-                  <button
-                    onClick={() => {
-                      const title =
-                        activeProject?.draftTitle?.trim() || "draft";
-                      const content = `${title}\n${"—".repeat(title.length)}\n\n${draft}`;
-                      const blob = new Blob([content], { type: "text/plain" });
-                      const a = document.createElement("a");
-                      a.href = URL.createObjectURL(blob);
-                      a.download = `${title.replace(/\s+/g, "-").toLowerCase()}.txt`;
-                      a.click();
-                      URL.revokeObjectURL(a.href);
-                    }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      fontSize: "11px",
-                      color: "#333",
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase",
-                      fontFamily: "inherit",
-                      outline: "none",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = "#666")}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = "#333")}
-                  >
-                    Export
-                  </button>
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowExportMenu(v => !v)}
+                      style={{
+                        background: "none", border: "none", padding: 0,
+                        cursor: "pointer", fontSize: "11px", color: "#333",
+                        letterSpacing: "0.06em", textTransform: "uppercase",
+                        fontFamily: "inherit", outline: "none",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#666")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#333")}
+                    >
+                      Export ↑
+                    </button>
+                    {showExportMenu && (
+                      <div style={{
+                        position: 'absolute', bottom: '24px', right: 0,
+                        background: '#141414', border: '1px solid #2a2a2a',
+                        borderRadius: '4px', overflow: 'hidden',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.5)', minWidth: '100px',
+                      }}>
+                        {(['txt', 'md'] as const).map(fmt => (
+                          <button
+                            key={fmt}
+                            onClick={() => {
+                              const title = activeProject?.draftTitle?.trim() || 'draft'
+                              const slug = title.replace(/\s+/g, '-').toLowerCase()
+                              let content: string
+                              if (fmt === 'md') {
+                                content = `# ${title}\n\n${draft}`
+                              } else {
+                                content = `${title}\n${'—'.repeat(title.length)}\n\n${draft}`
+                              }
+                              const blob = new Blob([content], { type: 'text/plain' })
+                              const a = document.createElement('a')
+                              a.href = URL.createObjectURL(blob)
+                              a.download = `${slug}.${fmt}`
+                              a.click()
+                              URL.revokeObjectURL(a.href)
+                              setShowExportMenu(false)
+                            }}
+                            style={{
+                              display: 'block', width: '100%', textAlign: 'left',
+                              background: 'none', border: 'none', padding: '8px 14px',
+                              cursor: 'pointer', fontSize: '11px', color: '#777',
+                              letterSpacing: '0.06em', textTransform: 'uppercase',
+                              fontFamily: 'inherit',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                          >
+                            .{fmt}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </>
@@ -1557,12 +1586,16 @@ export default function Home() {
                 >
                   {"Can't delete only project"}
                 </div>
-              ) : confirmDeleteProjId === proj.id ? (
+              ) : (
                 <button
                   onClick={() => {
-                    deleteProject(proj.id);
-                    setConfirmDeleteProjId(null);
-                    setProjContextMenu(null);
+                    if (confirmDeleteProjId === proj.id) {
+                      deleteProject(proj.id)
+                      setConfirmDeleteProjId(null)
+                      setProjContextMenu(null)
+                    } else {
+                      setConfirmDeleteProjId(proj.id)
+                    }
                   }}
                   style={{
                     display: "block",
@@ -1584,32 +1617,7 @@ export default function Home() {
                     (e.currentTarget.style.background = "none")
                   }
                 >
-                  Remove
-                </button>
-              ) : (
-                <button
-                  onClick={() => setConfirmDeleteProjId(proj.id)}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    textAlign: "left",
-                    background: "none",
-                    border: "none",
-                    padding: "9px 14px",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                    color: "#777",
-                    letterSpacing: "0.04em",
-                    fontFamily: "inherit",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#1e1e1e")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "none")
-                  }
-                >
-                  Remove
+                  {confirmDeleteProjId === proj.id ? "Confirm?" : "Remove"}
                 </button>
               )}
             </div>
@@ -1702,64 +1710,36 @@ export default function Home() {
                   <div style={{ height: "1px", background: "#1e1e1e" }} />
                 </>
               )}
-              {confirmDeleteSrcId === src.id ? (
-                <button
-                  onClick={() => {
-                    if (selectedIds.size > 1) removeSelected();
-                    else removeSource(src.id);
-                    setConfirmDeleteSrcId(null);
-                    setContextMenu(null);
-                  }}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    textAlign: "left",
-                    background: "none",
-                    border: "none",
-                    padding: "9px 14px",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                    color: "#c55",
-                    letterSpacing: "0.04em",
-                    fontFamily: "inherit",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#1e1e1e")
+              <button
+                onClick={() => {
+                  if (confirmDeleteSrcId === src.id) {
+                    if (selectedIds.size > 1) removeSelected(); else removeSource(src.id)
+                    setConfirmDeleteSrcId(null)
+                    setContextMenu(null)
+                  } else {
+                    setConfirmDeleteSrcId(src.id)
                   }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "none")
-                  }
-                >
-                  Remove{" "}
-                  {selectedIds.size > 1 ? `${selectedIds.size} sources` : ""}
-                </button>
-              ) : (
-                <button
-                  onClick={() => setConfirmDeleteSrcId(src.id)}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    textAlign: "left",
-                    background: "none",
-                    border: "none",
-                    padding: "9px 14px",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                    color: "#777",
-                    letterSpacing: "0.04em",
-                    fontFamily: "inherit",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#1e1e1e")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "none")
-                  }
-                >
-                  Remove{" "}
-                  {selectedIds.size > 1 ? `${selectedIds.size} sources` : ""}
-                </button>
-              )}
+                }}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  textAlign: "left",
+                  background: "none",
+                  border: "none",
+                  padding: "9px 14px",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  color: "#c55",
+                  letterSpacing: "0.04em",
+                  fontFamily: "inherit",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#1e1e1e")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+              >
+                {confirmDeleteSrcId === src.id
+                  ? "Confirm?"
+                  : `Remove${selectedIds.size > 1 ? ` ${selectedIds.size} sources` : ""}`}
+              </button>
             </div>
           );
         })()}
