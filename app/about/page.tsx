@@ -14,31 +14,31 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What is Proof?</h2>
           <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            Proof is a free AI-powered research assistant. Paste URLs or DOIs and it extracts structured insights from your sources — key claims, statistics, quotes, and keywords — so you can write faster and think more clearly.
+            Proof is a research tool that turns sources into structured knowledge. Paste a URL, DOI, or upload a PDF — Proof extracts the title, authors, methodology, findings, key statistics, and notable quotes, so you can spend less time reading and more time thinking.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How it works</h2>
           <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            When you submit a link, Proof fetches the source content. For academic papers, it queries CrossRef using the DOI to retrieve structured metadata. For web pages, it reads the page directly. The content is then sent to an AI model, which extracts a structured summary: the title, authors, publication year, main claims, key statistics, notable quotes, and keywords.
+            When you submit a source, Proof fetches the content directly. For academic papers, it queries CrossRef to retrieve structured metadata from the DOI. For web pages and PDFs, it reads the full text. That content is then analyzed by an AI model trained to extract research-grade structure — not summaries or paraphrases, but the actual claims, numbers, and conclusions from the source.
           </p>
           <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            You can queue multiple sources and analyze them in sequence. Each source's analysis appears in the middle panel, and you write your draft in the right panel — all in one workspace.
+            You can queue multiple sources and work through them in sequence. Each analysis appears in the center panel. Your draft lives in the right panel. Everything in one workspace.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Projects</h2>
           <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            Proof lets you organize your work into named projects and switch between them. Your sources, analyses, and draft are stored locally in your browser — nothing is sent to a server or tied to an account.
+            Proof lets you organize research into named projects and switch between them instantly. Your sources, analyses, and draft are stored locally in your browser — nothing is sent to a server, nothing is tied to an account.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>No account required</h2>
           <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            Proof is free to use without signing up. There are no ads, no paywalls, and no upsells. Open the page, paste your sources, get your insights.
+            Proof is free. There is no sign-up, no paywall, and no advertising. Open the page and start researching.
           </p>
         </div>
 
