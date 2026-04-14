@@ -9,14 +9,14 @@ const dmMono = DM_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Proof — Citation Generator',
-  description: 'Paste a DOI or URL. Get a citation in MLA, APA, or Chicago. Free, no sign-up.',
+  title: 'Proof — Research Assistant',
+  description: 'Paste URLs, DOIs, or upload PDFs. Extract structured insights from your sources.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={dmMono.className}>
-      <body>{children}</body>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   )
 }

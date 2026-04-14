@@ -1,5 +1,4 @@
 import Nav from '@/components/Nav'
-import Footer from '@/components/Footer'
 
 export default function About() {
   return (
@@ -13,47 +12,49 @@ export default function About() {
         </span>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>What is Proof?</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Proof is a free citation generator. Paste a URL or DOI and it returns a formatted citation in MLA, APA, or Chicago style — ready to copy into your paper or export as a .docx file.
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What is Proof?</h2>
+          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
+            Proof is a free AI-powered research assistant. Paste URLs or DOIs and it extracts structured insights from your sources — key claims, statistics, quotes, and keywords — so you can write faster and think more clearly.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>How it works</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            When you submit a link, Proof fetches metadata from the source — title, authors, publication date, journal, and publisher where available. For academic papers, it queries CrossRef using the DOI to retrieve structured citation data. For web pages, it reads open graph and citation meta tags directly from the page.
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How it works</h2>
+          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
+            When you submit a link, Proof fetches the source content. For academic papers, it queries CrossRef using the DOI to retrieve structured metadata. For web pages, it reads the page directly. The content is then sent to an AI model, which extracts a structured summary: the title, authors, publication year, main claims, key statistics, notable quotes, and keywords.
           </p>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Citations are formatted according to the 9th edition of MLA, the 7th edition of APA, and the 17th edition of the Chicago Manual of Style.
-          </p>
-        </div>
-
-        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>Projects and notes</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Proof lets you save named source lists as projects and switch between them. Your sources, notes, and projects are stored locally in your browser — nothing is sent to a server or tied to an account.
+          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
+            You can queue multiple sources and analyze them in sequence. Each source's analysis appears in the middle panel, and you write your draft in the right panel — all in one workspace.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>No account required</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Proof is free to use without signing up. There are no ads, no paywalls, and no upsells. Open the page, paste your source, get your citation.
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Projects</h2>
+          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
+            Proof lets you organize your work into named projects and switch between them. Your sources, analyses, and draft are stored locally in your browser — nothing is sent to a server or tied to an account.
           </p>
         </div>
 
-        <div style={{ padding: '20px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#e8e8e8', margin: 0 }}>Contact</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>No account required</h2>
+          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
+            Proof is free to use without signing up. There are no ads, no paywalls, and no upsells. Open the page, paste your sources, get your insights.
+          </p>
+        </div>
+
+        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Contact</h2>
+          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
             Questions or feedback?{' '}
             <a href="mailto:proof_official@protonmail.com" style={{ color: '#555', textDecoration: 'none' }}>proof_official@protonmail.com</a>
           </p>
         </div>
 
-      </main>
+        <div style={{ padding: '20px 0', textAlign: 'right' }}>
+          <a href="/" className="nav-link">Go to home →</a>
+        </div>
 
-      <Footer />
+      </main>
     </div>
   )
 }

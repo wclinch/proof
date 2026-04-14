@@ -2,732 +2,1358 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Nav from '@/components/Nav'
-import Footer from '@/components/Footer'
-import { formatMLA, formatAPA, formatChicago, formatMLAHtml, formatAPAHtml, formatChicagoHtml, inTextMLA, inTextAPA, inTextChicago } from '@/lib/cite'
-import type { CitationMeta } from '@/lib/cite'
-import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx'
 
-type Format = 'MLA' | 'APA' | 'Chicago'
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-interface Source {
-  meta: CitationMeta
-  logId: string | null
+type SourceStatus = 'queued' | 'loading' | 'done' | 'error'
+
+interface AnalysisResult {
+  title: string
+  authors: string[]
+  year: string | null
+  journal: string | null
+  doi: string | null
+  type: string
+  abstract: string | null
+  sample_n: string | null
+  sample_desc: string | null
+  methodology: string | null
+  stats: string[]
+  findings: string[]
+  conclusions: string[]
+  quotes: string[]
+  limitations: string[]
+  concepts: string[]
+  keywords: string[]
 }
 
-interface SavedProject {
+interface QueuedSource {
+  id: string
+  raw: string
+  status: SourceStatus
+  result: AnalysisResult | null
+  rawText: string | null
+  error: string | null
+  label?: string
+}
+
+interface Project {
   id: string
   name: string
-  sources: Source[]
-  notes: string
-  savedAt: number
+  sources: QueuedSource[]
+  draft: string
+  draftTitle: string
+  draftCreated: boolean
 }
 
-function nextProjectName(projects: SavedProject[]): string {
-  const existing = new Set(projects.map(p => p.name))
-  let n = 1
-  while (existing.has(`your-proof-${n}`)) n++
-  return `your-proof-${n}`
+// ─── Storage ─────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY    = 'proof-v2-projects'
+const ACTIVE_KEY     = 'proof-v2-active'
+const SELECTED_KEY   = 'proof-v2-selected'
+const SESSION_KEY    = 'proof-v2-session'
+
+function uid() { return Math.random().toString(36).slice(2, 10) }
+
+function getSessionId(): string {
+  let id = localStorage.getItem(SESSION_KEY)
+  if (!id) { id = uid() + uid(); localStorage.setItem(SESSION_KEY, id) }
+  return id
 }
 
-function sortSources(sources: Source[]): { src: Source; origIndex: number }[] {
-  return sources
-    .map((src, origIndex) => ({ src, origIndex }))
-    .sort((a, b) => {
-      const keyA = a.src.meta.authors[0]?.split(',')[0].trim() || a.src.meta.title
-      const keyB = b.src.meta.authors[0]?.split(',')[0].trim() || b.src.meta.title
-      return keyA.localeCompare(keyB)
-    })
+function newProject(n: number): Project {
+  return { id: uid(), name: `untitled-${n}`, sources: [], draft: '', draftTitle: '', draftCreated: false }
 }
+
+function loadProjects(): Project[] {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') ?? [] }
+  catch { return [] }
+}
+
+function saveProjects(ps: Project[]) {
+  // Truncate rawText to 20k chars — keeps highlight/jump working after reload
+  // while staying well within the 5MB localStorage quota
+  const slim = ps.map(p => ({
+    ...p,
+    sources: p.sources.map(s => ({
+      ...s,
+      rawText: s.rawText ? s.rawText.slice(0, 20000) : null,
+    })),
+  }))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(slim))
+  } catch {
+    // Quota exceeded — retry with rawText fully stripped
+    try {
+      const bare = ps.map(p => ({
+        ...p,
+        sources: p.sources.map(s => ({ ...s, rawText: null })),
+      }))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(bare))
+    } catch { /* still failing — silently ignore */ }
+  }
+}
+
+function parseInput(text: string): string[] {
+  return [...new Set(text.split(/[\n,]/).map(s => s.trim()).filter(Boolean))]
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [sources, setSources] = useState<Source[]>(() => {
-    if (typeof window === 'undefined') return []
-    try { return JSON.parse(localStorage.getItem('proof_sources') ?? '[]') } catch { return [] }
-  })
-  const [format, setFormat] = useState<Format>('MLA')
-  const [view, setView] = useState<'works-cited' | 'in-text'>('works-cited')
-  const [notes, setNotes] = useState<string>(() => {
-    if (typeof window === 'undefined') return ''
-    return localStorage.getItem('proof_notes') ?? ''
-  })
-  const [projects, setProjects] = useState<SavedProject[]>(() => {
-    if (typeof window === 'undefined') return []
-    try { return JSON.parse(localStorage.getItem('proof_projects') ?? '[]') } catch { return [] }
-  })
-  const [projectName, setProjectName] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'your-proof-1'
-    const saved = localStorage.getItem('proof_project_name')
-    if (saved) return saved
-    try {
-      const projs: SavedProject[] = JSON.parse(localStorage.getItem('proof_projects') ?? '[]')
-      return nextProjectName(projs)
-    } catch { return 'your-proof-1' }
-  })
-  const [showProjectList, setShowProjectList] = useState(false)
-  const [confirmDeleteProject, setConfirmDeleteProject] = useState<string | null>(null)
-  const [confirmNew, setConfirmNew] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
-  const [confirmClear, setConfirmClear] = useState(false)
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [mounted, setMounted]           = useState(false)
+  const [projects, setProjects]         = useState<Project[]>([])
+  const [activeId, setActiveId]         = useState<string | null>(null)
+  const [showProjects, setShowProjects] = useState(false)
+  const [inputText, setInputText]       = useState('')
+  const [selectedId, setSelectedId]     = useState<string | null>(null)
+  const [selectedIds, setSelectedIds]   = useState<Set<string>>(new Set())
+  const [anchorId, setAnchorId]         = useState<string | null>(null)
+  const [editingName, setEditingName]   = useState(false)
+  const [projectName, setProjectName]   = useState('')
+  const [confirmDeleteSrcId, setConfirmDeleteSrcId]   = useState<string | null>(null)
+  const [confirmDeleteProjId, setConfirmDeleteProjId] = useState<string | null>(null)
+  const [editingSrcId, setEditingSrcId]               = useState<string | null>(null)
+  const [projContextMenu, setProjContextMenu] = useState<{ projId: string; x: number; y: number } | null>(null)
+  const [editingProjId, setEditingProjId]     = useState<string | null>(null)
+  const [projNameInput, setProjNameInput]     = useState('')
+  const [srcLabelInput, setSrcLabelInput]             = useState('')
+  const [centerView, setCenterView]                   = useState<'analysis' | 'source'>('analysis')
+  const [contextMenu, setContextMenu]                 = useState<{ srcId: string; x: number; y: number } | null>(null)
+  const [highlightText, setHighlightText] = useState<string | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const nameRef      = useRef<HTMLInputElement>(null)
+  const fileRef      = useRef<HTMLInputElement>(null)
+  const draftTitleRef = useRef<HTMLInputElement>(null)
+  const analyzing  = useRef(false)
 
-  function setErrorTemp(msg: string) {
-    setError(msg)
-    if (errorTimer.current) clearTimeout(errorTimer.current)
-    errorTimer.current = setTimeout(() => setError(''), 4000)
-  }
-  const submitting = useRef(false)
-  const inProgress = useRef(new Set<string>())
-
+  // Close projects modal on Escape
   useEffect(() => {
-    return () => {
-      if (copyTimer.current) clearTimeout(copyTimer.current)
-      if (confirmTimer.current) clearTimeout(confirmTimer.current)
-      if (savedTimer.current) clearTimeout(savedTimer.current)
-      if (errorTimer.current) clearTimeout(errorTimer.current)
-    }
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowProjects(false) }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  // Dismiss source context menu on outside click
+  useEffect(() => {
+    if (!contextMenu) return
+    const handler = () => {
+      setContextMenu(null)
+      setConfirmDeleteSrcId(null)
+    }
+    window.addEventListener('click', handler)
+    return () => window.removeEventListener('click', handler)
+  }, [contextMenu])
+
+  // Dismiss project context menu on outside click
+  useEffect(() => {
+    if (!projContextMenu) return
+    const handler = () => {
+      setProjContextMenu(null)
+      setConfirmDeleteProjId(null)
+    }
+    window.addEventListener('click', handler)
+    return () => window.removeEventListener('click', handler)
+  }, [projContextMenu])
+
+  // Reset center view + highlight when switching sources
+  useEffect(() => { setCenterView('analysis'); setHighlightText(null) }, [selectedId])
+
+  // Reset multi-selection when switching projects
+  useEffect(() => { setSelectedIds(new Set()); setAnchorId(null) }, [activeId])
+
+  // Reset project delete confirm when modal opens/closes
+  useEffect(() => { setConfirmDeleteProjId(null) }, [showProjects])
 
   useEffect(() => {
-    try { localStorage.setItem('proof_sources', JSON.stringify(sources)) } catch {}
-  }, [sources])
-
-  useEffect(() => {
-    try { localStorage.setItem('proof_notes', notes) } catch {}
-  }, [notes])
-
-  useEffect(() => {
-    try { localStorage.setItem('proof_projects', JSON.stringify(projects)) } catch {}
-  }, [projects])
-
-  useEffect(() => {
-    try { localStorage.setItem('proof_project_name', projectName) } catch {}
-  }, [projectName])
-
-  function saveProject() {
-    const name = projectName.trim() || nextProjectName(projects)
-    setProjectName(name)
-    const project: SavedProject = {
-      id: projects.find(p => p.name === name)?.id ?? crypto.randomUUID(),
-      name,
-      sources,
-      notes,
-      savedAt: Date.now(),
-    }
-    setProjects(prev => {
-      const idx = prev.findIndex(p => p.name === name)
-      return idx >= 0 ? prev.map((p, i) => i === idx ? project : p) : [...prev, project]
-    })
-    setSaved(true)
-    if (savedTimer.current) clearTimeout(savedTimer.current)
-    savedTimer.current = setTimeout(() => setSaved(false), 2000)
-  }
-
-  function loadProject(p: SavedProject) {
-    setSources(p.sources)
-    setNotes(p.notes)
-    setProjectName(p.name)
-    setShowProjectList(false)
-    setConfirmNew(false)
-  }
-
-  function newProject() {
-    if (confirmNew) {
-      setSources([])
-      setNotes('')
-      setProjectName(nextProjectName(projects))
-      setConfirmNew(false)
-      if (confirmTimer.current) clearTimeout(confirmTimer.current)
-    } else {
-      setConfirmNew(true)
-      if (confirmTimer.current) clearTimeout(confirmTimer.current)
-      confirmTimer.current = setTimeout(() => setConfirmNew(false), 3000)
-    }
-  }
-
-  function deleteProject(id: string, e: React.MouseEvent) {
-    e.stopPropagation()
-    if (confirmDeleteProject === id) {
-      setProjects(prev => prev.filter(p => p.id !== id))
-      setConfirmDeleteProject(null)
-    } else {
-      setConfirmDeleteProject(id)
-      if (confirmTimer.current) clearTimeout(confirmTimer.current)
-      confirmTimer.current = setTimeout(() => setConfirmDeleteProject(null), 3000)
-    }
-  }
-
-  async function citeOne(trimmed: string): Promise<string | null> {
-    if (!trimmed) return null
-    const isDuplicate = sources.some(s => s.meta.url === trimmed || s.meta.doi === trimmed)
-    if (isDuplicate || inProgress.current.has(trimmed)) return 'duplicate'
-    inProgress.current.add(trimmed)
-    try {
-      const res = await fetch('/api/cite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: trimmed }),
-      })
-      const data = await res.json()
-      if (!res.ok || data.error) return data.error ?? 'Could not retrieve metadata.'
-      setSources(prev => [...prev, { meta: data.meta, logId: data.logId ?? null }])
-      return null
-    } catch {
-      return 'Something went wrong.'
-    } finally {
-      inProgress.current.delete(trimmed)
-    }
-  }
-
-  async function citeRaw(raw: string) {
-    if (!raw.trim() || submitting.current) return
-    submitting.current = true
-    setLoading(true)
-    setError('')
-
-    try {
-      const lines = raw.split(',').map(l => l.trim()).filter(Boolean)
-      if (!lines.length) return
-
-      if (lines.length > 1) {
-        const results = await Promise.all(lines.map(citeOne))
-        const duplicates = results.filter(e => e === 'duplicate').length
-        const errors = results.filter(e => e && e !== 'duplicate') as string[]
-        setInput('')
-        setCopied(false)
-        if (errors.length) setErrorTemp(`${errors.length} source${errors.length > 1 ? 's' : ''} couldn't be added.`)
-        else if (duplicates === lines.length) setErrorTemp('Already in your list.')
-      } else {
-        const err = await citeOne(lines[0])
-        if (err === 'duplicate') {
-          setErrorTemp('This source is already in your list.')
-        } else if (err) {
-          setErrorTemp(err)
-        } else {
-          setInput('')
-          setCopied(false)
-        }
+    const saved = loadProjects()
+    if (saved.length) {
+      setProjects(saved)
+      const savedActive = localStorage.getItem(ACTIVE_KEY)
+      const match = saved.find(p => p.id === savedActive) ?? saved[0]
+      setActiveId(match.id)
+      setProjectName(match.name)
+      const savedSelected = localStorage.getItem(SELECTED_KEY)
+      if (savedSelected && match.sources.find(s => s.id === savedSelected)) {
+        setSelectedId(savedSelected)
       }
-    } finally {
-      setLoading(false)
-      submitting.current = false
-    }
-  }
-
-  function cite() { citeRaw(input) }
-
-  function handleRemoveClick(index: number) {
-    if (confirmDelete === index) {
-      setSources(prev => prev.filter((_, i) => i !== index))
-      setConfirmDelete(null)
-      setCopied(false)
-      if (confirmTimer.current) clearTimeout(confirmTimer.current)
     } else {
-      setConfirmDelete(index)
-      setConfirmClear(false)
-      if (confirmTimer.current) clearTimeout(confirmTimer.current)
-      confirmTimer.current = setTimeout(() => setConfirmDelete(null), 3000)
+      const p = newProject(1)
+      setProjects([p])
+      setActiveId(p.id)
+      setProjectName(p.name)
     }
+    setMounted(true)
+  }, [])
+
+  useEffect(() => { if (projects.length) saveProjects(projects) }, [projects])
+  useEffect(() => { if (activeId) localStorage.setItem(ACTIVE_KEY, activeId) }, [activeId])
+  useEffect(() => {
+    if (selectedId) localStorage.setItem(SELECTED_KEY, selectedId)
+    else localStorage.removeItem(SELECTED_KEY)
+  }, [selectedId])
+
+  const activeProject  = projects.find(p => p.id === activeId) ?? null
+  const sources        = activeProject?.sources ?? []
+  const draft          = activeProject?.draft ?? ''
+  const selectedSource = sources.find(s => s.id === selectedId) ?? null
+  const doneCount      = sources.filter(s => s.status === 'done').length
+  const loadingCount   = sources.filter(s => s.status === 'loading').length
+
+  function updateProject(id: string, update: Partial<Project>) {
+    setProjects(ps => ps.map(p => p.id === id ? { ...p, ...update } : p))
   }
 
-  function handleClearClick() {
-    if (confirmClear) {
-      setSources([])
-      setConfirmClear(false)
-      setCopied(false)
-      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+  function patchSource(projId: string, srcId: string, patch: Partial<QueuedSource>) {
+    setProjects(ps => ps.map(p =>
+      p.id !== projId ? p : {
+        ...p,
+        sources: p.sources.map(s => s.id === srcId ? { ...s, ...patch } : s),
+      }
+    ))
+  }
+
+  function setDraft(val: string) {
+    if (activeId) updateProject(activeId, { draft: val })
+  }
+
+  function setDraftTitle(val: string) {
+    if (activeId) updateProject(activeId, { draftTitle: val })
+  }
+
+  function jumpToSource(text: string) {
+    setCenterView('source')
+    setHighlightText(text)
+  }
+
+  async function analyzeSources() {
+    if (!activeId || !inputText.trim() || analyzing.current) return
+    const urls = parseInput(inputText)
+    if (!urls.length) return
+
+    const newSources: QueuedSource[] = urls.map(raw => ({
+      id: uid(), raw, status: 'queued', result: null, rawText: null, error: null,
+    }))
+
+    updateProject(activeId, { sources: [...sources, ...newSources] })
+    setInputText('')
+    setSelectedId(newSources[0].id)
+    analyzing.current = true
+
+    const projId = activeId
+    for (const src of newSources) {
+      patchSource(projId, src.id, { status: 'loading' })
+      try {
+        const res  = await fetch('/api/analyze', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            url:         src.raw,
+            session_id:  getSessionId(),
+            draft_title: activeProject?.draftTitle?.trim() || null,
+          }),
+        })
+        const data = await res.json()
+        if (data.error) {
+          patchSource(projId, src.id, { status: 'error', error: data.error })
+        } else {
+          patchSource(projId, src.id, { status: 'done', result: data.analysis, rawText: data.content ?? null })
+        }
+      } catch {
+        patchSource(projId, src.id, { status: 'error', error: 'Network error' })
+      }
+    }
+
+    analyzing.current = false
+  }
+
+  async function uploadFiles(files: FileList | File[]) {
+    if (!activeId || analyzing.current) return
+    const list = Array.from(files).filter(f =>
+      f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf') ||
+      f.type === 'text/plain' || f.name.toLowerCase().endsWith('.txt')
+    )
+    if (!list.length) return
+
+    const newSources: QueuedSource[] = list.map(f => ({
+      id: uid(), raw: `file:${f.name}`, status: 'queued', result: null, rawText: null, error: null, label: f.name,
+    }))
+
+    updateProject(activeId, { sources: [...sources, ...newSources] })
+    setSelectedId(newSources[0].id)
+    analyzing.current = true
+
+    const projId = activeId
+    for (let i = 0; i < list.length; i++) {
+      const file = list[i]
+      const src  = newSources[i]
+      patchSource(projId, src.id, { status: 'loading' })
+      try {
+        const form = new FormData()
+        form.append('file', file)
+        form.append('session_id', getSessionId())
+        form.append('draft_title', activeProject?.draftTitle?.trim() || '')
+        const res  = await fetch('/api/upload', { method: 'POST', body: form })
+        const data = await res.json()
+        if (data.error) {
+          patchSource(projId, src.id, { status: 'error', error: data.error })
+        } else {
+          patchSource(projId, src.id, { status: 'done', result: data.analysis, rawText: data.content ?? null })
+        }
+      } catch {
+        patchSource(projId, src.id, { status: 'error', error: 'Upload failed' })
+      }
+    }
+    analyzing.current = false
+  }
+
+  function removeSource(srcId: string) {
+    if (!activeId) return
+    const updated = sources.filter(s => s.id !== srcId)
+    updateProject(activeId, { sources: updated })
+    if (selectedId === srcId) setSelectedId(updated[0]?.id ?? null)
+    setSelectedIds(new Set())
+    setAnchorId(null)
+  }
+
+  function removeSelected() {
+    if (!activeId || !selectedIds.size) return
+    const updated = sources.filter(s => !selectedIds.has(s.id))
+    updateProject(activeId, { sources: updated })
+    const nextSelected = selectedId && !selectedIds.has(selectedId) ? selectedId : (updated[0]?.id ?? null)
+    setSelectedId(nextSelected)
+    setSelectedIds(new Set())
+    setAnchorId(null)
+  }
+
+  function createProject() {
+    const p = newProject(projects.length + 1)
+    setProjects(ps => [...ps, p])
+    setActiveId(p.id)
+    setProjectName(p.name)
+    setShowProjects(false)
+    setSelectedId(null)
+  }
+
+  function switchProject(id: string) {
+    const p = projects.find(q => q.id === id)
+    if (!p) return
+    setActiveId(id)
+    setProjectName(p.name)
+    setShowProjects(false)
+    setSelectedId(null)
+  }
+
+  function deleteProject(id: string) {
+    const updated = projects.filter(p => p.id !== id)
+    if (!updated.length) {
+      const p = newProject(1)
+      setProjects([p])
+      setActiveId(p.id)
+      setProjectName(p.name)
+      setShowProjects(false)
     } else {
-      setConfirmClear(true)
-      setConfirmDelete(null)
-      if (confirmTimer.current) clearTimeout(confirmTimer.current)
-      confirmTimer.current = setTimeout(() => setConfirmClear(false), 3000)
+      setProjects(updated)
+      if (activeId === id) {
+        setActiveId(updated[0].id)
+        setProjectName(updated[0].name)
+      }
     }
   }
 
-  const sorted = sortSources(sources)
-  const listTitle = format === 'MLA' ? 'Works Cited' : format === 'APA' ? 'References' : 'Bibliography'
+  function saveName() {
+    if (!activeId) return
+    const untitledCount = projects.filter(p => p.name.startsWith('untitled-')).length
+    const name = projectName.trim() || `untitled-${untitledCount + 1}`
+    updateProject(activeId, { name })
+    setProjectName(name)
+    setEditingName(false)
+  }
 
+  // ─── Render ───────────────────────────────────────────────────────────────
 
-  const allCitations = sorted.map(({ src }) =>
-    format === 'MLA' ? formatMLA(src.meta)
-    : format === 'APA' ? formatAPA(src.meta)
-    : formatChicago(src.meta)
+  if (!mounted) return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#080808' }}>
+      <Nav />
+    </div>
   )
 
-  async function copyAll() {
-    if (!allCitations.length) return
-
-    let plainText: string
-    let htmlContent: string
-
-    if (view === 'works-cited') {
-      const htmlCitations = sorted.map(({ src }) =>
-        format === 'MLA' ? formatMLAHtml(src.meta)
-        : format === 'APA' ? formatAPAHtml(src.meta)
-        : formatChicagoHtml(src.meta)
-      )
-      plainText = `${listTitle}\n\n` + allCitations.join('\n\n')
-      htmlContent = `<html><body><p style="text-align:center;font-family:'Times New Roman',serif;font-size:12pt;">${listTitle}</p>${htmlCitations.map(c => `<p style="margin-left:2em;text-indent:-2em;font-family:'Times New Roman',serif;font-size:12pt;">${c}</p>`).join('')}</body></html>`
-    } else {
-      const inTextLines = sorted.map(({ src }) => {
-        const inText = format === 'MLA' ? inTextMLA(src.meta) : format === 'APA' ? inTextAPA(src.meta) : inTextChicago(src.meta)
-        return `${inText} — ${src.meta.title}`
-      })
-      plainText = `In-Text Citations\n\n` + inTextLines.join('\n')
-      htmlContent = `<html><body><p style="text-align:center;font-family:'Times New Roman',serif;font-size:12pt;">In-Text Citations</p>${inTextLines.map(l => `<p style="font-family:'Times New Roman',serif;font-size:12pt;">${l}</p>`).join('')}</body></html>`
-    }
-
-    try {
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          'text/plain': new Blob([plainText], { type: 'text/plain' }),
-          'text/html': new Blob([htmlContent], { type: 'text/html' }),
-        }),
-      ])
-    } catch {
-      try {
-        await navigator.clipboard.writeText(plainText)
-      } catch {
-        setErrorTemp('Clipboard access denied.')
-        return
-      }
-    }
-
-    setCopied(true)
-    if (copyTimer.current) clearTimeout(copyTimer.current)
-    copyTimer.current = setTimeout(() => setCopied(false), 2000)
-    sorted.forEach(({ src }) => {
-      if (src.logId) {
-        fetch('/api/log-copy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ logId: src.logId, format }),
-        }).catch(() => {})
-      }
-    })
-  }
-
-  function htmlToRuns(html: string): TextRun[] {
-    return html.split(/(<em>.*?<\/em>)/g).filter(Boolean).map(part => {
-      const isItalic = part.startsWith('<em>')
-      const text = part
-        .replace(/<\/?em>/g, '')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-      return new TextRun({ text, italics: isItalic, font: 'Times New Roman', size: 24 })
-    })
-  }
-
-  async function downloadDocx() {
-    if (!sorted.length) return
-    try {
-
-    let children: Paragraph[]
-    let filename: string
-
-    if (view === 'works-cited') {
-      children = [
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { line: 480, after: 0 },
-          children: [new TextRun({ text: listTitle, font: 'Times New Roman', size: 24 })],
-        }),
-        ...sorted.map(({ src }) => {
-          const html = format === 'MLA' ? formatMLAHtml(src.meta)
-            : format === 'APA' ? formatAPAHtml(src.meta)
-            : formatChicagoHtml(src.meta)
-          return new Paragraph({
-            spacing: { line: 480, before: 0, after: 0 },
-            indent: { left: 720, hanging: 720 },
-            children: htmlToRuns(html),
-          })
-        }),
-      ]
-      filename = `${projectName.trim().toLowerCase().replace(/\s+/g, '-') || 'your-proof'}.docx`
-    } else {
-      children = [
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { line: 480, after: 0 },
-          children: [new TextRun({ text: 'In-Text Citations', font: 'Times New Roman', size: 24 })],
-        }),
-        ...sorted.map(({ src }) => {
-          const inText = format === 'MLA' ? inTextMLA(src.meta) : format === 'APA' ? inTextAPA(src.meta) : inTextChicago(src.meta)
-          return new Paragraph({
-            spacing: { line: 480, before: 0, after: 0 },
-            children: [
-              new TextRun({ text: inText, font: 'Times New Roman', size: 24 }),
-              new TextRun({ text: `  —  ${src.meta.title}`, font: 'Times New Roman', size: 24, color: '888888' }),
-            ],
-          })
-        }),
-      ]
-      filename = `${projectName.trim().toLowerCase().replace(/\s+/g, '-') || 'your-proof'}-in-text.docx`
-    }
-
-    const doc = new Document({
-      sections: [{
-        properties: { page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
-        children,
-      }],
-    })
-    const blob = await Packer.toBlob(doc)
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    } catch {
-      setErrorTemp('Failed to generate .docx file.')
-    }
-  }
-
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#080808' }}>
       <Nav />
 
-      <main style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        padding: '48px 20px',
-        gap: '32px',
+      {/* Project bar */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 40px', height: '40px', flexShrink: 0,
+        borderBottom: '1px solid #1a1a1a',
       }}>
+        {editingName ? (
+          <input
+            ref={nameRef}
+            value={projectName}
+            onChange={e => setProjectName(e.target.value)}
+            onFocus={e => e.target.select()}
+            onBlur={saveName}
+            onKeyDown={e => {
+              if (e.key === 'Enter') saveName()
+              if (e.key === 'Escape') { setProjectName(activeProject?.name ?? ''); setEditingName(false) }
+            }}
+            autoFocus
+            style={{
+              background: 'transparent', border: 'none', outline: 'none',
+              fontSize: '12px', color: '#aaa', letterSpacing: '0.06em',
+              textTransform: 'uppercase', fontFamily: 'inherit',
+              padding: 0, margin: 0, height: '20px', lineHeight: '20px', boxSizing: 'border-box',
+            }}
+          />
+        ) : (
+          <button
+            onClick={() => setEditingName(true)}
+            style={{
+              background: 'none', border: 'none', padding: 0, cursor: 'text',
+              outline: 'none',
+              fontSize: '11px', color: '#444', letterSpacing: '0.08em',
+              textTransform: 'uppercase', fontFamily: 'inherit',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+          >
+            {activeProject?.name ?? 'untitled'}
+          </button>
+        )}
 
-        {/* Project bar */}
-        <div style={{ width: '100%', maxWidth: '980px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <input
-              value={projectName}
-              onChange={e => setProjectName(e.target.value)}
-              onFocus={e => e.currentTarget.select()}
-              style={{
-                background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px',
-                outline: 'none', fontSize: '11px', color: '#444',
-                letterSpacing: '0.03em', padding: '8px 14px', width: '160px',
-              }}
-            />
-            <button
-              onClick={saveProject}
-              style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', fontSize: '11px', color: saved ? '#666' : '#555', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
-            >
-              {saved ? 'Saved' : 'Save'}
-            </button>
-            <button
-              onClick={newProject}
-              style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', fontSize: '11px', color: confirmNew ? '#666' : '#555', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
-            >
-              {confirmNew ? 'Confirm?' : 'New'}
-            </button>
-            <button
-              onClick={() => setShowProjectList(v => !v)}
-              style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '8px', fontSize: '11px', color: showProjectList ? '#666' : '#555', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', flexShrink: 0 }}
-            >
-              Projects
-            </button>
-          </div>
-
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          {sources.length > 0 && (
+            <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.06em' }}>
+              {doneCount}/{sources.length} analyzed{loadingCount > 0 ? ' · analyzing...' : ''}
+            </span>
+          )}
+          <button
+            onClick={() => setShowProjects(v => !v)}
+            style={{
+              background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+              outline: 'none',
+              fontSize: '11px', color: '#444', letterSpacing: '0.08em',
+              textTransform: 'uppercase', fontFamily: 'inherit',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+          >
+            Projects
+          </button>
+          <button
+            onClick={createProject}
+            style={{
+              background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+              outline: 'none',
+              fontSize: '11px', color: '#444', letterSpacing: '0.08em',
+              textTransform: 'uppercase', fontFamily: 'inherit',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+          >
+            New
+          </button>
         </div>
+      </div>
 
-        {/* Input */}
-        <div style={{ width: '100%', maxWidth: '680px', display: 'flex', gap: '10px', marginTop: '-16px' }}>
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            background: '#111',
-            border: '1px solid #222',
-            borderRadius: '8px',
-            padding: '0 20px',
-          }}>
-            <input
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && cite()}
-              onPaste={e => {
-                const text = e.clipboardData.getData('text')
-                const parts = text.split(',').map(s => s.trim()).filter(Boolean)
-                const allUrlish = parts.length > 1 && parts.every(p => /^https?:\/\/|^10\.\d{4,}\//.test(p))
-                if (allUrlish) {
-                  e.preventDefault()
-                  citeRaw(text.trim())
+      {/* 3-panel layout */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+
+        {/* Left — Source hopper */}
+        <div style={{
+          width: '280px', flexShrink: 0,
+          borderRight: '1px solid #1a1a1a',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <div
+            style={{ padding: '16px', borderBottom: '1px solid #1a1a1a', flexShrink: 0 }}
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => {
+              e.preventDefault()
+              setDragOver(false)
+              if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files)
+            }}
+          >
+            <textarea
+              value={inputText}
+              onChange={e => setInputText(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault(); analyzeSources()
                 }
               }}
-              placeholder="Paste a source link or DOI..."
+              placeholder={'Paste URLs or DOIs\none per line or comma-separated'}
               style={{
-                flex: 1, background: 'none', border: 'none', outline: 'none',
-                color: '#f0f0f0', fontSize: '15px', padding: '18px 0',
+                width: '100%', height: '88px', boxSizing: 'border-box',
+                background: dragOver ? '#141414' : '#0f0f0f',
+                border: `1px solid ${dragOver ? '#333' : '#1a1a1a'}`,
+                borderRadius: '4px', color: '#ccc', fontSize: '13px',
+                padding: '10px 12px', resize: 'none', outline: 'none',
+                fontFamily: 'inherit', lineHeight: 1.6,
+                transition: 'border-color 0.15s, background 0.15s',
               }}
             />
-            {input && (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
               <button
-                onClick={() => { setInput(''); setError('') }}
-                style={{ background: 'none', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}
+                onClick={analyzeSources}
+                disabled={!inputText.trim()}
+                style={{
+                  flex: 1, padding: '9px',
+                  background: '#0f0f0f', border: '1px solid #1a1a1a',
+                  borderRadius: '4px',
+                  color: inputText.trim() ? '#bbb' : '#333',
+                  fontSize: '12px', letterSpacing: '0.08em',
+                  textTransform: 'uppercase', fontFamily: 'inherit',
+                  cursor: inputText.trim() ? 'pointer' : 'default',
+                  transition: 'border-color 0.15s, color 0.15s', outline: 'none',
+                }}
+                onMouseEnter={e => { if (inputText.trim()) { e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#e8e8e8' } }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = inputText.trim() ? '#bbb' : '#333' }}
               >
-                ×
+                Analyze ⌘↵
+              </button>
+              <button
+                onClick={() => fileRef.current?.click()}
+                title="Upload PDF or TXT"
+                style={{
+                  padding: '9px 12px',
+                  background: '#0f0f0f', border: '1px solid #1a1a1a',
+                  borderRadius: '4px', color: '#555',
+                  fontSize: '14px', lineHeight: 1,
+                  cursor: 'pointer', outline: 'none',
+                  transition: 'border-color 0.15s, color 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#aaa' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#555' }}
+              >
+                ↑
+              </button>
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".pdf,.txt"
+              multiple
+              style={{ display: 'none' }}
+              onChange={e => { if (e.target.files?.length) { uploadFiles(e.target.files); e.target.value = '' } }}
+            />
+          </div>
+
+          {/* Source list */}
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {sources.length === 0 ? (
+              <div style={{ padding: '20px 16px', fontSize: '13px', color: '#333', letterSpacing: '0.04em' }}>
+                No sources yet.
+              </div>
+            ) : sources.map(src => {
+              const displayName = src.label || src.result?.title || src.raw
+              const isEditing = editingSrcId === src.id
+              return (
+                <div
+                  key={src.id}
+                  onClick={e => {
+                    if (e.shiftKey && anchorId) {
+                      const anchorIdx = sources.findIndex(s => s.id === anchorId)
+                      const clickIdx  = sources.findIndex(s => s.id === src.id)
+                      const [lo, hi]  = anchorIdx < clickIdx ? [anchorIdx, clickIdx] : [clickIdx, anchorIdx]
+                      setSelectedIds(new Set(sources.slice(lo, hi + 1).map(s => s.id)))
+                      setSelectedId(src.id)
+                    } else {
+                      setSelectedIds(new Set([src.id]))
+                      setSelectedId(src.id)
+                      setAnchorId(src.id)
+                    }
+                  }}
+                  onContextMenu={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    // If right-clicking outside the current selection, re-select just this one
+                    if (!selectedIds.has(src.id)) {
+                      setSelectedIds(new Set([src.id]))
+                      setSelectedId(src.id)
+                      setAnchorId(src.id)
+                    }
+                    setContextMenu({ srcId: src.id, x: e.clientX, y: e.clientY })
+                  }}
+                  style={{
+                    padding: '10px 16px',
+                    cursor: 'pointer',
+                    background: selectedIds.has(src.id) ? '#111' : 'transparent',
+                    borderLeft: `2px solid ${selectedId === src.id ? '#333' : selectedIds.has(src.id) ? '#222' : 'transparent'}`,
+                    display: 'flex', alignItems: 'flex-start', gap: '9px',
+                    transition: 'background 0.1s',
+                    userSelect: 'none',
+                  }}
+                  onMouseEnter={e => { if (!selectedIds.has(src.id)) e.currentTarget.style.background = '#0d0d0d' }}
+                  onMouseLeave={e => { if (!selectedIds.has(src.id)) e.currentTarget.style.background = 'transparent' }}
+                >
+                  <span style={{
+                    width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0, marginTop: '5px',
+                    background:
+                      src.status === 'done'    ? '#2a6' :
+                      src.status === 'error'   ? '#933' :
+                      src.status === 'loading' ? '#555' : '#2a2a2a',
+                  }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {isEditing ? (
+                      <input
+                        autoFocus
+                        value={srcLabelInput}
+                        onChange={e => setSrcLabelInput(e.target.value)}
+                        onFocus={e => e.target.select()}
+                        onClick={e => e.stopPropagation()}
+                        onBlur={() => {
+                          const val = srcLabelInput.trim()
+                          if (activeId) patchSource(activeId, src.id, { label: val || undefined })
+                          setEditingSrcId(null)
+                        }}
+                        onKeyDown={e => {
+                          e.stopPropagation()
+                          if (e.key === 'Enter') {
+                            const val = srcLabelInput.trim()
+                            if (activeId) patchSource(activeId, src.id, { label: val || undefined })
+                            setEditingSrcId(null)
+                          }
+                          if (e.key === 'Escape') setEditingSrcId(null)
+                        }}
+                        style={{
+                          background: 'transparent', border: 'none', outline: 'none',
+                          width: '100%', fontSize: '13px', color: '#ccc',
+                          fontFamily: 'inherit', padding: 0, height: '18px',
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        fontSize: '13px', lineHeight: 1.4,
+                        color: src.status === 'done' ? '#ccc' : '#555',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {displayName}
+                      </div>
+                    )}
+                    {src.status === 'loading' && (
+                      <div style={{ fontSize: '11px', color: '#444', marginTop: '3px', letterSpacing: '0.04em' }}>analyzing...</div>
+                    )}
+                    {src.status === 'error' && (
+                      <div style={{ fontSize: '11px', color: '#733', marginTop: '3px', letterSpacing: '0.03em' }}>{src.error}</div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Middle — Analysis */}
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          borderRight: '1px solid #1a1a1a', overflow: 'hidden',
+        }}>
+          {/* Center panel header */}
+          <div style={{
+            padding: '0 20px', height: '40px', flexShrink: 0,
+            borderBottom: '1px solid #1a1a1a',
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px',
+          }}>
+            {selectedSource?.status === 'done' && (
+              <>
+                <button
+                  onClick={() => setCenterView('analysis')}
+                  style={{
+                    background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
+                    fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'inherit',
+                    color: centerView === 'analysis' ? '#aaa' : '#333',
+                  }}
+                >
+                  Analysis
+                </button>
+                <button
+                  onClick={() => setCenterView('source')}
+                  style={{
+                    background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
+                    fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'inherit',
+                    color: centerView === 'source' ? '#aaa' : '#333',
+                  }}
+                >
+                  Source
+                </button>
+              </>
+            )}
+          </div>
+
+          <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
+            {!selectedSource && (
+              <div style={{ fontSize: '13px', color: '#333', paddingTop: '60px', textAlign: 'center', letterSpacing: '0.04em' }}>
+                Select a source to view its analysis.
+              </div>
+            )}
+            {selectedSource?.status === 'queued' && (
+              <div style={{ fontSize: '13px', color: '#333', paddingTop: '60px', textAlign: 'center', letterSpacing: '0.04em' }}>
+                Queued.
+              </div>
+            )}
+            {selectedSource?.status === 'loading' && (
+              <div style={{ fontSize: '13px', color: '#444', paddingTop: '60px', textAlign: 'center', letterSpacing: '0.04em' }}>
+                Analyzing...
+              </div>
+            )}
+            {selectedSource?.status === 'error' && (
+              <div style={{ fontSize: '13px', color: '#733', paddingTop: '60px', textAlign: 'center', letterSpacing: '0.04em' }}>
+                {selectedSource.error}
+              </div>
+            )}
+            {selectedSource?.status === 'done' && selectedSource.result && (
+              centerView === 'source' ? (
+                <SourceTextView text={selectedSource.rawText ?? 'No source text available.'} highlight={highlightText} />
+              ) : (
+                <AnalysisView result={selectedSource.result} url={selectedSource.raw} onJump={jumpToSource} />
+              )
+            )}
+          </div>
+        </div>
+
+        {/* Right — Draft */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{
+            padding: '0 20px', height: '40px', flexShrink: 0,
+            borderBottom: '1px solid #1a1a1a',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            fontSize: '12px', color: '#444', letterSpacing: '0.08em', textTransform: 'uppercase',
+          }}>
+            <span>Draft</span>
+            {(activeProject?.draftCreated || activeProject?.draftTitle || activeProject?.draft) && (
+              <button
+                onClick={() => {
+                  if (activeId) updateProject(activeId, { draftCreated: false, draft: '', draftTitle: '' })
+                }}
+                style={{
+                  background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
+                  fontSize: '11px', color: '#333', letterSpacing: '0.06em',
+                  textTransform: 'uppercase', fontFamily: 'inherit',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#666')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+              >
+                Discard
               </button>
             )}
           </div>
-          <button
-            onClick={cite}
-            disabled={loading}
-            style={{
-              background: '#f0f0f0', color: '#0a0a0a', border: 'none',
-              borderRadius: '8px', padding: '0 24px', fontSize: '13px',
-              fontWeight: 600, cursor: loading ? 'default' : 'pointer',
-              letterSpacing: '0.04em', opacity: loading ? 0.6 : 1,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {loading ? 'Loading...' : 'Add'}
-          </button>
-        </div>
 
-        <p style={{ fontSize: '11px', color: '#444', letterSpacing: '0.03em', maxWidth: '680px', width: '100%', marginTop: '-24px', paddingLeft: '4px' }}>
-          Supports CSV bulk paste
-        </p>
-
-        {error && (
-          <p style={{ fontSize: '13px', color: '#555', letterSpacing: '0.02em', maxWidth: '680px', width: '100%', marginTop: '-20px', marginBottom: '-20px', paddingLeft: '4px' }}>
-            {error}
-          </p>
-        )}
-
-        {/* Sources + output */}
-        <div style={{ width: '100%', maxWidth: '980px', display: 'flex', gap: '12px', alignItems: 'stretch' }}>
-          <div style={{ flex: 1, minWidth: 0, border: '1px solid #1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
-
-          {!sources.length && (
-            <div style={{ borderBottom: '1px solid #1a1a1a', padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <p style={{ fontSize: '13px', color: '#555', letterSpacing: '0.02em' }}>Nothing here yet.</p>
-              <p style={{ fontSize: '11px', color: '#444', letterSpacing: '0.02em' }}>Paste a source above to get started.</p>
+          {!(activeProject?.draftCreated || activeProject?.draftTitle || activeProject?.draft) ? (
+            <div style={{
+              flex: 1, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: '10px',
+            }}>
+              <button
+                onClick={() => {
+                  if (activeId) updateProject(activeId, { draftCreated: true })
+                  requestAnimationFrame(() => draftTitleRef.current?.focus())
+                }}
+                style={{
+                  background: '#0f0f0f', border: '1px solid #1a1a1a',
+                  borderRadius: '4px', padding: '9px 20px', cursor: 'pointer',
+                  fontSize: '12px', color: '#555', letterSpacing: '0.08em',
+                  textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
+                  transition: 'border-color 0.15s, color 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#999' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#555' }}
+              >
+                New Draft
+              </button>
+              <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em' }}>
+                no draft yet
+              </span>
             </div>
+          ) : (
+            <>
+              <div style={{ padding: '20px 28px 0', flexShrink: 0, borderBottom: '1px solid #111' }}>
+                <input
+                  ref={draftTitleRef}
+                  value={activeProject?.draftTitle ?? ''}
+                  onChange={e => setDraftTitle(e.target.value)}
+                  placeholder="Title your draft..."
+                  style={{
+                    width: '100%', background: 'transparent', border: 'none', outline: 'none',
+                    fontSize: '18px', fontWeight: 500, color: '#aaa',
+                    fontFamily: 'inherit', padding: '0 0 16px 0', boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <textarea
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                disabled={!activeProject?.draftTitle?.trim()}
+                onKeyDown={e => {
+                  if (e.key === 'Tab') {
+                    e.preventDefault()
+                    const el = e.currentTarget
+                    const start = el.selectionStart
+                    const end = el.selectionEnd
+                    const next = draft.slice(0, start) + '    ' + draft.slice(end)
+                    setDraft(next)
+                    requestAnimationFrame(() => {
+                      el.selectionStart = el.selectionEnd = start + 4
+                    })
+                  }
+                }}
+                placeholder={activeProject?.draftTitle?.trim() ? 'Start writing...' : 'Add a title first...'}
+                style={{
+                  flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                  color: activeProject?.draftTitle?.trim() ? '#bbb' : '#2a2a2a',
+                  fontSize: '14px', lineHeight: 1.9,
+                  padding: '20px 28px', resize: 'none', fontFamily: 'inherit',
+                  overflowY: 'auto', cursor: activeProject?.draftTitle?.trim() ? 'text' : 'default',
+                  WebkitTextFillColor: 'inherit', opacity: 1,
+                }}
+              />
+              <div style={{
+                padding: '0 20px', height: '34px', flexShrink: 0,
+                borderTop: '1px solid #1a1a1a',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                fontSize: '11px', color: '#333', letterSpacing: '0.06em',
+              }}>
+                <span>{draft.split(/\s+/).filter(Boolean).length} words</span>
+                {draft.trim() && (
+                  <button
+                    onClick={() => {
+                      const title = activeProject?.draftTitle?.trim() || 'draft'
+                      const content = `${title}\n${'—'.repeat(title.length)}\n\n${draft}`
+                      const blob = new Blob([content], { type: 'text/plain' })
+                      const a = document.createElement('a')
+                      a.href = URL.createObjectURL(blob)
+                      a.download = `${title.replace(/\s+/g, '-').toLowerCase()}.txt`
+                      a.click()
+                      URL.revokeObjectURL(a.href)
+                    }}
+                    style={{
+                      background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                      fontSize: '11px', color: '#333', letterSpacing: '0.06em',
+                      textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#666')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+                  >
+                    Export
+                  </button>
+                )}
+              </div>
+            </>
           )}
+        </div>
+      </div>
 
-            {/* Format tabs */}
-            <div style={{ display: 'flex', borderBottom: '1px solid #1a1a1a' }}>
-              {(['MLA', 'APA', 'Chicago'] as Format[]).map(f => (
-                <button
-                  key={f}
-                  onClick={() => { setFormat(f); setCopied(false) }}
-                  style={{
-                    flex: 1, background: format === f ? '#141414' : 'none',
-                    border: 'none', borderRight: f !== 'Chicago' ? '1px solid #1a1a1a' : 'none',
-                    color: format === f ? '#f0f0f0' : '#555',
-                    fontSize: '11px', fontWeight: format === f ? 600 : 400,
-                    padding: '12px', cursor: 'pointer',
-                    letterSpacing: '0.08em', textTransform: 'uppercase',
-                    transition: 'color 0.15s',
-                  }}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-
-            {/* View tabs */}
-            <div style={{ display: 'flex', borderBottom: '1px solid #1a1a1a' }}>
-              {(['works-cited', 'in-text'] as const).map(v => (
-                <button
-                  key={v}
-                  onClick={() => { setView(v); setCopied(false) }}
-                  style={{
-                    flex: 1, background: view === v ? '#141414' : 'none',
-                    border: 'none', borderRight: v === 'works-cited' ? '1px solid #1a1a1a' : 'none',
-                    color: view === v ? '#f0f0f0' : '#555',
-                    fontSize: '11px', fontWeight: view === v ? 600 : 400,
-                    padding: '12px', cursor: 'pointer',
-                    letterSpacing: '0.08em', textTransform: 'uppercase',
-                    transition: 'color 0.15s',
-                  }}
-                >
-                  {v === 'works-cited' ? listTitle : 'In-Text'}
-                </button>
-              ))}
-            </div>
-
-            {view === 'works-cited' ? (
-              <div style={{ padding: '20px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {!sources.length && (
-                  <p style={{ fontSize: '13px', color: '#444', letterSpacing: '0.02em', textAlign: 'center', margin: '12px 0', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
-                    Your {listTitle} will appear here.
-                  </p>
-                )}
-                {allCitations.map((c, i) => {
-                  const { src, origIndex } = sorted[i]
-                  return (
-                    <div key={src.meta.doi ?? src.meta.url} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                      <p style={{
-                        flex: 1, fontSize: '14px', color: '#aaa', lineHeight: 1.85,
-                        fontFamily: 'Georgia, serif', letterSpacing: '0.01em',
-                        margin: 0, paddingLeft: '2em', textIndent: '-2em',
-                      }}>
-                        {c}
-                      </p>
-                      <button
-                        onClick={() => handleRemoveClick(origIndex)}
-                        style={{ background: 'none', border: 'none', color: '#555', fontSize: '13px', cursor: 'pointer', flexShrink: 0, letterSpacing: '0.06em', textTransform: 'uppercase', paddingTop: '2px', width: '60px', textAlign: 'right' }}
-                      >
-                        {confirmDelete === origIndex ? 'confirm?' : '✕'}
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div style={{ padding: '20px 24px 24px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {!sources.length && (
-                  <p style={{ fontSize: '13px', color: '#444', letterSpacing: '0.02em', textAlign: 'center', margin: '12px 0', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
-                    In-text citations will appear here.
-                  </p>
-                )}
-                {sorted.map(({ src, origIndex }) => {
-                  const inText = format === 'MLA' ? inTextMLA(src.meta) : format === 'APA' ? inTextAPA(src.meta) : inTextChicago(src.meta)
-                  return (
-                    <div key={src.meta.doi ?? src.meta.url} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <p style={{ fontSize: '14px', color: '#aaa', fontFamily: 'Georgia, serif', margin: 0, letterSpacing: '0.01em', lineHeight: 1.85 }}>
-                          {inText}
-                        </p>
-                        <p style={{ fontSize: '11px', color: '#555', margin: 0, letterSpacing: '0.03em' }}>
-                          {src.meta.title}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleRemoveClick(origIndex)}
-                        style={{ background: 'none', border: 'none', color: '#555', fontSize: '13px', cursor: 'pointer', flexShrink: 0, letterSpacing: '0.06em', textTransform: 'uppercase', paddingTop: '2px', width: '60px', textAlign: 'right' }}
-                      >
-                        {confirmDelete === origIndex ? 'confirm?' : '✕'}
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* Copy all */}
-            <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #1a1a1a' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.03em' }}>
-                  {sources.length} source{sources.length !== 1 ? 's' : ''}
-                </span>
-                <button
-                  onClick={handleClearClick}
-                  style={{ background: 'none', border: 'none', fontSize: '11px', color: '#555', cursor: 'pointer', letterSpacing: '0.08em', textTransform: 'uppercase', padding: 0 }}
-                >
-                  {confirmClear ? 'Confirm?' : 'Clear All'}
-                </button>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={downloadDocx}
-                  style={{
-                    background: 'none', color: '#555',
-                    border: '1px solid #1e1e1e',
-                    borderRadius: '6px', padding: '8px 20px',
-                    fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                    letterSpacing: '0.06em', textTransform: 'uppercase',
-                  }}
-                >
-                  Export .docx
-                </button>
-                <button
-                  onClick={copyAll}
-                  style={{
-                    background: copied ? 'none' : '#f0f0f0',
-                    color: copied ? '#555' : '#0a0a0a',
-                    border: copied ? '1px solid #1e1e1e' : 'none',
-                    borderRadius: '6px', padding: '8px 20px',
-                    fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                    letterSpacing: '0.06em', textTransform: 'uppercase',
-                  }}
-                >
-                  {copied ? 'Copied' : 'Copy All'}
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Notes panel */}
-          <div style={{
-            width: '260px', flexShrink: 0,
-            border: '1px solid #1a1a1a', borderRadius: '10px',
-            overflow: 'hidden', display: 'flex', flexDirection: 'column',
-          }}>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder="Quotes, reminders, thoughts on your sources..."
-              style={{
-                flex: 1, width: '100%', minHeight: '200px',
-                background: 'none', border: 'none', outline: 'none', resize: 'none',
-                color: '#aaa', fontSize: '13px', lineHeight: 1.7,
-                padding: '16px 20px', letterSpacing: '0.01em',
-              }}
-            />
-          </div>
-
-          </div>
-      </main>
-
-      {/* Projects overlay */}
-      {showProjectList && (
+      {/* Projects modal */}
+      {showProjects && (
         <div
-          onClick={() => { setShowProjectList(false); setConfirmDeleteProject(null) }}
-          style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setShowProjects(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 100,
+          }}
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '12px', width: '100%', maxWidth: '400px', margin: '0 20px', overflow: 'hidden' }}
+            style={{
+              background: '#0d0d0d', border: '1px solid #1a1a1a',
+              borderRadius: '6px', width: '320px', maxHeight: '400px',
+              display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            }}
           >
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Saved Projects</span>
-              <button onClick={() => { setShowProjectList(false); setConfirmDeleteProject(null) }} style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', fontSize: '16px', lineHeight: 1, padding: 0 }}>×</button>
+            <div style={{
+              padding: '14px 20px', borderBottom: '1px solid #1a1a1a',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <span style={{ fontSize: '12px', color: '#555', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                Projects
+              </span>
+              <button
+                onClick={createProject}
+                style={{
+                  background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                  fontSize: '12px', color: '#555', letterSpacing: '0.06em',
+                  textTransform: 'uppercase', fontFamily: 'inherit',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#999')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+              >
+                New
+              </button>
             </div>
-            {projects.length === 0 ? (
-              <p style={{ padding: '24px', fontSize: '12px', color: '#444', letterSpacing: '0.03em', margin: 0, textAlign: 'center' }}>No saved projects.</p>
-            ) : (
-              projects.map(p => (
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {projects.map(p => (
                 <div
                   key={p.id}
-                  onClick={() => { loadProject(p); setShowProjectList(false); setConfirmDeleteProject(null) }}
-                  style={{ padding: '14px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1a1a1a' }}
+                  onClick={() => switchProject(p.id)}
+                  onContextMenu={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setProjContextMenu({ projId: p.id, x: e.clientX, y: e.clientY })
+                  }}
+                  style={{
+                    padding: '11px 20px', display: 'flex', alignItems: 'center', gap: '10px',
+                    background: p.id === activeId ? '#111' : 'transparent',
+                    borderLeft: `2px solid ${p.id === activeId ? '#333' : 'transparent'}`,
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={e => { if (p.id !== activeId) e.currentTarget.style.background = '#0d0d0d' }}
+                  onMouseLeave={e => { if (p.id !== activeId) e.currentTarget.style.background = 'transparent' }}
                 >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <span style={{ fontSize: '13px', color: '#555', letterSpacing: '0.02em' }}>{p.name}</span>
-                    <span style={{ fontSize: '10px', color: '#444', letterSpacing: '0.02em' }}>{p.sources.length} source{p.sources.length !== 1 ? 's' : ''} · {new Date(p.savedAt).toLocaleDateString()}</span>
-                  </div>
-                  <button
-                    onClick={e => deleteProject(p.id, e)}
-                    style={{ background: 'none', border: 'none', color: confirmDeleteProject === p.id ? '#888' : '#444', cursor: 'pointer', fontSize: confirmDeleteProject === p.id ? '11px' : '16px', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '0 0 0 12px', flexShrink: 0, lineHeight: 1 }}
-                  >
-                    {confirmDeleteProject === p.id ? 'Confirm?' : '✕'}
-                  </button>
+                  {editingProjId === p.id ? (
+                    <input
+                      autoFocus
+                      value={projNameInput}
+                      onChange={e => setProjNameInput(e.target.value)}
+                      onFocus={e => e.target.select()}
+                      onClick={e => e.stopPropagation()}
+                      onBlur={() => {
+                        const name = projNameInput.trim() || p.name
+                        updateProject(p.id, { name })
+                        if (activeId === p.id) setProjectName(name)
+                        setEditingProjId(null)
+                      }}
+                      onKeyDown={e => {
+                        e.stopPropagation()
+                        if (e.key === 'Enter') {
+                          const name = projNameInput.trim() || p.name
+                          updateProject(p.id, { name })
+                          if (activeId === p.id) setProjectName(name)
+                          setEditingProjId(null)
+                        }
+                        if (e.key === 'Escape') setEditingProjId(null)
+                      }}
+                      style={{
+                        flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                        fontSize: '13px', color: '#ccc', fontFamily: 'inherit',
+                        padding: 0, letterSpacing: '0.03em',
+                      }}
+                    />
+                  ) : (
+                    <span style={{
+                      flex: 1, fontSize: '13px',
+                      color: p.id === activeId ? '#ddd' : '#555', letterSpacing: '0.03em',
+                    }}>
+                      {p.name}
+                    </span>
+                  )}
+                  <span style={{ fontSize: '11px', color: '#333' }}>
+                    {p.sources.length} {p.sources.length === 1 ? 'source' : 'sources'}
+                  </span>
                 </div>
-              ))
-            )}
+              ))}
+            </div>
+            <div style={{
+              padding: '8px 20px', borderTop: '1px solid #111',
+              fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em', textTransform: 'uppercase',
+            }}>
+              Esc to close
+            </div>
           </div>
         </div>
       )}
 
-      <Footer />
+      {/* Project context menu */}
+      {projContextMenu && (() => {
+        const proj = projects.find(p => p.id === projContextMenu.projId)
+        if (!proj) return null
+        return (
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'fixed', left: projContextMenu.x, top: projContextMenu.y,
+              background: '#141414', border: '1px solid #2a2a2a', borderRadius: '4px',
+              zIndex: 300, minWidth: '140px', overflow: 'hidden',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+            }}
+          >
+            <button
+              onClick={() => {
+                setEditingProjId(proj.id)
+                setProjNameInput(proj.name)
+                setProjContextMenu(null)
+              }}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left',
+                background: 'none', border: 'none', padding: '9px 14px',
+                cursor: 'pointer', fontSize: '12px', color: '#777',
+                letterSpacing: '0.04em', fontFamily: 'inherit',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              Rename
+            </button>
+            <div style={{ height: '1px', background: '#1e1e1e' }} />
+            {projects.length === 1 ? (
+              <div style={{
+                padding: '9px 14px', fontSize: '12px', color: '#333',
+                letterSpacing: '0.04em', userSelect: 'none',
+              }}>
+                Can't delete only project
+              </div>
+            ) : confirmDeleteProjId === proj.id ? (
+              <button
+                onClick={() => { deleteProject(proj.id); setConfirmDeleteProjId(null); setProjContextMenu(null) }}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  background: 'none', border: 'none', padding: '9px 14px',
+                  cursor: 'pointer', fontSize: '12px', color: '#c55',
+                  letterSpacing: '0.04em', fontFamily: 'inherit',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                Remove
+              </button>
+            ) : (
+              <button
+                onClick={() => setConfirmDeleteProjId(proj.id)}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  background: 'none', border: 'none', padding: '9px 14px',
+                  cursor: 'pointer', fontSize: '12px', color: '#777',
+                  letterSpacing: '0.04em', fontFamily: 'inherit',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* Source context menu */}
+      {contextMenu && (() => {
+        const src = sources.find(s => s.id === contextMenu.srcId)
+        if (!src) return null
+        return (
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'fixed', left: contextMenu.x, top: contextMenu.y,
+              background: '#141414', border: '1px solid #2a2a2a', borderRadius: '4px',
+              zIndex: 200, minWidth: '140px', overflow: 'hidden',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+            }}
+          >
+            {selectedIds.size <= 1 && (
+              <>
+                <button
+                  onClick={() => {
+                    setEditingSrcId(src.id)
+                    setSrcLabelInput(src.label ?? src.result?.title ?? src.raw)
+                    setContextMenu(null)
+                  }}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left',
+                    background: 'none', border: 'none', padding: '9px 14px',
+                    cursor: 'pointer', fontSize: '12px', color: '#777',
+                    letterSpacing: '0.04em', fontFamily: 'inherit',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  Rename
+                </button>
+                <div style={{ height: '1px', background: '#1e1e1e' }} />
+              </>
+            )}
+            {confirmDeleteSrcId === src.id ? (
+              <button
+                onClick={() => {
+                  selectedIds.size > 1 ? removeSelected() : removeSource(src.id)
+                  setConfirmDeleteSrcId(null)
+                  setContextMenu(null)
+                }}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  background: 'none', border: 'none', padding: '9px 14px',
+                  cursor: 'pointer', fontSize: '12px', color: '#c55',
+                  letterSpacing: '0.04em', fontFamily: 'inherit',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                Remove {selectedIds.size > 1 ? `${selectedIds.size} sources` : ''}
+              </button>
+            ) : (
+              <button
+                onClick={() => setConfirmDeleteSrcId(src.id)}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  background: 'none', border: 'none', padding: '9px 14px',
+                  cursor: 'pointer', fontSize: '12px', color: '#777',
+                  letterSpacing: '0.04em', fontFamily: 'inherit',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                Remove {selectedIds.size > 1 ? `${selectedIds.size} sources` : ''}
+              </button>
+            )}
+          </div>
+        )
+      })()}
     </div>
   )
 }
+
+// ─── Source text view ────────────────────────────────────────────────────────
+
+function SourceTextView({ text, highlight }: { text: string; highlight: string | null }) {
+  const markRef = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    if (markRef.current) {
+      markRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [highlight])
+
+  const pre: React.CSSProperties = {
+    fontSize: '13px', color: '#666', lineHeight: 1.75,
+    whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+    margin: 0, padding: 0, fontFamily: 'inherit',
+  }
+
+  if (!highlight) return <pre style={pre}>{text}</pre>
+
+  // Normalize newlines→spaces for search (positions stay identical, it's 1:1)
+  const searchText = text.replace(/\n/g, ' ')
+  const needle     = highlight.slice(0, 120).toLowerCase()
+  const idx        = searchText.toLowerCase().indexOf(needle)
+  if (idx === -1) return <pre style={pre}>{text}</pre>
+
+  // Use needle only to find position; highlight the full original text length
+  const matchLen = highlight.length
+  const before = text.slice(0, idx)
+  const match  = text.slice(idx, idx + matchLen)
+  const after  = text.slice(idx + matchLen)
+
+  return (
+    <pre style={pre}>
+      {before}
+      <span ref={markRef} style={{
+        background: '#1e3020', color: '#aaa',
+        borderRadius: '2px', padding: '1px 2px',
+        outline: '1px solid #2a4a30',
+      }}>
+        {match}
+      </span>
+      {after}
+    </pre>
+  )
+}
+
+// ─── Analysis view ────────────────────────────────────────────────────────────
+
+function AnalysisView({ result, url, onJump }: { result: AnalysisResult; url: string; onJump: (text: string) => void }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+
+      {/* Header */}
+      <div style={{ paddingBottom: '18px', borderBottom: '1px solid #1a1a1a', marginBottom: '20px' }}>
+        <div style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', lineHeight: 1.4, marginBottom: '6px' }}>
+          {result.title}
+        </div>
+        <div style={{ fontSize: '12px', color: '#555', lineHeight: 1.7 }}>
+          {result.authors?.join(', ')}
+        </div>
+        <div style={{ fontSize: '12px', color: '#444', marginTop: '3px' }}>
+          {[result.year, result.journal, result.type].filter(Boolean).join(' · ')}
+          {result.doi && <span style={{ color: '#333' }}> · {result.doi}</span>}
+        </div>
+      </div>
+
+      {result.abstract && (
+        <Field label="Abstract">
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+            <p style={{ fontSize: '13px', color: '#777', lineHeight: 1.75, margin: 0, flex: 1 }}>{result.abstract}</p>
+            <CopyBtn text={result.abstract} />
+            <JumpBtn onClick={() => onJump(result.abstract!)} />
+          </div>
+        </Field>
+      )}
+
+      {(result.sample_n || result.sample_desc) && (
+        <Field label="Sample">
+          {result.sample_n   && <Row value={result.sample_n}   onJump={onJump} />}
+          {result.sample_desc && <Row value={result.sample_desc} onJump={onJump} />}
+        </Field>
+      )}
+
+      {result.methodology && (
+        <Field label="Methodology">
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+            <p style={{ fontSize: '13px', color: '#777', lineHeight: 1.75, margin: 0, flex: 1 }}>{result.methodology}</p>
+            <CopyBtn text={result.methodology} />
+            <JumpBtn onClick={() => onJump(result.methodology!)} />
+          </div>
+        </Field>
+      )}
+
+      {result.stats?.length > 0 && (
+        <Field label="Statistics">
+          {result.stats.map((s, i) => <Row key={i} value={s} onJump={onJump} />)}
+        </Field>
+      )}
+
+      {result.findings?.length > 0 && (
+        <Field label="Findings">
+          {result.findings.map((f, i) => <Row key={i} value={f} onJump={onJump} />)}
+        </Field>
+      )}
+
+      {result.conclusions?.length > 0 && (
+        <Field label="Conclusions">
+          {result.conclusions.map((c, i) => <Row key={i} value={c} onJump={onJump} />)}
+        </Field>
+      )}
+
+      {result.quotes?.length > 0 && (
+        <Field label="Direct Quotes">
+          {result.quotes.map((q, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '6px' }}>
+              <div style={{
+                fontSize: '13px', color: '#666', lineHeight: 1.7,
+                padding: '8px 12px', borderLeft: '2px solid #222',
+                fontStyle: 'italic', flex: 1,
+              }}>
+                "{q}"
+              </div>
+              <JumpBtn onClick={() => onJump(q)} />
+            </div>
+          ))}
+        </Field>
+      )}
+
+      {result.limitations?.length > 0 && (
+        <Field label="Limitations">
+          {result.limitations.map((l, i) => <Row key={i} value={l} onJump={onJump} />)}
+        </Field>
+      )}
+
+      {result.concepts?.length > 0 && (
+        <Field label="Concepts & Frameworks">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+            {result.concepts.map((c, i) => <Tag key={i}>{c}</Tag>)}
+          </div>
+        </Field>
+      )}
+
+      {result.keywords?.length > 0 && (
+        <Field label="Keywords">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+            {result.keywords.map((k, i) => <Tag key={i}>{k}</Tag>)}
+          </div>
+        </Field>
+      )}
+
+      <div style={{ paddingTop: '16px', marginTop: '4px', borderTop: '1px solid #111' }}>
+        <a
+          href={url} target="_blank" rel="noreferrer"
+          style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', wordBreak: 'break-all' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#555')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+        >
+          {url}
+        </a>
+      </div>
+    </div>
+  )
+}
+
+function JumpBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="Find in source"
+      style={{
+        background: 'none', border: 'none', padding: '2px 4px',
+        cursor: 'pointer', color: '#2a2a2a', fontSize: '12px',
+        lineHeight: 1, outline: 'none', flexShrink: 0, marginTop: '4px',
+        fontFamily: 'inherit',
+      }}
+      onMouseEnter={e => (e.currentTarget.style.color = '#666')}
+      onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+    >
+      ◎
+    </button>
+  )
+}
+
+function CopyBtn({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(text).then(() => {
+          setCopied(true)
+          setTimeout(() => setCopied(false), 1200)
+        })
+      }}
+      title="Copy"
+      style={{
+        background: 'none', border: 'none', padding: '2px 4px',
+        cursor: 'pointer', color: copied ? '#4a8' : '#2a2a2a', fontSize: '11px',
+        lineHeight: 1, outline: 'none', flexShrink: 0, marginTop: '5px',
+        fontFamily: 'inherit', letterSpacing: '0.04em',
+        transition: 'color 0.15s',
+      }}
+      onMouseEnter={e => { if (!copied) e.currentTarget.style.color = '#666' }}
+      onMouseLeave={e => { if (!copied) e.currentTarget.style.color = '#2a2a2a' }}
+    >
+      {copied ? '✓' : '⌘'}
+    </button>
+  )
+}
+
+function Row({ value, onJump }: { value: string; onJump?: (t: string) => void }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: '6px',
+      borderLeft: '2px solid #1e1e1e', marginBottom: '4px',
+    }}>
+      <div style={{
+        fontSize: '13px', color: '#777', lineHeight: 1.65,
+        padding: '5px 10px', flex: 1,
+      }}>
+        {value}
+      </div>
+      <CopyBtn text={value} />
+      {onJump && <JumpBtn onClick={() => onJump(value)} />}
+    </div>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: '20px' }}>
+      <div style={{
+        fontSize: '10px', color: '#3a3a3a', letterSpacing: '0.12em',
+        textTransform: 'uppercase', marginBottom: '8px', fontWeight: 500,
+      }}>
+        {label}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function Tag({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{
+      padding: '3px 8px', background: '#0f0f0f',
+      border: '1px solid #1e1e1e', borderRadius: '3px',
+      fontSize: '11px', color: '#4a4a4a', letterSpacing: '0.03em',
+    }}>
+      {children}
+    </span>
+  )
+}
+

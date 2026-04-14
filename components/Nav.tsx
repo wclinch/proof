@@ -1,12 +1,7 @@
 'use client'
-
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 
 export default function Nav() {
-  const pathname = usePathname()
-  const isHome = pathname === '/'
-
   return (
     <nav style={{
       padding: '24px 40px',
@@ -17,15 +12,17 @@ export default function Nav() {
     }}>
       <Link href="/" style={{ textDecoration: 'none' }}>
         <span style={{
-          display: 'flex', alignItems: 'center', gap: '10px',
-          fontSize: '15px', fontWeight: 600, letterSpacing: '0.15em',
-          textTransform: 'uppercase', color: '#f0f0f0',
+          fontSize: '22px', fontWeight: 300, color: '#888',
         }}>
-          <span style={{ fontSize: '15px', fontWeight: 300, letterSpacing: '-1px' }}>{'{'}</span>
-          Proof
+          {'{'}
         </span>
       </Link>
 
+      <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+        <Link href="/about"   className="nav-link">About</Link>
+        <Link href="/privacy" className="nav-link">Privacy</Link>
+        <a href="mailto:proof_official@protonmail.com" className="nav-link">Contact</a>
+      </div>
     </nav>
   )
 }
