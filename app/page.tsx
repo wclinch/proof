@@ -546,6 +546,7 @@ export default function Home() {
           borderBottom: "1px solid #1a1a1a",
         }}
       >
+        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
         {editingName ? (
           <input
             ref={nameRef}
@@ -575,6 +576,7 @@ export default function Home() {
               height: "20px",
               lineHeight: "20px",
               boxSizing: "border-box",
+              width: "100%",
             }}
           />
         ) : (
@@ -591,6 +593,10 @@ export default function Home() {
               letterSpacing: "0.08em",
               textTransform: "uppercase",
               fontFamily: "inherit",
+              maxWidth: "100%",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "#777")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "#444")}
@@ -598,6 +604,7 @@ export default function Home() {
             {activeProject?.name ?? "untitled"}
           </button>
         )}
+        </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
           {sources.length > 0 && (
@@ -974,6 +981,7 @@ export default function Home() {
         <div
           style={{
             flex: 1,
+            minWidth: 0,
             display: "flex",
             flexDirection: "column",
             borderRight: "1px solid #1a1a1a",
@@ -1107,6 +1115,7 @@ export default function Home() {
         <div
           style={{
             flex: 1,
+            minWidth: 0,
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
