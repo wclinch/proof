@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'GROQ_API_KEY not configured' }, { status: 500 })
   }
 
-  const { url, session_id, draft_title } = await req.json() as { url: string; session_id?: string; draft_title?: string }
+  const { url, session_id } = await req.json() as { url: string; session_id?: string }
   if (!url?.trim()) {
     return NextResponse.json({ error: 'No URL provided' }, { status: 400 })
   }
@@ -151,7 +151,6 @@ export async function POST(req: NextRequest) {
       year:        (analysis as Record<string, unknown>).year ?? null,
       doi:         (analysis as Record<string, unknown>).doi ?? null,
       input_type:  inputType,
-      draft_title: draft_title ?? null,
       session_id:  session_id ?? null,
     }).then(({ error }) => { if (error) console.error('[supabase]', error.message) })
 

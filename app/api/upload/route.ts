@@ -19,7 +19,6 @@ export async function POST(req: NextRequest) {
 
   const name        = file.name
   const session_id  = formData.get('session_id') as string | null
-  const draft_title = (formData.get('draft_title') as string | null) || null
   const buffer      = Buffer.from(await file.arrayBuffer())
 
   let fullText: string
@@ -56,7 +55,6 @@ export async function POST(req: NextRequest) {
       year:        (analysis as Record<string, unknown>).year ?? null,
       doi:         (analysis as Record<string, unknown>).doi ?? null,
       input_type:  'file',
-      draft_title: draft_title ?? null,
       session_id:  session_id ?? null,
     }).then(({ error }) => { if (error) console.error('[supabase]', error.message) })
 

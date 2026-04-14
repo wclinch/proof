@@ -194,14 +194,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsAnalyzing(true)
 
     const projId      = activeId
-    const draftTitle  = activeProject?.draftTitle?.trim() || null
     for (const src of newSources) {
       patchSource(projId, src.id, { status: 'loading' })
       try {
         const res = await fetch('/api/analyze', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: src.raw, session_id: getSessionId(), draft_title: draftTitle }),
+          body: JSON.stringify({ url: src.raw, session_id: getSessionId() }),
         })
         const data = await res.json() as { error?: string; analysis?: unknown; content?: string }
         if (data.error) {
@@ -236,7 +235,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsAnalyzing(true)
 
     const projId     = activeId
-    const draftTitle = activeProject?.draftTitle?.trim() || ''
     for (let i = 0; i < list.length; i++) {
       const file = list[i]
       const src  = newSources[i]
@@ -252,7 +250,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const form = new FormData()
         form.append('file', file)
         form.append('session_id', getSessionId())
-        form.append('draft_title', draftTitle)
         const res  = await fetch('/api/upload', { method: 'POST', body: form })
         const data = await res.json() as { error?: string; analysis?: unknown; content?: string }
         if (data.error) {
@@ -276,13 +273,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     reanalyzeCooldown.current.add(srcId)
     setTimeout(() => reanalyzeCooldown.current.delete(srcId), 30000)
     const projId     = activeId
-    const draftTitle = activeProject?.draftTitle?.trim() || null
     patchSource(projId, srcId, { status: 'loading', error: null })
     try {
       const res  = await fetch('/api/analyze', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: src.raw, session_id: getSessionId(), draft_title: draftTitle }),
+        body: JSON.stringify({ url: src.raw, session_id: getSessionId() }),
       })
       const data = await res.json() as { error?: string; analysis?: unknown; content?: string }
       if (data.error) {
