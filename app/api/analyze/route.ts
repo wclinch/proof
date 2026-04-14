@@ -62,9 +62,11 @@ async function fetchContent(url: string): Promise<{ content: string; fullText: s
     return { content, fullText, title, publisher: null }
   }
 
-  const isDoi = /^10\.\d{4,}\//.test(url) || url.includes('doi.org/')
+  // Match explicit DOIs and DOIs embedded in journal URLs (e.g. frontiersin.org/articles/10.3389/...)
+  const embeddedDoi = url.match(/\b(10\.\d{4,}\/[^\s"'<>?#&]+)/)?.[1]
+  const isDoi = /^10\.\d{4,}\//.test(url) || url.includes('doi.org/') || !!embeddedDoi
   if (isDoi) {
-    const doi = url.replace(/^https?:\/\/doi\.org\//, '')
+    const doi = embeddedDoi ?? url.replace(/^https?:\/\/doi\.org\//, '')
     const res = await fetch(`https://api.crossref.org/works/${encodeURIComponent(doi)}`, {
       headers: { 'User-Agent': 'Proof/2.0 (mailto:proof_official@protonmail.com)' },
     })
@@ -218,8 +220,7 @@ export async function POST(req: NextRequest) {
     const analysis = JSON.parse(json)
 
     // Log to Supabase (best-effort)
-    const isDoi = /^10\.\d{4,}\//.test(url) || url.includes('doi.org/')
-    const inputType = isDoi ? 'doi' : 'url'
+    const inputType = (/^10\.\d{4,}\//.test(url) || url.includes('doi.org/') || /\b10\.\d{4,}\//.test(url)) ? 'doi' : 'url'
     supabase.from('sources').insert({
       title:       analysis.title ?? title,
       publisher:   analysis.journal ?? publisher ?? null,
