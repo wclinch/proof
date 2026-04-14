@@ -92,7 +92,7 @@ function saveProjects(ps: Project[]) {
     ...p,
     sources: p.sources.map((s) => ({
       ...s,
-      rawText: s.rawText ? s.rawText.slice(0, 20000) : null,
+      rawText: s.rawText ? s.rawText.slice(0, 20000).replace(/\S+$/, '').trimEnd() : null,
     })),
   }));
   try {
@@ -1777,17 +1777,37 @@ function SourceTextView({
 
   if (!highlight) return <pre style={pre}>{text}</pre>;
 
-  // Normalize newlines→spaces for search (positions stay identical, it's 1:1)
-  const searchText = text.replace(/\n/g, " ");
-  const needle = highlight.slice(0, 120).toLowerCase();
-  const idx = searchText.toLowerCase().indexOf(needle);
-  if (idx === -1) return <pre style={pre}>{text}</pre>;
+  // Normalize all whitespace to single space for matching — handles cases where
+  // Groq extracted from the flattened (newlines→space) version of the content
+  const normText   = text.replace(/\s+/g, ' ')
+  const normNeedle = highlight.replace(/\s+/g, ' ').slice(0, 150).trim().toLowerCase()
+  const normIdx    = normText.toLowerCase().indexOf(normNeedle)
+  if (normIdx === -1) return <pre style={pre}>{text}</pre>
 
-  // Use needle only to find position; highlight the full original text length
-  const matchLen = highlight.length;
-  const before = text.slice(0, idx);
-  const match = text.slice(idx, idx + matchLen);
-  const after = text.slice(idx + matchLen);
+  // Map normalized index back to position in original text
+  let origStart = 0, normPos = 0
+  while (normPos < normIdx && origStart < text.length) {
+    if (/\s/.test(text[origStart])) {
+      while (origStart < text.length && /\s/.test(text[origStart])) origStart++
+      normPos++
+    } else { origStart++; normPos++ }
+  }
+
+  // Walk forward matching needle chars, treating any whitespace run as one space
+  let origEnd = origStart, needlePos = 0
+  const nn = normNeedle
+  while (needlePos < nn.length && origEnd < text.length) {
+    if (/\s/.test(nn[needlePos]) && /\s/.test(text[origEnd])) {
+      needlePos++
+      while (origEnd < text.length && /\s/.test(text[origEnd])) origEnd++
+    } else if (nn[needlePos].toLowerCase() === text[origEnd].toLowerCase()) {
+      needlePos++; origEnd++
+    } else { break }
+  }
+
+  const before = text.slice(0, origStart)
+  const match  = text.slice(origStart, origEnd)
+  const after  = text.slice(origEnd)
 
   return (
     <pre style={pre}>
