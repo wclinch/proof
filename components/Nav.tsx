@@ -12,7 +12,7 @@ export default function Nav() {
     }}>
       <Link href="/" style={{ textDecoration: 'none' }}>
         <span style={{
-          fontSize: '22px', fontWeight: 300, color: '#888',
+          fontSize: '22px', fontWeight: 300, color: '#e8e8e8',
         }}>
           {'{'}
         </span>
