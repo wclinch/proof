@@ -993,7 +993,7 @@ export default function Home() {
                 padding: '9px 14px', fontSize: '12px', color: '#333',
                 letterSpacing: '0.04em', userSelect: 'none',
               }}>
-                Can't delete only project
+                {"Can't delete only project"}
               </div>
             ) : confirmDeleteProjId === proj.id ? (
               <button
@@ -1067,7 +1067,7 @@ export default function Home() {
             {confirmDeleteSrcId === src.id ? (
               <button
                 onClick={() => {
-                  selectedIds.size > 1 ? removeSelected() : removeSource(src.id)
+                  if (selectedIds.size > 1) removeSelected(); else removeSource(src.id)
                   setConfirmDeleteSrcId(null)
                   setContextMenu(null)
                 }}
@@ -1224,7 +1224,7 @@ function AnalysisView({ result, url, onJump }: { result: AnalysisResult; url: st
                 padding: '8px 12px', borderLeft: '2px solid #222',
                 fontStyle: 'italic', flex: 1,
               }}>
-                "{q}"
+                &ldquo;{q}&rdquo;
               </div>
               <JumpBtn onClick={() => onJump(q)} />
             </div>
