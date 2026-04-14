@@ -167,10 +167,14 @@ export default function Home() {
   const analyzing = useRef(false);
   const reanalyzeCooldown = useRef<Set<string>>(new Set());
 
-  // Close projects modal on Escape
+  // Close projects modal on Escape, also dismiss any open context menu
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowProjects(false);
+      if (e.key === "Escape") {
+        setShowProjects(false)
+        setProjContextMenu(null)
+        setContextMenu(null)
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -210,7 +214,11 @@ export default function Home() {
     setAnchorId(null);
   }, [activeId]);
 
-  // Reset project delete confirm when modal opens/closes
+  // Reset project context menu + confirm when modal opens/closes
+  useEffect(() => {
+    setProjContextMenu(null)
+  }, [showProjects])
+
   useEffect(() => {
     setConfirmDeleteProjId(null);
   }, [showProjects]);
@@ -1518,7 +1526,7 @@ export default function Home() {
                 textTransform: "uppercase",
               }}
             >
-              Esc to close
+              Click anywhere or Esc to close
             </div>
           </div>
         </div>
