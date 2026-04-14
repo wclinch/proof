@@ -1,0 +1,101 @@
+'use client'
+import { useState } from 'react'
+import { useApp } from '@/context/AppContext'
+import type { RenameSourceDetail } from './SourceItem'
+
+export default function SourceContextMenu() {
+  const {
+    contextMenu, setContextMenu,
+    sources, selectedIds,
+    removeSource, removeSelected,
+    reanalyzeSource, isOnCooldown,
+  } = useApp()
+
+  const [confirmDeleteSrcId, setConfirmDeleteSrcId] = useState<string | null>(null)
+
+  if (!contextMenu) return null
+  const src = sources.find(s => s.id === contextMenu.srcId)
+  if (!src) return null
+
+  const onCooldown   = isOnCooldown(src.id)
+  const isMulti      = selectedIds.size > 1
+
+  function handleRename() {
+    const detail: RenameSourceDetail = {
+      srcId: src!.id,
+      currentLabel: src!.label ?? src!.result?.title ?? src!.raw,
+    }
+    window.dispatchEvent(new CustomEvent('proof:rename-source', { detail }))
+    setContextMenu(null)
+  }
+
+  function handleReanalyze() {
+    if (onCooldown) return
+    reanalyzeSource(src!.id)
+    setContextMenu(null)
+  }
+
+  function handleRemove() {
+    if (confirmDeleteSrcId === src!.id) {
+      if (isMulti) removeSelected()
+      else removeSource(src!.id)
+      setConfirmDeleteSrcId(null)
+      setContextMenu(null)
+    } else {
+      setConfirmDeleteSrcId(src!.id)
+    }
+  }
+
+  const menuBtn: React.CSSProperties = {
+    display: 'block', width: '100%', textAlign: 'left',
+    background: 'none', border: 'none', padding: '9px 14px',
+    cursor: 'pointer', fontSize: '12px', color: '#777',
+    letterSpacing: '0.04em', fontFamily: 'inherit',
+  }
+
+  return (
+    <div
+      onClick={e => e.stopPropagation()}
+      style={{
+        position: 'fixed', left: contextMenu.x, top: contextMenu.y,
+        background: '#141414', border: '1px solid #2a2a2a',
+        borderRadius: '4px', zIndex: 200, minWidth: '140px',
+        overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+      }}
+    >
+      {!isMulti && (
+        <>
+          <button
+            onClick={handleRename}
+            style={menuBtn}
+            onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            Rename
+          </button>
+          {!src.raw.startsWith('file:') && (
+            <button
+              onClick={handleReanalyze}
+              style={{ ...menuBtn, color: onCooldown ? '#333' : '#777', cursor: onCooldown ? 'default' : 'pointer' }}
+              onMouseEnter={e => { if (!onCooldown) e.currentTarget.style.background = '#1e1e1e' }}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              {onCooldown ? 'Re-analyze (wait 30s)' : 'Re-analyze'}
+            </button>
+          )}
+          <div style={{ height: '1px', background: '#1e1e1e' }} />
+        </>
+      )}
+      <button
+        onClick={handleRemove}
+        style={{ ...menuBtn, color: '#c55' }}
+        onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+      >
+        {confirmDeleteSrcId === src.id
+          ? 'Confirm?'
+          : `Remove${isMulti ? ` ${selectedIds.size} sources` : ''}`}
+      </button>
+    </div>
+  )
+}

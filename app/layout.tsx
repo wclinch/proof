@@ -9,8 +9,8 @@ const dmMono = DM_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Proof — Research Assistant',
-  description: 'Paste URLs, DOIs, or upload PDFs. Extract structured insights from your sources.',
+  title: 'Proof — Research Workspace',
+  description: 'Paste URLs, DOIs, or upload PDFs. Break down sources, write, and cite — all in one place.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

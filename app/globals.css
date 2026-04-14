@@ -33,3 +33,11 @@ button, nav, label { user-select: none; }
   transition: color 0.15s;
 }
 .nav-link:hover { color: #777; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+.dot-loading {
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
