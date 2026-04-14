@@ -120,15 +120,30 @@ async function fetchContent(url: string): Promise<{ content: string; fullText: s
   const description = getMeta('og:description') ?? getMeta('description') ?? null
 
   const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] ?? html
-  const fullText = bodyMatch
+
+  // Strip boilerplate blocks before extracting text
+  const stripped = bodyMatch
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+    .replace(/<header[\s\S]*?<\/header>/gi, '')
+    .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+    .replace(/<aside[\s\S]*?<\/aside>/gi, '')
+
+  // Prefer semantic content blocks — article > main > body
+  const contentBlock =
+    stripped.match(/<article[^>]*>([\s\S]*?)<\/article>/i)?.[1] ??
+    stripped.match(/<main[^>]*>([\s\S]*?)<\/main>/i)?.[1] ??
+    stripped.match(/role=["']main["'][^>]*>([\s\S]*?)<\//i)?.[1] ??
+    stripped
+
+  const fullText = contentBlock
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>/gi, '\n\n')
     .replace(/<\/div>/gi, '\n')
     .replace(/<\/h[1-6]>/gi, '\n\n')
     .replace(/<[^>]+>/g, '')
-    .replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&[a-z]+;/gi, ' ')
+    .replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&[a-z#\d]+;/gi, ' ')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/[ \t]+/g, ' ')
     .replace(/^ /gm, '')
