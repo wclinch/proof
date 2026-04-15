@@ -89,6 +89,8 @@ async function fetchContent(url: string): Promise<{ content: string; fullText: s
   const stripped = bodyMatch
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<svg[\s\S]*?<\/svg>/gi, '')
+    .replace(/<canvas[^>]*>[\s\S]*?<\/canvas>/gi, '')
     .replace(/<nav[\s\S]*?<\/nav>/gi, '')
     .replace(/<header[\s\S]*?<\/header>/gi, '')
     .replace(/<footer[\s\S]*?<\/footer>/gi, '')
@@ -105,6 +107,8 @@ async function fetchContent(url: string): Promise<{ content: string; fullText: s
     .replace(/<\/p>/gi, '\n\n')
     .replace(/<\/div>/gi, '\n')
     .replace(/<\/h[1-6]>/gi, '\n\n')
+    .replace(/<\/t[dh]>/gi, ' ')
+    .replace(/<\/tr>/gi, '\n')
     .replace(/<[^>]+>/g, '')
     .replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&[a-z#\d]+;/gi, ' ')
     .replace(/(\n[ \t]*){3,}/g, '\n\n')

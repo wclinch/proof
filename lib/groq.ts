@@ -13,7 +13,7 @@ Extract verbatim where possible. Never invent, guess, or paraphrase data not pre
   "sample_n": "sample size as stated e.g. 'n = 1,151', or null",
   "sample_desc": "who was studied — population, demographics, setting — verbatim, or null",
   "methodology": "research design, instruments, measures, analytic approach — verbatim, or null",
-  "stats": ["Actual numerical results only: means, SDs, percentages, p-values, effect sizes, CIs, correlations, regression coefficients, ORs — verbatim. Do NOT include sample size here. Leave [] if no numerical results are present."],
+  "stats": ["Numerical results with full context — always include the label, subject, and unit alongside the number. Format as a complete phrase e.g. '42 firefighters died from cardiovascular events', '72% of participants reported...', 'p = 0.03 for the correlation between X and Y'. Never extract a bare number without its label. Do NOT include sample size here. Leave [] if no numerical results are present."],
   "findings": ["Key results from the results section — verbatim or near-verbatim — up to 8. Leave [] if results section is not in the provided text."],
   "conclusions": ["What the authors conclude or recommend — verbatim or near-verbatim — up to 5"],
   "quotes": ["Direct quotes worth citing — exact text with punctuation — up to 4, or []"],
