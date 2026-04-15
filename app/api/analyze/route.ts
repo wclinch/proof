@@ -103,6 +103,8 @@ async function fetchContent(url: string): Promise<{ content: string; fullText: s
     stripped
 
   const fullText = contentBlock
+    // Strip file download links including their text (e.g. "2022 PDF" anchor tags)
+    .replace(/<a[^>]+href=["'][^"']*\.(pdf|doc|docx|xls|xlsx|csv|zip)["'][^>]*>[\s\S]*?<\/a>/gi, '')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>/gi, '\n\n')
     .replace(/<\/div>/gi, '\n')
@@ -112,8 +114,15 @@ async function fetchContent(url: string): Promise<{ content: string; fullText: s
     .replace(/<[^>]+>/g, '')
     .replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&[a-z#\d]+;/gi, ' ')
     .split('\n')
-    // Keep only lines with real content — drops nav items, file lists, stray table cells
-    .filter(line => line.trim() === '' || line.trim().length >= 30)
+    .filter(line => {
+      const t = line.trim()
+      if (t === '') return true
+      // Drop short lines (nav items, stray labels)
+      if (t.length < 30) return false
+      // Drop lines that are just "YEAR FILETYPE" repetitions
+      if (/^(\d{4}\s+(?:PDF|DOC|DOCX|XLS|CSV|ZIP)\s*)+$/i.test(t)) return false
+      return true
+    })
     .join('\n')
     .replace(/(\n[ \t]*){3,}/g, '\n\n')
     .replace(/[ \t]+/g, ' ')
