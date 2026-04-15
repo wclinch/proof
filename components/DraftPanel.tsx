@@ -89,18 +89,62 @@ export default function DraftPanel({ width }: { width: number }) {
       }}>
         <span>Synthesis</span>
         {hasDraft && (
-          <button
-            onClick={handleDiscard}
-            style={{
-              background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
-              fontSize: '11px', color: '#333', letterSpacing: '0.06em',
-              textTransform: 'uppercase', fontFamily: 'inherit',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#666')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#333')}
-          >
-            Discard
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em' }}>{wordCount} words</span>
+            {localDraft.trim() && (
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowExportMenu(v => !v)}
+                  style={{
+                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                    fontSize: '11px', color: '#333', letterSpacing: '0.06em',
+                    textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#666')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+                >
+                  Export ↑
+                </button>
+                {showExportMenu && (
+                  <div style={{
+                    position: 'absolute', top: '24px', right: 0,
+                    background: '#141414', border: '1px solid #2a2a2a',
+                    borderRadius: '4px', overflow: 'hidden',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.5)', minWidth: '100px', zIndex: 50,
+                  }}>
+                    {(['txt', 'md'] as const).map(fmt => (
+                      <button
+                        key={fmt}
+                        onClick={() => handleExport(fmt)}
+                        style={{
+                          display: 'block', width: '100%', textAlign: 'left',
+                          background: 'none', border: 'none', padding: '8px 14px',
+                          cursor: 'pointer', fontSize: '11px', color: '#777',
+                          letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'inherit',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                      >
+                        .{fmt}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            <button
+              onClick={handleDiscard}
+              style={{
+                background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
+                fontSize: '11px', color: '#333', letterSpacing: '0.06em',
+                textTransform: 'uppercase', fontFamily: 'inherit',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#666')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+            >
+              Discard
+            </button>
+          </div>
         )}
       </div>
 
@@ -155,57 +199,6 @@ export default function DraftPanel({ width }: { width: number }) {
               WebkitTextFillColor: 'inherit', opacity: 1,
             }}
           />
-
-          {/* Footer — word count + export, above the ledger */}
-          <div style={{
-            padding: '0 20px', height: '34px', flexShrink: 0,
-            borderTop: '1px solid #1a1a1a',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            fontSize: '11px', color: '#333', letterSpacing: '0.06em',
-          }}>
-            <span>{wordCount} words</span>
-            {localDraft.trim() && (
-              <div style={{ position: 'relative' }}>
-                <button
-                  onClick={() => setShowExportMenu(v => !v)}
-                  style={{
-                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                    fontSize: '11px', color: '#333', letterSpacing: '0.06em',
-                    textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#666')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#333')}
-                >
-                  Export ↑
-                </button>
-                {showExportMenu && (
-                  <div style={{
-                    position: 'absolute', bottom: '24px', right: 0,
-                    background: '#141414', border: '1px solid #2a2a2a',
-                    borderRadius: '4px', overflow: 'hidden',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.5)', minWidth: '100px',
-                  }}>
-                    {(['txt', 'md'] as const).map(fmt => (
-                      <button
-                        key={fmt}
-                        onClick={() => handleExport(fmt)}
-                        style={{
-                          display: 'block', width: '100%', textAlign: 'left',
-                          background: 'none', border: 'none', padding: '8px 14px',
-                          cursor: 'pointer', fontSize: '11px', color: '#777',
-                          letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'inherit',
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                      >
-                        .{fmt}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
 
           {/* Citations tray */}
           <CitationsPanel />
