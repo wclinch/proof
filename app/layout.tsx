@@ -9,7 +9,7 @@ const dmMono = DM_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Proof — Research Workspace',
+  title: 'Proof',
   description: 'Paste URLs, DOIs, or upload PDFs. Break down sources, write, and cite — all in one place.',
 }
 
