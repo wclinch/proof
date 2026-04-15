@@ -28,7 +28,7 @@ export default function AuthPage() {
       if (err) { setError(err.message); setLoading(false); return }
       // Create profile row — trigger handles this, but insert here as fallback (upsert = no-op if exists)
       if (data.user) {
-        await sb.from('profiles').upsert({ id: data.user.id, subscribed: false }, { onConflict: 'id' })
+        await (sb.from as any)('profiles').upsert({ id: data.user.id, subscribed: false }, { onConflict: 'id' })
       }
       setSentTo(email)
       setLoading(false)
