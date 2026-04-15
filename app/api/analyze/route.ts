@@ -70,25 +70,44 @@ async function fetchContent(url: string): Promise<{ content: string; fullText: s
     throw new Error(`Failed to fetch page (${jinaRes.status})`)
   }
 
-  const raw      = await jinaRes.text()
-  // Jina prepends metadata lines — extract title and strip the header block
-  const titleMatch = raw.match(/^Title:\s*(.+)$/m)
-  const title      = titleMatch?.[1]?.trim() ?? null
-  const urlMatch   = raw.match(/^URL Source:\s*(.+)$/m)
-  const publisher  = urlMatch?.[1] ? new URL(urlMatch[1].trim()).hostname.replace(/^www\./, '') : null
+  const raw = await jinaRes.text()
 
-  // Strip Jina's metadata header (everything before the first blank line after the header block)
-  const bodyStart = raw.indexOf('\n\n')
-  const fullText  = (bodyStart !== -1 ? raw.slice(bodyStart) : raw)
-    .replace(/!\[.*?\]\(.*?\)/g, '')   // strip markdown images
-    .replace(/\[([^\]]*)\]\([^)]*\.(pdf|doc|docx|xls|csv|zip)[^)]*\)/gi, '')  // strip file links
+  // Extract Jina metadata
+  const title     = raw.match(/^Title:\s*(.+)$/m)?.[1]?.trim() ?? null
+  const sourceUrl = raw.match(/^URL Source:\s*(.+)$/m)?.[1]?.trim() ?? null
+  const publisher = sourceUrl ? (() => { try { return new URL(sourceUrl).hostname.replace(/^www\./, '') } catch { return null } })() : null
+
+  // Isolate markdown body
+  const mdStart  = raw.indexOf('Markdown Content:')
+  const markdown = mdStart !== -1 ? raw.slice(mdStart + 'Markdown Content:'.length) : raw
+
+  // Remove boilerplate and noise from markdown
+  const cleaned = markdown
+    .replace(/An official website[\s\S]*?Share sensitive information only on official, secure websites\./i, '')
+    .replace(/\[Skip to[^\]]*\]\([^)]*\)/gi, '')
+    .replace(/\[\]\([^)]*\)/g, '')
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\.(pdf|doc|docx|xls|xlsx|csv|zip)[^)]*\)/gi, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 
+  // Plain text for source view — strip all markdown syntax
+  const fullText = cleaned
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^[-*_]{3,}\s*$/gm, '')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  // Send cleaned markdown to Groq (tables/headings help extraction)
   const content = [
     title     && `Title: ${title}`,
     publisher && `Site: ${publisher}`,
-    `Content: ${fullText.replace(/\n+/g, ' ').slice(0, 28000)}`,
+    `Content: ${cleaned.replace(/\n+/g, ' ').slice(0, 28000)}`,
   ].filter(Boolean).join('\n')
 
   return { content, fullText, title, publisher }
