@@ -152,15 +152,23 @@ export async function POST(req: NextRequest) {
     const a = analysis as Record<string, unknown>
     const inputType = (/^10\.\d{4,}\//.test(url) || url.includes('doi.org/') || /\b10\.\d{4,}\//.test(url)) ? 'doi' : 'url'
     supabase.from('sources').insert({
-      title:      a.title ?? title,
-      publisher:  a.journal ?? publisher ?? null,
-      type:       a.type ?? null,
-      year:       a.year ?? null,
-      doi:        a.doi ?? null,
-      input_type: inputType,
-      session_id: session_id ?? null,
-      keywords:   Array.isArray(a.keywords) ? a.keywords : null,
-      concepts:   Array.isArray(a.concepts) ? a.concepts : null,
+      title:       a.title ?? title,
+      publisher:   a.journal ?? publisher ?? null,
+      type:        a.type ?? null,
+      year:        a.year ?? null,
+      doi:         a.doi ?? null,
+      input_type:  inputType,
+      session_id:  session_id ?? null,
+      keywords:    Array.isArray(a.keywords)    ? a.keywords    : null,
+      concepts:    Array.isArray(a.concepts)    ? a.concepts    : null,
+      authors:     Array.isArray(a.authors)     ? a.authors     : null,
+      findings:    Array.isArray(a.findings)    ? a.findings    : null,
+      stats:       Array.isArray(a.stats)       ? a.stats       : null,
+      conclusions: Array.isArray(a.conclusions) ? a.conclusions : null,
+      abstract:    typeof a.abstract    === 'string' ? a.abstract    : null,
+      methodology: typeof a.methodology === 'string' ? a.methodology : null,
+      sample_n:    typeof a.sample_n    === 'string' ? a.sample_n    : null,
+      sample_desc: typeof a.sample_desc === 'string' ? a.sample_desc : null,
     }).then(({ error }) => { if (error) console.error('[supabase]', error.message) })
 
     return NextResponse.json({ analysis, content: fullText })

@@ -21,7 +21,7 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we collect</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            When you analyze a source, we log the title, publisher, publication type, year, DOI, keywords, and key concepts where available. We also log a randomly generated session identifier — a string stored in your browser that lets us understand how sources are used together, without identifying you as an individual.
+            When you analyze a source, we log structured metadata extracted from it — including title, authors, publisher, type, year, DOI, abstract, findings, methodology, statistics, conclusions, keywords, and concepts — where available. We also log a randomly generated session identifier — a string stored in your browser that lets us understand how sources are used together, without identifying you as an individual.
           </p>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
             We do not collect your name, email address, IP address, or any information that identifies you personally.
