@@ -91,15 +91,20 @@ async function fetchContent(url: string): Promise<{ content: string; fullText: s
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 
-  // Plain text for source view — strip all markdown syntax
+  // Plain text for source view — strip all markdown syntax and noise
   const fullText = cleaned
     .replace(/^#{1,6}\s+/gm, '')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\[\s*\]\([^)]+\)/g, '')              // empty links (images, icons)
+    .replace(/\[([^\]]+)\]\([^)]+\.(jpg|jpeg|png|gif|webp|svg|ico|pdf|doc|docx|xls|csv|zip)[^)]*\)/gi, '') // file/image links
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')       // remaining links → text only
     .replace(/^\s*[-*+]\s+/gm, '')
     .replace(/^[-*_]{3,}\s*$/gm, '')
     .replace(/`([^`]+)`/g, '$1')
+    .split('\n')
+    .filter(line => line.trim() === '' || line.trim().length >= 20)
+    .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 
