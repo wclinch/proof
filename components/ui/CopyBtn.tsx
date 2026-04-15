@@ -9,7 +9,7 @@ export default function CopyBtn({ text }: { text: string }) {
         navigator.clipboard.writeText(text).then(() => {
           setCopied(true)
           setTimeout(() => setCopied(false), 1200)
-        })
+        }).catch(() => {})
       }}
       title="Copy"
       style={{

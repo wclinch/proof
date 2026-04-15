@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,6 +14,11 @@ function escapeCSV(val: unknown): string {
 }
 
 export async function GET(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+  if (!checkRateLimit(`admin:${ip}`, 10, 60_000)) {
+    return new NextResponse('Too many requests', { status: 429 })
+  }
+
   const password = req.headers.get('x-admin-password')
   if (!process.env.ADMIN_PASSWORD || password !== process.env.ADMIN_PASSWORD) {
     return new NextResponse('Unauthorized', { status: 401 })
@@ -20,8 +26,8 @@ export async function GET(req: NextRequest) {
 
   const since = req.nextUrl.searchParams.get('since')
   let query = supabase
-    .from('sources')
-    .select('created_at, title, authors, publisher, type, year, doi, input_type, session_id, abstract, methodology, sample_n, sample_desc, findings, stats, conclusions, keywords, concepts')
+    .from('verified_facts')
+    .select('created_at, hash, session_id, source_name, fact_text')
     .order('created_at', { ascending: false })
 
   if (since) query = query.gte('created_at', new Date(Number(since)).toISOString())
@@ -30,7 +36,7 @@ export async function GET(req: NextRequest) {
   if (error) return new NextResponse(error.message, { status: 500 })
   if (!data)  return new NextResponse('No data', { status: 500 })
 
-  const headers = ['created_at', 'title', 'authors', 'publisher', 'type', 'year', 'doi', 'input_type', 'session_id', 'abstract', 'methodology', 'sample_n', 'sample_desc', 'findings', 'stats', 'conclusions', 'keywords', 'concepts']
+  const headers = ['created_at', 'hash', 'session_id', 'source_name', 'fact_text']
   const rows = data.map(r => headers.map(h => escapeCSV(r[h as keyof typeof r])).join(','))
   const csv  = [headers.join(','), ...rows].join('\n')
 
@@ -39,7 +45,7 @@ export async function GET(req: NextRequest) {
     status: 200,
     headers: {
       'Content-Type': 'text/csv',
-      'Content-Disposition': `attachment; filename="proof-export-${date}.csv"`,
+      'Content-Disposition': `attachment; filename="proof-verified-facts-${date}.csv"`,
     },
   })
 }

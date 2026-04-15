@@ -56,17 +56,16 @@ export default function ProjectsModal() {
         // Ensure imported projects have all required fields
         const safe: Project[] = incoming.map(p => ({
           ...p,
-          citations:     p.citations     ?? [],
-          citationStyle: p.citationStyle ?? 'mla',
-          draft:         p.draft         ?? '',
-          draftTitle:    p.draftTitle    ?? '',
-          draftCreated:  p.draftCreated  ?? false,
+          draft:        p.draft        ?? '',
+          draftTitle:   p.draftTitle   ?? '',
+          draftCreated: p.draftCreated ?? false,
         }))
         setProjects(prev => [...prev, ...safe])
       } catch {
         setImportError('Could not read file.')
       }
     }
+    reader.onerror = () => setImportError('Could not read file.')
     reader.readAsText(file)
     e.target.value = ''
   }

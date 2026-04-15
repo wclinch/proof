@@ -5,12 +5,9 @@ interface Row   { label: string; count: number }
 interface DayRow { date: string; count: number }
 interface Stats {
   total: number
-  byType: Row[]
-  byInput: Row[]
-  byYear: Row[]
-  byPublisher: Row[]
-  topKeywords: Row[]
-  topConcepts: Row[]
+  bySessions: number
+  bySource: Row[]
+  topFacts: Row[]
   daily: DayRow[]
 }
 
@@ -116,7 +113,7 @@ export default function AdminPage() {
     try {
       const res  = await fetch(url, { headers: { 'x-admin-password': pw } })
       const data = await res.json() as Stats & { error?: string }
-      if (!res.ok) setError(data.error ?? 'Failed')
+      if (!res.ok) { setError(data.error ?? 'Failed'); setSavedPw('') }
       else { setStats(data); setSavedPw(pw) }
     } catch {
       setError('Network error')
@@ -236,9 +233,6 @@ export default function AdminPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <span style={{ fontSize: '12px', color: '#444' }}>
-            {total.toLocaleString()} {total === 1 ? 'source' : 'sources'}
-          </span>
           <button
             onClick={handleRawExport}
             style={{
@@ -254,13 +248,21 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {/* Sessions summary */}
+      <div style={{ marginBottom: '40px', display: 'flex', gap: '40px' }}>
+        <div>
+          <div style={{ fontSize: '24px', fontWeight: 500, color: '#555' }}>{total.toLocaleString()}</div>
+          <div style={{ fontSize: '11px', color: '#333', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: '4px' }}>Verified facts</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '24px', fontWeight: 500, color: '#555' }}>{stats.bySessions.toLocaleString()}</div>
+          <div style={{ fontSize: '11px', color: '#333', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: '4px' }}>Sessions</div>
+        </div>
+      </div>
+
       {/* Data sections */}
-      <DataSection title="Keywords"              rows={stats.topKeywords} total={total} emptyMsg="No keyword data yet — analyze sources to populate" />
-      <DataSection title="Concepts & Frameworks" rows={stats.topConcepts} total={total} emptyMsg="No concept data yet" />
-      <DataSection title="Publishers & Journals" rows={stats.byPublisher} total={total} emptyMsg="No publisher data yet" />
-      <DataSection title="Source Type"           rows={stats.byType}      total={total} />
-      <DataSection title="Input Method"          rows={stats.byInput}     total={total} />
-      <DataSection title="Publication Year"      rows={[...stats.byYear].sort((a, b) => Number(b.label) - Number(a.label))} total={total} />
+      <DataSection title="Source Documents"  rows={stats.bySource}  total={total} emptyMsg="No verifications yet" />
+      <DataSection title="Top Verified Facts" rows={stats.topFacts}  total={total} emptyMsg="No verifications yet" />
 
     </div>
   )

@@ -1,11 +1,14 @@
 'use client'
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
+import type { User } from '@supabase/supabase-js'
 import type { Project, QueuedSource } from '@/lib/types'
 import {
   ACTIVE_KEY, SELECTED_KEY,
   uid, getSessionId, newProject,
-  loadProjects, saveProjects, parseInput,
+  loadProjects, saveProjects,
+  getPdfCount, setPdfCount, initPdfCount, PDF_FREE_LIMIT,
 } from '@/lib/storage'
+import { getSupabaseBrowser } from '@/lib/supabase-browser'
 
 interface ContextMenu    { srcId: string;  x: number; y: number }
 interface ProjContextMenu { projId: string; x: number; y: number }
@@ -26,6 +29,12 @@ interface AppState {
   activeProject: Project | null
   sources: QueuedSource[]
   selectedSource: QueuedSource | null
+  // auth
+  user: User | null
+  isSubscribed: boolean
+  pdfCount: number
+  showPaywall: boolean
+  setShowPaywall: (v: boolean) => void
   // setters exposed for local use in components
   setShowProjects: (v: boolean | ((prev: boolean) => boolean)) => void
   setSelectedId: (id: string | null) => void
@@ -39,12 +48,7 @@ interface AppState {
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
   updateProject: (id: string, patch: Partial<Project>) => void
   patchSource: (projId: string, srcId: string, patch: Partial<QueuedSource>) => void
-  analyzeSources: (inputText: string) => Promise<void>
   uploadFiles: (files: FileList | File[]) => Promise<void>
-  reanalyzeSource: (srcId: string) => Promise<void>
-  isOnCooldown: (srcId: string) => boolean
-  addCitation: (srcId: string) => void
-  removeCitation: (srcId: string) => void
   removeSource: (srcId: string) => void
   removeSelected: () => void
   createProject: () => void
@@ -68,9 +72,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [contextMenu, setContextMenu]     = useState<ContextMenu | null>(null)
   const [projContextMenu, setProjContextMenu] = useState<ProjContextMenu | null>(null)
 
+  const [user, setUser]               = useState<User | null>(null)
+  const [isSubscribed, setIsSubscribed] = useState(false)
+  const [pdfCount, setPdfCountState]  = useState(0)
+  const [showPaywall, setShowPaywall] = useState(false)
+  const isSubscribedRef               = useRef(false)
+
   const analyzing         = useRef(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const reanalyzeCooldown = useRef<Set<string>>(new Set())
 
   // Escape closes all modals and menus
   useEffect(() => {
@@ -118,6 +127,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setProjContextMenu(null)
   }, [showProjects])
 
+  // Auth listener
+  useEffect(() => {
+    const sb = getSupabaseBrowser()
+    sb.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      if (session?.user) checkSubscription(session.user.id)
+    })
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      if (session?.user) checkSubscription(session.user.id)
+      else { setIsSubscribed(false); isSubscribedRef.current = false }
+    })
+    return () => subscription.unsubscribe()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function checkSubscription(userId: string) {
+    const sb = getSupabaseBrowser()
+    const { data } = await sb.from('profiles').select('subscribed').eq('id', userId).single()
+    const sub = data?.subscribed ?? false
+    setIsSubscribed(sub)
+    isSubscribedRef.current = sub
+  }
+
   // Hydrate from localStorage once on mount
   useEffect(() => {
     const saved = loadProjects()
@@ -135,6 +167,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setProjects([p])
       setActiveId(p.id)
     }
+    // Seed PDF count from existing sources for users who pre-date this feature
+    initPdfCount(loadProjects())
+    setPdfCountState(getPdfCount())
     setMounted(true)
   }, [])
 
@@ -171,58 +206,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const MAX_BATCH = 10
   const MAX_FILE_MB = 20
 
-  async function analyzeSources(inputText: string) {
-    if (!activeId || !inputText.trim() || analyzing.current) return
-    const parsed = parseInput(inputText)
-    if (!parsed.length) return
-
-    // Deduplicate against sources already in the project
-    const existingRaws = new Set(sources.map(s => s.raw))
-    const fresh = parsed.filter(u => !existingRaws.has(u))
-    if (!fresh.length) return
-
-    // Cap batch size
-    const urls = fresh.slice(0, MAX_BATCH)
-
-    const newSources: QueuedSource[] = urls.map(raw => ({
-      id: uid(), raw, status: 'queued', result: null, rawText: null, error: null,
-    }))
-
-    updateProject(activeId, { sources: [...sources, ...newSources] })
-    setSelectedId(newSources[0].id)
-    analyzing.current = true
-    setIsAnalyzing(true)
-
-    const projId      = activeId
-    for (const src of newSources) {
-      patchSource(projId, src.id, { status: 'loading' })
-      try {
-        const res = await fetch('/api/analyze', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: src.raw, session_id: getSessionId() }),
-        })
-        const data = await res.json() as { error?: string; analysis?: unknown; content?: string }
-        if (data.error) {
-          patchSource(projId, src.id, { status: 'error', error: data.error })
-        } else {
-          patchSource(projId, src.id, { status: 'done', result: data.analysis as QueuedSource['result'], rawText: data.content ?? null })
-        }
-      } catch {
-        patchSource(projId, src.id, { status: 'error', error: 'Network error — check your connection' })
-      }
-    }
-    analyzing.current = false
-    setIsAnalyzing(false)
-  }
-
   async function uploadFiles(files: FileList | File[]) {
     if (!activeId || analyzing.current) return
-    const list = Array.from(files).filter(f =>
-      f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf') ||
-      f.type === 'text/plain'      || f.name.toLowerCase().endsWith('.txt')
+    let list = Array.from(files).filter(f =>
+      f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
     ).slice(0, MAX_BATCH)
     if (!list.length) return
+
+    // PDF cap for free (unauthenticated or unsubscribed) users
+    if (!isSubscribedRef.current) {
+      const used = getPdfCount()
+      const remaining = Math.max(0, PDF_FREE_LIMIT - used)
+      if (remaining === 0) { setShowPaywall(true); return }
+      if (list.length > remaining) list = list.slice(0, remaining)
+    }
 
     const newSources: QueuedSource[] = list.map(f => ({
       id: uid(), raw: `file:${f.name}`, status: 'queued',
@@ -256,6 +253,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           patchSource(projId, src.id, { status: 'error', error: data.error })
         } else {
           patchSource(projId, src.id, { status: 'done', result: data.analysis as QueuedSource['result'], rawText: data.content ?? null })
+          // Track lifetime PDF count for free tier cap
+          if (!isSubscribedRef.current) {
+            const newCount = getPdfCount() + 1
+            setPdfCount(newCount)
+            setPdfCountState(newCount)
+            if (newCount >= PDF_FREE_LIMIT) setShowPaywall(true)
+          }
         }
       } catch {
         patchSource(projId, src.id, { status: 'error', error: 'Upload failed — check your connection' })
@@ -263,49 +267,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     analyzing.current = false
     setIsAnalyzing(false)
-  }
-
-  async function reanalyzeSource(srcId: string) {
-    if (!activeId) return
-    const src = sources.find(s => s.id === srcId)
-    if (!src || src.raw.startsWith('file:')) return
-    if (reanalyzeCooldown.current.has(srcId)) return
-    reanalyzeCooldown.current.add(srcId)
-    setTimeout(() => reanalyzeCooldown.current.delete(srcId), 30000)
-    const projId     = activeId
-    patchSource(projId, srcId, { status: 'loading', error: null })
-    try {
-      const res  = await fetch('/api/analyze', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: src.raw, session_id: getSessionId() }),
-      })
-      const data = await res.json() as { error?: string; analysis?: unknown; content?: string }
-      if (data.error) {
-        patchSource(projId, srcId, { status: 'error', error: data.error })
-      } else {
-        patchSource(projId, srcId, { status: 'done', result: data.analysis as QueuedSource['result'], rawText: data.content ?? null })
-      }
-    } catch {
-      patchSource(projId, srcId, { status: 'error', error: 'Network error' })
-    }
-  }
-
-  function isOnCooldown(srcId: string): boolean {
-    return reanalyzeCooldown.current.has(srcId)
-  }
-
-  function addCitation(srcId: string) {
-    if (!activeId) return
-    const current = activeProject?.citations ?? []
-    if (current.includes(srcId)) return
-    updateProject(activeId, { citations: [...current, srcId] })
-  }
-
-  function removeCitation(srcId: string) {
-    if (!activeId) return
-    const current = activeProject?.citations ?? []
-    updateProject(activeId, { citations: current.filter(id => id !== srcId) })
   }
 
   function removeSource(srcId: string) {
@@ -359,6 +320,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   function jumpToSource(text: string) {
     setCenterView('source')
     setHighlightText(text)
+    // Index the verified fact — fire-and-forget
+    const sourceName = selectedSource?.label ?? selectedSource?.raw ?? ''
+    fetch('/api/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: getSessionId(), source_name: sourceName, fact_text: text }),
+    }).catch(() => {})
   }
 
   // ─── Context value ──────────────────────────────────────────────────────────
@@ -367,11 +335,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     mounted, projects, activeId, selectedId, selectedIds, anchorId,
     showProjects, centerView, highlightText, contextMenu, projContextMenu,
     activeProject, sources, selectedSource, isAnalyzing,
+    user, isSubscribed, pdfCount, showPaywall, setShowPaywall,
     setShowProjects, setSelectedId, setSelectedIds, setAnchorId,
     setCenterView, setContextMenu, setProjContextMenu,
     setProjects, updateProject, patchSource,
-    analyzeSources, uploadFiles, reanalyzeSource, isOnCooldown,
-    addCitation, removeCitation,
+    uploadFiles,
     removeSource, removeSelected,
     createProject, switchProject, deleteProject,
     jumpToSource,

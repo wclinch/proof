@@ -14,58 +14,48 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Overview</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Proof is built on a simple principle: we collect only what helps us improve the tool, nothing more. This policy explains exactly what that is.
+            Proof collects only what is necessary to operate the verification index and improve the tool. This policy explains exactly what that is.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we collect</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            When you analyze a source, we log structured metadata extracted from it — including title, authors, publisher, type, year, DOI, abstract, findings, methodology, statistics, conclusions, keywords, and concepts — where available. We also log a randomly generated session identifier — a string stored in your browser that lets us understand how sources are used together, without identifying you as an individual.
+            When you click to locate a fact in a source document, we record a verified fact entry: the source document name, the exact fact text, a hash of both, and a randomly generated session identifier. This forms a persistent verification index.
           </p>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            We do not collect your name, email address, IP address, or any information that identifies you personally.
-          </p>
-        </div>
-
-        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How we use it</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            We use this data in aggregate to understand which sources are being analyzed, what types of research Proof supports, and how the tool is being used over time. This helps us improve the product and understand its value to researchers, students, and institutions.
+            We also log structured metadata extracted from PDFs you analyze — including title, authors, year, abstract, findings, statistics, conclusions, methodology, and keywords — where present.
           </p>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            We do not use this information to serve advertising, build user profiles, or make automated decisions about you.
-          </p>
-        </div>
-
-        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Third-party AI processing</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Source content submitted for analysis is processed by Groq&apos;s inference infrastructure using open-weight language models. This content may include text extracted from the URLs or files you submit. Please review Groq&apos;s privacy policy for information on how submitted content is handled.
+            We do not collect your name, email address, IP address, or any information that identifies you as an individual.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we do not collect</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Proof requires no account. We do not collect passwords, payment information, or contact details. We do not use cookies or cross-site tracking technologies.
-          </p>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Your projects, drafts, and source lists are stored locally in your browser using localStorage and never leave your device.
+            Proof requires no account. We do not collect passwords, payment information, or contact details. We do not use cookies or cross-site tracking. Your projects and source lists are stored locally in your browser and never leave your device.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Data sharing</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How we use it</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Anonymized, aggregate trend data — such as which sources, keywords, or research areas are most commonly analyzed — may be licensed to academic institutions or publishers. Individual records are never shared. This data cannot be used to identify any individual.
+            Verified fact records are used to build a searchable index of verified claims across public documents. Aggregate, anonymized data — which facts are being verified, across which source types — may be licensed to research institutions or publishers. Individual records are never shared or sold.
+          </p>
+        </div>
+
+        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Third-party AI processing</h2>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+            PDF content submitted for analysis is processed by Groq&apos;s inference infrastructure using open-weight language models. Text extracted from your PDFs passes through Groq&apos;s servers. Please review Groq&apos;s privacy policy for details on how submitted content is handled.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Data retention</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Aggregate usage data is retained indefinitely to support long-term analysis. No personally identifiable information is retained because none is collected.
+            Verified fact records and extracted metadata are retained indefinitely to support the verification index. No personally identifiable information is retained because none is collected.
           </p>
         </div>
 
@@ -78,7 +68,7 @@ export default function Privacy() {
         </div>
 
         <div style={{ padding: '20px 0', textAlign: 'right' }}>
-          <a href="/" className="nav-link">Go to home →</a>
+          <a href="/app" className="nav-link">← Back</a>
         </div>
 
       </main>

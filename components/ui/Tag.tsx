@@ -1,7 +1,7 @@
 'use client'
 import { ReactNode } from 'react'
 
-export default function Tag({ children }: { children: ReactNode }) {
+export default function Tag({ children, dim }: { children: ReactNode; dim?: boolean }) {
   return (
     <span
       style={{
@@ -10,7 +10,7 @@ export default function Tag({ children }: { children: ReactNode }) {
         border: '1px solid #1e1e1e',
         borderRadius: '3px',
         fontSize: '11px',
-        color: '#4a4a4a',
+        color: dim ? '#333' : '#4a4a4a',
         letterSpacing: '0.03em',
       }}
     >

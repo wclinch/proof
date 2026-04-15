@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { callGroq, parseGroqResponse, formatGroqError } from '@/lib/groq'
 import { extractPdfText } from '@/lib/pdf'
 import { checkRateLimit } from '@/lib/rateLimit'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-)
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
@@ -19,28 +13,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'GROQ_API_KEY not configured' }, { status: 500 })
   }
 
-  const formData    = await req.formData()
-  const file        = formData.get('file') as File | null
+  const formData = await req.formData()
+  const file     = formData.get('file') as File | null
   if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
-  const name        = file.name
-  const session_id  = formData.get('session_id') as string | null
-  const buffer      = Buffer.from(await file.arrayBuffer())
+  const name   = file.name
+  const buffer = Buffer.from(await file.arrayBuffer())
 
   let fullText: string
   try {
-    if (name.toLowerCase().endsWith('.pdf')) {
-      const raw = await extractPdfText(buffer)
-      // Strip bare page-number lines (lone integers) left by pdf-parse
-      fullText = raw
-        .split('\n')
-        .filter(line => !/^\s*\d{1,4}\s*$/.test(line))
-        .join('\n')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim()
-    } else {
-      fullText = buffer.toString('utf-8').replace(/\s+/g, ' ').trim()
-    }
+    const raw = await extractPdfText(buffer)
+    fullText = raw
+      .split('\n')
+      .filter(line => !/^\s*\d{1,4}\s*$/.test(line))
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
   } catch {
     return NextResponse.json({ error: 'Failed to read file' }, { status: 422 })
   }
@@ -53,28 +41,6 @@ export async function POST(req: NextRequest) {
     const content  = fullText.replace(/\n+/g, ' ').slice(0, 28000)
     const raw      = await callGroq(process.env.GROQ_API_KEY, content, name)
     const analysis = parseGroqResponse(raw)
-
-    const a = analysis as Record<string, unknown>
-    supabase.from('sources').insert({
-      title:       a.title ?? name,
-      publisher:   a.journal ?? null,
-      type:        a.type ?? null,
-      year:        a.year ?? null,
-      doi:         a.doi ?? null,
-      input_type:  'file',
-      session_id:  session_id ?? null,
-      keywords:    Array.isArray(a.keywords)    ? a.keywords    : null,
-      concepts:    Array.isArray(a.concepts)    ? a.concepts    : null,
-      authors:     Array.isArray(a.authors)     ? a.authors     : null,
-      findings:    Array.isArray(a.findings)    ? a.findings    : null,
-      stats:       Array.isArray(a.stats)       ? a.stats       : null,
-      conclusions: Array.isArray(a.conclusions) ? a.conclusions : null,
-      abstract:    typeof a.abstract    === 'string' ? a.abstract    : null,
-      methodology: typeof a.methodology === 'string' ? a.methodology : null,
-      sample_n:    typeof a.sample_n    === 'string' ? a.sample_n    : null,
-      sample_desc: typeof a.sample_desc === 'string' ? a.sample_desc : null,
-    }).then(({ error }) => { if (error) console.error('[supabase]', error.message) })
-
     return NextResponse.json({ analysis, content: fullText })
   } catch (e) {
     return NextResponse.json({ error: formatGroqError(e) }, { status: 500 })

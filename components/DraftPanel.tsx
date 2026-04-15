@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useApp } from '@/context/AppContext'
-import CitationsPanel from './CitationsPanel'
+
+type CtxMenu = { x: number; y: number }
 
 export default function DraftPanel({ width }: { width: number }) {
   const { activeProject, activeId, updateProject } = useApp()
@@ -12,7 +13,8 @@ export default function DraftPanel({ width }: { width: number }) {
   // Draft body: local state with debounced sync — zero typing lag
   const [localDraft, setLocalDraft] = useState(activeProject?.draft ?? '')
 
-  const [showExportMenu, setShowExportMenu] = useState(false)
+  const [ctxMenu, setCtxMenu]       = useState<CtxMenu | null>(null)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
   const draftTitleRef = useRef<HTMLInputElement>(null)
 
   // Reinitialize local state when active project switches
@@ -52,6 +54,8 @@ export default function DraftPanel({ width }: { width: number }) {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [hasDraft, activeId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+
   const wordCount = localDraft.split(/\s+/).filter(Boolean).length
 
   function handleNewDraft() {
@@ -79,7 +83,6 @@ export default function DraftPanel({ width }: { width: number }) {
     a.download = `${slug}.${fmt}`
     a.click()
     URL.revokeObjectURL(a.href)
-    setShowExportMenu(false)
   }
 
   function handleTab(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -93,6 +96,23 @@ export default function DraftPanel({ width }: { width: number }) {
     requestAnimationFrame(() => { el.selectionStart = el.selectionEnd = start + 4 })
   }
 
+  const menuBtn: React.CSSProperties = {
+    display: 'block', width: '100%', textAlign: 'left',
+    background: 'none', border: 'none', padding: '9px 14px',
+    cursor: 'pointer', fontSize: '12px', color: '#777',
+    letterSpacing: '0.04em', fontFamily: 'inherit',
+  }
+
+  const menuBtnRef = useRef<HTMLButtonElement>(null)
+
+  function openCtxMenu() {
+    if (!menuBtnRef.current) return
+    setConfirmDiscard(false)
+    const rect = menuBtnRef.current.getBoundingClientRect()
+    // anchor to right edge of button so menu doesn't overflow viewport
+    setCtxMenu({ x: window.innerWidth - rect.right, y: rect.bottom + 4 })
+  }
+
   return (
     <div style={{ width, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header */}
@@ -102,62 +122,25 @@ export default function DraftPanel({ width }: { width: number }) {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         fontSize: '12px', color: '#444', letterSpacing: '0.08em', textTransform: 'uppercase',
       }}>
-        <span>Synthesis</span>
+        <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Synthesis</span>
         {hasDraft && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em' }}>{wordCount} words</span>
-            {localDraft.trim() && (
-              <div style={{ position: 'relative' }}>
-                <button
-                  onClick={() => setShowExportMenu(v => !v)}
-                  style={{
-                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                    fontSize: '11px', color: '#333', letterSpacing: '0.06em',
-                    textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#666')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#333')}
-                >
-                  Export ↑
-                </button>
-                {showExportMenu && (
-                  <div style={{
-                    position: 'absolute', top: '24px', right: 0,
-                    background: '#141414', border: '1px solid #2a2a2a',
-                    borderRadius: '4px', overflow: 'hidden',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.5)', minWidth: '100px', zIndex: 50,
-                  }}>
-                    {(['txt', 'md'] as const).map(fmt => (
-                      <button
-                        key={fmt}
-                        onClick={() => handleExport(fmt)}
-                        style={{
-                          display: 'block', width: '100%', textAlign: 'left',
-                          background: 'none', border: 'none', padding: '8px 14px',
-                          cursor: 'pointer', fontSize: '11px', color: '#777',
-                          letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'inherit',
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                      >
-                        .{fmt}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0, marginLeft: '8px' }}>
+            <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+              {wordCount}w
+            </span>
             <button
-              onClick={handleDiscard}
+              ref={menuBtnRef}
+              onClick={openCtxMenu}
               style={{
-                background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
-                fontSize: '11px', color: '#333', letterSpacing: '0.06em',
-                textTransform: 'uppercase', fontFamily: 'inherit',
+                background: 'none', border: 'none', padding: '0 2px', cursor: 'pointer', outline: 'none',
+                fontSize: '14px', color: '#333', letterSpacing: '0.1em', fontFamily: 'inherit',
+                lineHeight: 1,
               }}
               onMouseEnter={e => (e.currentTarget.style.color = '#666')}
               onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+              title="Options"
             >
-              Discard
+              ···
             </button>
           </div>
         )}
@@ -179,7 +162,9 @@ export default function DraftPanel({ width }: { width: number }) {
           >
             New
           </button>
-          <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em' }}>nothing here yet · ⌘↵</span>
+          <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em' }}>
+            nothing here yet · {typeof navigator !== 'undefined' && /mac/i.test(navigator.platform) ? '⌘↵' : 'Ctrl+↵'}
+          </span>
         </div>
       ) : (
         <>
@@ -214,9 +199,57 @@ export default function DraftPanel({ width }: { width: number }) {
               WebkitTextFillColor: 'inherit', opacity: 1,
             }}
           />
+        </>
+      )}
 
-          {/* Citations tray */}
-          <CitationsPanel />
+      {/* Options menu */}
+      {ctxMenu && (
+        <>
+          <div
+            onClick={() => { setCtxMenu(null); setConfirmDiscard(false) }}
+            style={{ position: 'fixed', inset: 0, zIndex: 199 }}
+          />
+          <div
+            style={{
+            position: 'fixed', right: ctxMenu.x, top: ctxMenu.y,
+            background: '#141414', border: '1px solid #2a2a2a',
+            borderRadius: '4px', zIndex: 200, minWidth: '140px',
+            overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+          }}
+        >
+          {localDraft.trim() && (
+            <>
+              <button
+                onClick={() => { handleExport('txt'); setCtxMenu(null) }}
+                style={menuBtn}
+                onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                Export .txt
+              </button>
+              <button
+                onClick={() => { handleExport('md'); setCtxMenu(null) }}
+                style={menuBtn}
+                onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                Export .md
+              </button>
+              <div style={{ height: '1px', background: '#1e1e1e' }} />
+            </>
+          )}
+          <button
+            onClick={() => {
+              if (confirmDiscard) { handleDiscard(); setCtxMenu(null) }
+              else setConfirmDiscard(true)
+            }}
+            style={{ ...menuBtn, color: confirmDiscard ? '#e55' : '#c55' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            {confirmDiscard ? 'Confirm?' : 'Discard'}
+          </button>
+        </div>
         </>
       )}
     </div>

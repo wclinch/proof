@@ -38,7 +38,7 @@ export default function SourceTextView({ text, highlight }: { text: string; high
   // Normalize all whitespace to single space for matching — handles cases where
   // Groq extracted from the flattened (newlines→space) version of the content
   const normText   = text.replace(/\s+/g, ' ')
-  const normNeedle = highlight.replace(/\s+/g, ' ').slice(0, 150).trim().toLowerCase()
+  const normNeedle = highlight.replace(/\s+/g, ' ').slice(0, 400).trim().toLowerCase()
   const normIdx    = normText.toLowerCase().indexOf(normNeedle)
   if (normIdx === -1) return <pre style={pre}>{text}</pre>
 

@@ -17,7 +17,6 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
   const {
     activeId, selectedId, selectedIds, anchorId, sources,
     setSelectedId, setSelectedIds, setAnchorId, setContextMenu, patchSource,
-    reanalyzeSource, isOnCooldown,
   } = useApp()
 
   const [editing, setEditing]       = useState(false)
@@ -73,11 +72,6 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
 
   return (
     <div
-      draggable={src.status === 'done'}
-      onDragStart={e => {
-        e.dataTransfer.setData('proof/srcId', src.id)
-        e.dataTransfer.effectAllowed = 'copy'
-      }}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
       style={{
@@ -138,26 +132,8 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
           </div>
         )}
         {src.status === 'error' && (
-          <div style={{ marginTop: '3px' }}>
-            <div style={{ fontSize: '11px', color: '#733', letterSpacing: '0.03em' }}>
-              {src.error}
-            </div>
-            {!src.raw.startsWith('file:') && (
-              <button
-                onClick={e => { e.stopPropagation(); reanalyzeSource(src.id) }}
-                disabled={isOnCooldown(src.id)}
-                style={{
-                  marginTop: '5px', background: 'none', border: '1px solid #2a1a1a',
-                  borderRadius: '3px', padding: '2px 8px', cursor: isOnCooldown(src.id) ? 'default' : 'pointer',
-                  fontSize: '10px', color: isOnCooldown(src.id) ? '#3a2a2a' : '#733',
-                  letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
-                }}
-                onMouseEnter={e => { if (!isOnCooldown(src.id)) { e.currentTarget.style.borderColor = '#5a2a2a'; e.currentTarget.style.color = '#a55' } }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a1a1a'; e.currentTarget.style.color = isOnCooldown(src.id) ? '#3a2a2a' : '#733' }}
-              >
-                {isOnCooldown(src.id) ? 'cooldown' : 'Retry'}
-              </button>
-            )}
+          <div style={{ fontSize: '11px', color: '#733', marginTop: '3px', letterSpacing: '0.03em' }}>
+            {src.error}
           </div>
         )}
       </div>

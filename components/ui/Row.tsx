@@ -1,5 +1,4 @@
 'use client'
-import CopyBtn from './CopyBtn'
 import JumpBtn from './JumpBtn'
 
 export default function Row({ value, onJump }: { value: string; onJump?: (t: string) => void }) {
@@ -24,7 +23,6 @@ export default function Row({ value, onJump }: { value: string; onJump?: (t: str
       >
         {value}
       </div>
-      <CopyBtn text={value} />
       {onJump && <JumpBtn onClick={() => onJump(value)} />}
     </div>
   )

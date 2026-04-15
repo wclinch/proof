@@ -4,7 +4,7 @@ import AnalysisView  from './AnalysisView'
 import SourceTextView from './SourceTextView'
 import type { AnalysisResult } from '@/lib/types'
 
-function formatBreakdown(result: AnalysisResult, url: string, fmt: 'txt' | 'md'): string {
+function formatBreakdown(result: AnalysisResult, fmt: 'txt' | 'md'): string {
   const h = (label: string) => fmt === 'md' ? `## ${label}\n` : `${label}\n${'─'.repeat(label.length)}\n`
   const li = (v: string) => fmt === 'md' ? `- ${v}` : `• ${v}`
   const lines: string[] = []
@@ -13,8 +13,7 @@ function formatBreakdown(result: AnalysisResult, url: string, fmt: 'txt' | 'md')
   if (result.authors?.length) lines.push(result.authors.join(', '))
   const meta = [result.year, result.journal, result.type].filter(Boolean).join(' · ')
   if (meta) lines.push(meta)
-  if (result.doi) lines.push(`DOI: ${result.doi}`)
-  lines.push(url, '')
+  lines.push('')
 
   if (result.abstract) {
     lines.push(h('Abstract'), result.abstract, '')
@@ -67,13 +66,13 @@ export default function AnalysisPanel() {
   function handleExport(fmt: 'txt' | 'md') {
     if (!selectedSource?.result) return
     const slug    = (selectedSource.result.title ?? 'breakdown').replace(/\s+/g, '-').toLowerCase().slice(0, 60)
-    const content = formatBreakdown(selectedSource.result, selectedSource.raw, fmt)
+    const content = formatBreakdown(selectedSource.result, fmt)
     downloadText(content, `${slug}.${fmt}`)
   }
 
   return (
     <div style={{
-      flex: 1, minWidth: 0,
+      flex: 1, minWidth: 40,
       display: 'flex', flexDirection: 'column',
       overflow: 'hidden',
     }}>
@@ -135,24 +134,24 @@ export default function AnalysisPanel() {
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
         {!selectedSource && (
-          <div style={{ fontSize: '13px', color: '#333', paddingTop: '60px', textAlign: 'center', letterSpacing: '0.04em' }}>
+          <div style={{ fontSize: '13px', color: '#333', letterSpacing: '0.04em' }}>
             Select a source.
           </div>
         )}
         {selectedSource?.status === 'queued' && (
-          <div style={{ fontSize: '13px', color: '#333', paddingTop: '60px', textAlign: 'center', letterSpacing: '0.04em' }}>
+          <div style={{ fontSize: '13px', color: '#333', letterSpacing: '0.04em' }}>
             Queued.
           </div>
         )}
         {selectedSource?.status === 'loading' && (
-          <div style={{ fontSize: '13px', color: '#444', paddingTop: '60px', textAlign: 'center', letterSpacing: '0.04em' }}>
+          <div style={{ fontSize: '13px', color: '#444', letterSpacing: '0.04em' }}>
             Analyzing...
           </div>
         )}
         {selectedSource?.status === 'error' && (
-          <div style={{ fontSize: '13px', color: '#733', paddingTop: '60px', textAlign: 'center', letterSpacing: '0.04em' }}>
+          <div style={{ fontSize: '13px', color: '#733', letterSpacing: '0.04em' }}>
             {selectedSource.error}
           </div>
         )}
@@ -165,7 +164,6 @@ export default function AnalysisPanel() {
           ) : (
             <AnalysisView
               result={selectedSource.result}
-              url={selectedSource.raw}
               onJump={jumpToSource}
             />
           )

@@ -1,5 +1,20 @@
 import Nav from '@/components/Nav'
 
+const mono: React.CSSProperties = {
+  fontFamily: 'inherit',
+  background: '#111',
+  border: '1px solid #1e1e1e',
+  borderRadius: '3px',
+  padding: '1px 6px',
+  fontSize: '12px',
+  color: '#666',
+  letterSpacing: '0.04em',
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return <span style={mono}>{children}</span>
+}
+
 export default function About() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -12,130 +27,76 @@ export default function About() {
         </span>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What is Proof?</h2>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            Proof is a research workspace. Drop in a URL, a DOI, or a PDF — Proof reads the source, runs it through an AI model, and breaks it down into structured information: who wrote it, what they found, what the numbers say, what they concluded, and what&apos;s worth quoting. Everything sits in a three-panel layout where you can read the breakdown, jump back into the source text, and write — all without switching tabs.
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Proof is</h2>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+            Proof is a verification workbench. Drop a source PDF — Proof extracts every claim, statistic, finding, and quote and structures them in order of verifiability. Click any fact to jump to its exact location in the document. Every jump is hashed and indexed.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>The layout</h2>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            Three panels, side by side. Drag the dividers between them to resize — collapse any panel down to almost nothing if you need the space.
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>Left — Sources.</span> Paste URLs or DOIs into the input — one per line or comma-separated — and hit Analyze, or use <span style={{ color: '#555' }}>⌘↵</span>. You can also drag and drop PDF or TXT files directly onto the input, or click the upload button (↑) to pick files from your device. Each source appears in the list below with a status dot: grey is queued, pulsing is running, green is done, red is an error. A filter input above the list lets you search by title, label, or URL.
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>Middle — Breakdown.</span> Select a source and its extracted information appears here. Toggle between Breakdown and Source using the buttons at the top right. Breakdown shows the structured output. Source shows the full raw text, with any highlighted passage scrolled into view and marked in green. If the source text was truncated (PDFs over ~20k characters), a note appears at the bottom of Source view. Export the full breakdown as <span style={{ color: '#555' }}>.txt</span> or <span style={{ color: '#555' }}>.md</span> using the buttons in the top right.
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>Right — Synthesis.</span> Your writing space. Click New to start, give it a title, then write. The title unlocks the text area — this is intentional. Word count and Export options (.txt, .md) appear in the header bar once you have content.
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            At the bottom of the Synthesis panel is the <span style={{ color: '#555' }}>source ledger</span>. Drag any analyzed source from the left panel and drop it here to add it to your reference list. The ledger splits into two columns: a formatted entry on the left and a short parenthetical on the right. Both are copyable. Right-click a ledger entry to remove it. The source stays in your source list — the ledger just tracks what you&apos;ve cited.
-          </p>
-        </div>
-
-        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What gets extracted</h2>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            Each source produces the following where available:
-          </p>
-          {[
-            ['Title, Authors, Year, Journal, DOI, Type', 'Publication details.'],
-            ['Abstract', 'The full abstract, verbatim.'],
-            ['Sample', 'Who was studied and how many, as stated.'],
-            ['Methodology', 'Research design and how it was done.'],
-            ['Statistics', 'Numbers only — means, percentages, p-values, effect sizes, correlations.'],
-            ['Findings', 'Key results, verbatim or near-verbatim.'],
-            ['Conclusions', 'What the authors concluded or recommended.'],
-            ['Direct Quotes', 'Exact passages worth citing.'],
-            ['Limitations', 'What the authors said their work couldn\'t do.'],
-            ['Concepts & Frameworks', 'Named theories, models, and constructs.'],
-            ['Keywords', 'Key terms from the source.'],
-          ].map(([label, desc]) => (
-            <p key={label} style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#555' }}>{label} — </span>{desc}
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How to use it</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+              <span style={{ color: '#555' }}>1. Drop PDFs</span> — drag one or more PDF files into the left panel, or click the upload button. Each document is analyzed automatically.
             </p>
-          ))}
+            <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+              <span style={{ color: '#555' }}>2. Read the breakdown</span> — select a source from the list. The center panel shows extracted facts in order: statistics, findings, quotes, conclusions, then supporting context below.
+            </p>
+            <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+              <span style={{ color: '#555' }}>3. Locate a fact</span> — click <span style={{ color: '#555', fontFamily: 'inherit', fontSize: '12px', letterSpacing: '0.06em' }}>src</span> next to any fact to jump to that exact passage in the source text. This also logs a verified fact record to the index.
+            </p>
+            <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+              <span style={{ color: '#555' }}>4. Write</span> — use the Synthesis panel on the right to draft notes or a document. Click <span style={{ color: '#555' }}>···</span> in the panel header to export as <span style={{ color: '#555' }}>.txt</span> or <span style={{ color: '#555' }}>.md</span>, or to discard the draft. Discard requires a confirmation click.
+            </p>
+            <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+              <span style={{ color: '#555' }}>5. Projects</span> — click Projects in the top bar to manage multiple workspaces. Each project has its own source list and draft.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Shortcuts</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {[
+              { keys: ['⌘↵', 'Ctrl+↵'], desc: 'Start a new draft (when synthesis panel is empty and nothing is focused)' },
+              { keys: ['Tab'], desc: 'Indent 4 spaces inside the draft textarea' },
+              { keys: ['Esc'], desc: 'Close the projects panel' },
+              { keys: ['Enter'], desc: 'Confirm a project or source name edit' },
+              { keys: ['Esc'], desc: 'Cancel a name edit without saving' },
+            ].map((row, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '4px', flexShrink: 0, minWidth: '110px' }}>
+                  {row.keys.map((k, j) => <Kbd key={j}>{k}</Kbd>)}
+                </div>
+                <span style={{ fontSize: '13px', color: '#3a3a3a', lineHeight: 1.5 }}>{row.desc}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Buttons and actions</h2>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>◎ Find in source</span> — appears next to each extracted item. Switches to Source view and scrolls to the exact passage in the original text.
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>⌘ Copy</span> — copies that item to your clipboard. Turns green for a moment to confirm.
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>Right-click a source</span> — opens a menu with Rename, Re-analyze (URL and DOI sources only, limited to once every 30 seconds), or Remove. Removing requires a second click to confirm.
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>Shift-click sources</span> — selects a range. Right-clicking a multi-selection lets you remove all of them at once.
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>Drag a source</span> — drag any analyzed source from the left panel and drop it onto the ledger at the bottom of the Synthesis panel to add it to your reference list.
-          </p>
-        </div>
-
-        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Reference formats</h2>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            The source ledger supports three formats — switch between them using the toggle in the ledger header. The format applies to both the full entry and the short parenthetical.
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>MLA</span> — Works Cited format. In-text: (Author).
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>APA</span> — References format. In-text: (Author, Year).
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>Chicago</span> — Bibliography format. In-text: (Author Year).
-          </p>
-        </div>
-
-        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Projects</h2>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            Proof organizes work into projects. Each project has its own source list, breakdown history, synthesis, and reference ledger. Click Projects in the top bar to see all projects and switch between them, or click New to create one. Right-clicking a project lets you rename or remove it. You always need at least one — the last one can&apos;t be deleted. Click the project name in the top bar to rename it inline.
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            Everything is stored in your browser using localStorage. Nothing is sent to a server. Clearing your browser data will erase your projects. Use <span style={{ color: '#555' }}>Export</span> in the Projects modal to download all your projects as a JSON backup, and <span style={{ color: '#555' }}>Import</span> to load them back — on any device or browser. Importing merges incoming projects with your existing ones.
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Layout</h2>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+            The three panels are resizable — drag the dividers between them. The left panel lists your sources. The center panel shows the extracted breakdown or the raw source text (toggle via Breakdown / Source). The right panel is the synthesis editor — when a draft is open, <span style={{ color: '#555' }}>···</span> in its header opens export and discard options.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What you can drop in</h2>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>DOIs</span> — paste a DOI directly (e.g. <span style={{ color: '#444' }}>10.1037/a0012345</span>) or a doi.org URL. Proof queries CrossRef for structured data and uses it to build the breakdown. Best coverage for peer-reviewed work.
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>URLs</span> — paste any web URL. Proof fetches the page and extracts readable text. Some sites block external access — if that happens, try the DOI instead.
-          </p>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#555' }}>PDFs and TXTs</span> — upload via the ↑ button or drag and drop onto the input area.
-          </p>
-        </div>
-
-        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>No account required</h2>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            Proof is free. No sign-up, no paywall, no ads. Open it and start.
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Pricing</h2>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+            The first 5 PDFs are free — no account required. After that, $3/month with no PDF limit. Create an account to subscribe.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Contact</h2>
-          <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.75, margin: 0 }}>
-            Questions or feedback?{' '}
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
             <a href="mailto:proof_official@protonmail.com" style={{ color: '#555', textDecoration: 'none' }}>proof_official@protonmail.com</a>
           </p>
         </div>
 
         <div style={{ padding: '20px 0', textAlign: 'right' }}>
-          <a href="/" className="nav-link">Go to home →</a>
+          <a href="/app" className="nav-link">← Back</a>
         </div>
 
       </main>

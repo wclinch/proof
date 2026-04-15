@@ -8,7 +8,6 @@ export default function SourceContextMenu() {
     contextMenu, setContextMenu,
     sources, selectedIds,
     removeSource, removeSelected,
-    reanalyzeSource, isOnCooldown,
   } = useApp()
 
   const [confirmDeleteSrcId, setConfirmDeleteSrcId] = useState<string | null>(null)
@@ -17,8 +16,7 @@ export default function SourceContextMenu() {
   const src = sources.find(s => s.id === contextMenu.srcId)
   if (!src) return null
 
-  const onCooldown   = isOnCooldown(src.id)
-  const isMulti      = selectedIds.size > 1
+  const isMulti = selectedIds.size > 1
 
   function handleRename() {
     const detail: RenameSourceDetail = {
@@ -26,12 +24,6 @@ export default function SourceContextMenu() {
       currentLabel: src!.label ?? src!.result?.title ?? src!.raw,
     }
     window.dispatchEvent(new CustomEvent('proof:rename-source', { detail }))
-    setContextMenu(null)
-  }
-
-  function handleReanalyze() {
-    if (onCooldown) return
-    reanalyzeSource(src!.id)
     setContextMenu(null)
   }
 
@@ -73,16 +65,6 @@ export default function SourceContextMenu() {
           >
             Rename
           </button>
-          {!src.raw.startsWith('file:') && (
-            <button
-              onClick={handleReanalyze}
-              style={{ ...menuBtn, color: onCooldown ? '#333' : '#777', cursor: onCooldown ? 'default' : 'pointer' }}
-              onMouseEnter={e => { if (!onCooldown) e.currentTarget.style.background = '#1e1e1e' }}
-              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-            >
-              {onCooldown ? 'Re-analyze (wait 30s)' : 'Re-analyze'}
-            </button>
-          )}
           <div style={{ height: '1px', background: '#1e1e1e' }} />
         </>
       )}

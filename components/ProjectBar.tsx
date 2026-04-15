@@ -6,6 +6,7 @@ export default function ProjectBar() {
   const {
     activeProject, activeId, projects,
     updateProject, setShowProjects, createProject, sources,
+    user,
   } = useApp()
 
   const [editingName, setEditingName] = useState(false)
@@ -15,7 +16,6 @@ export default function ProjectBar() {
   const doneCount    = sources.filter(s => s.status === 'done').length
   const loadingCount = sources.filter(s => s.status === 'loading').length
 
-  // Sync name when active project changes
   useEffect(() => {
     setProjectName(activeProject?.name ?? '')
     setEditingName(false)
@@ -30,18 +30,27 @@ export default function ProjectBar() {
     setEditingName(false)
   }
 
-  const btnStyle: React.CSSProperties = {
+  const linkStyle: React.CSSProperties = {
     background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
-    fontSize: '11px', color: '#444', letterSpacing: '0.08em',
-    textTransform: 'uppercase', fontFamily: 'inherit',
+    fontSize: '11px', color: '#333', letterSpacing: '0.08em',
+    textTransform: 'uppercase', fontFamily: 'inherit', textDecoration: 'none',
+    display: 'inline-block',
   }
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 40px', height: '40px', flexShrink: 0,
-      borderBottom: '1px solid #1a1a1a',
+      display: 'flex', alignItems: 'center',
+      padding: '0 24px', height: '44px', flexShrink: 0,
+      borderBottom: '1px solid #1a1a1a', gap: '16px',
     }}>
+      {/* Logo */}
+      <a href="/" style={{ ...linkStyle, color: '#555', fontSize: '15px', fontWeight: 300, letterSpacing: 0, marginRight: '4px' }}>
+        {'{'}
+      </a>
+
+      <div style={{ width: '1px', height: '14px', background: '#1a1a1a', flexShrink: 0 }} />
+
+      {/* Project name */}
       <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
         {editingName ? (
           <input
@@ -60,7 +69,7 @@ export default function ProjectBar() {
             autoFocus
             style={{
               background: 'transparent', border: 'none', outline: 'none',
-              fontSize: '12px', color: '#aaa', letterSpacing: '0.06em',
+              fontSize: '11px', color: '#aaa', letterSpacing: '0.06em',
               textTransform: 'uppercase', fontFamily: 'inherit',
               padding: 0, margin: 0, height: '20px', lineHeight: '20px',
               boxSizing: 'border-box', width: '100%',
@@ -70,42 +79,79 @@ export default function ProjectBar() {
           <button
             onClick={() => setEditingName(true)}
             style={{
-              ...btnStyle, cursor: 'text',
+              ...linkStyle, cursor: 'text', color: '#555',
               maxWidth: '100%', overflow: 'hidden',
               textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#777')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+            onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#555')}
           >
             {activeProject?.name ?? 'untitled'}
           </button>
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-        {sources.length > 0 && (
-          <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.06em' }}>
-            {doneCount}/{sources.length} analyzed
-            {loadingCount > 0 ? ' · analyzing...' : ''}
-          </span>
-        )}
-        <button
-          onClick={() => setShowProjects(v => !v)}
-          style={btnStyle}
-          onMouseEnter={e => (e.currentTarget.style.color = '#777')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+      {/* Status */}
+      {sources.length > 0 && (
+        <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em', flexShrink: 0 }}>
+          {doneCount}/{sources.length}
+          {loadingCount > 0 ? ' · analyzing...' : ''}
+        </span>
+      )}
+
+      <div style={{ width: '1px', height: '14px', background: '#1a1a1a', flexShrink: 0 }} />
+
+      {/* Actions */}
+      <button
+        onClick={() => setShowProjects(v => !v)}
+        style={linkStyle}
+        onMouseEnter={e => (e.currentTarget.style.color = '#666')}
+        onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+      >
+        Projects
+      </button>
+      <button
+        onClick={createProject}
+        style={linkStyle}
+        onMouseEnter={e => (e.currentTarget.style.color = '#666')}
+        onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+      >
+        New
+      </button>
+
+      <div style={{ width: '1px', height: '14px', background: '#1a1a1a', flexShrink: 0 }} />
+
+      <a href="/about" style={linkStyle}
+        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#666'}
+        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#333'}
+      >
+        About
+      </a>
+      <a href="/privacy" style={linkStyle}
+        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#666'}
+        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#333'}
+      >
+        Privacy
+      </a>
+
+      <div style={{ width: '1px', height: '14px', background: '#1a1a1a', flexShrink: 0 }} />
+
+      {user ? (
+        <a href="/account" style={{ ...linkStyle, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+          title={user.email}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#666'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#333'}
         >
-          Projects
-        </button>
-        <button
-          onClick={createProject}
-          style={btnStyle}
-          onMouseEnter={e => (e.currentTarget.style.color = '#777')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+          {user.email}
+        </a>
+      ) : (
+        <a href="/auth" style={linkStyle}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#666'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#333'}
         >
-          New
-        </button>
-      </div>
+          Sign in
+        </a>
+      )}
     </div>
   )
 }

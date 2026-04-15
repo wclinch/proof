@@ -4,6 +4,24 @@ export const STORAGE_KEY  = 'proof-v2-projects'
 export const ACTIVE_KEY   = 'proof-v2-active'
 export const SELECTED_KEY = 'proof-v2-selected'
 export const SESSION_KEY  = 'proof-v2-session'
+export const PDF_COUNT_KEY = 'proof-pdf-lifetime-count'
+
+export const PDF_FREE_LIMIT = 5
+
+export function getPdfCount(): number {
+  return parseInt(localStorage.getItem(PDF_COUNT_KEY) ?? '0', 10)
+}
+
+export function setPdfCount(n: number) {
+  localStorage.setItem(PDF_COUNT_KEY, String(n))
+}
+
+// Call once on mount — seeds count from existing sources so legacy users aren't cut off
+export function initPdfCount(projects: import('./types').Project[]) {
+  if (localStorage.getItem(PDF_COUNT_KEY) !== null) return
+  const total = projects.reduce((acc, p) => acc + p.sources.length, 0)
+  localStorage.setItem(PDF_COUNT_KEY, String(total))
+}
 
 export function uid(): string {
   return Math.random().toString(36).slice(2, 10)
@@ -26,8 +44,6 @@ export function newProject(n: number): Project {
     draft: '',
     draftTitle: '',
     draftCreated: false,
-    citations: [],
-    citationStyle: 'mla',
   }
 }
 
@@ -61,14 +77,13 @@ export function saveProjects(ps: Project[]) {
         sources: p.sources.map(s => ({ ...s, rawText: null })),
       }))
       localStorage.setItem(STORAGE_KEY, JSON.stringify(bare))
-    } catch { /* silent */ }
+      window.dispatchEvent(new CustomEvent('proof-storage-warning', {
+        detail: 'Storage nearly full — source text cleared to save space.',
+      }))
+    } catch {
+      window.dispatchEvent(new CustomEvent('proof-storage-warning', {
+        detail: 'Storage full — changes may not be saved.',
+      }))
+    }
   }
-}
-
-export function parseInput(text: string): string[] {
-  return [
-    ...new Set(
-      text.split(/[\n,]/).map(s => s.trim()).filter(Boolean)
-    ),
-  ]
 }

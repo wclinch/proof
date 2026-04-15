@@ -57,7 +57,11 @@ export async function callGroq(key: string, content: string, source: string): Pr
 
 export function parseGroqResponse(raw: string): unknown {
   const json = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim()
-  return JSON.parse(json)
+  try {
+    return JSON.parse(json)
+  } catch {
+    throw new Error('Model returned invalid JSON — try again.')
+  }
 }
 
 export function formatGroqError(e: unknown): string {

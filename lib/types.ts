@@ -37,6 +37,4 @@ export interface Project {
   draft: string
   draftTitle: string
   draftCreated: boolean
-  citations: string[]                        // ordered source IDs added to the citations tray
-  citationStyle: 'mla' | 'apa' | 'chicago'  // active citation format
 }
