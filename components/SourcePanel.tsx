@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import { useApp } from '@/context/AppContext'
+import { parseInput } from '@/lib/storage'
 import SourceItem from './SourceItem'
 
 export default function SourcePanel({ width }: { width: number }) {
@@ -8,10 +9,23 @@ export default function SourcePanel({ width }: { width: number }) {
   const [inputText, setInputText] = useState('')
   const [dragOver, setDragOver]   = useState(false)
   const [filter, setFilter]       = useState('')
+  const [notice, setNotice]       = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  function showNotice(msg: string) {
+    setNotice(msg)
+    setTimeout(() => setNotice(null), 2000)
+  }
 
   function handleAnalyze() {
     if (!inputText.trim()) return
+    const parsed = parseInput(inputText)
+    const existingRaws = new Set(sources.map(s => s.raw))
+    const fresh = parsed.filter(u => !existingRaws.has(u))
+    if (!fresh.length) {
+      showNotice(parsed.length === 1 ? 'Already in list' : 'All already in list')
+      return
+    }
     analyzeSources(inputText)
     setInputText('')
   }
@@ -53,6 +67,11 @@ export default function SourcePanel({ width }: { width: number }) {
             transition: 'border-color 0.15s, background 0.15s',
           }}
         />
+        {notice && (
+          <div style={{ marginTop: '8px', fontSize: '11px', color: '#555', letterSpacing: '0.04em' }}>
+            {notice}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
           <button
             onClick={handleAnalyze}
