@@ -66,26 +66,32 @@ export default function AdminPage() {
   const [stats, setStats]       = useState<Stats | null>(null)
   const [error, setError]       = useState<string | null>(null)
   const [loading, setLoading]   = useState(false)
+  const [savedPw, setSavedPw]   = useState('')
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
+  async function fetchStats(pw: string) {
     setLoading(true)
     setError(null)
     try {
       const res = await fetch('/api/admin/stats', {
-        headers: { 'x-admin-password': password },
+        headers: { 'x-admin-password': pw },
       })
       const data = await res.json() as Stats & { error?: string }
       if (!res.ok) {
         setError(data.error ?? 'Failed')
       } else {
         setStats(data)
+        setSavedPw(pw)
       }
     } catch {
       setError('Network error')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    await fetchStats(password)
   }
 
   if (!stats) {
@@ -132,12 +138,21 @@ export default function AdminPage() {
 
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '40px' }}>
         <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Admin — Proof</span>
-        <button
-          onClick={() => setStats(null)}
-          style={{ background: 'none', border: 'none', fontSize: '11px', color: '#333', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'inherit', cursor: 'pointer', padding: 0, outline: 'none' }}
-        >
-          Sign out
-        </button>
+        <div style={{ display: 'flex', gap: '20px' }}>
+          <button
+            onClick={() => fetchStats(savedPw)}
+            disabled={loading}
+            style={{ background: 'none', border: 'none', fontSize: '11px', color: loading ? '#2a2a2a' : '#333', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'inherit', cursor: loading ? 'default' : 'pointer', padding: 0, outline: 'none' }}
+          >
+            {loading ? '...' : 'Refresh'}
+          </button>
+          <button
+            onClick={() => { setStats(null); setSavedPw('') }}
+            style={{ background: 'none', border: 'none', fontSize: '11px', color: '#333', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'inherit', cursor: 'pointer', padding: 0, outline: 'none' }}
+          >
+            Sign out
+          </button>
+        </div>
       </div>
 
       {/* Top stats */}
