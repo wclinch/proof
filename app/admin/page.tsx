@@ -1,87 +1,123 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-interface StatsRow { label: string; count: number }
-interface DayRow   { date: string; count: number }
-
+interface Row   { label: string; count: number }
+interface DayRow { date: string; count: number }
 interface Stats {
   total: number
-  recentCount: number
-  byType: StatsRow[]
-  byInput: StatsRow[]
-  byYear: StatsRow[]
-  topKeywords: StatsRow[]
-  topConcepts: StatsRow[]
+  byType: Row[]
+  byInput: Row[]
+  byYear: Row[]
+  byPublisher: Row[]
+  topKeywords: Row[]
+  topConcepts: Row[]
   daily: DayRow[]
 }
 
-function Bar({ label, count, max }: { label: string; count: number; max: number }) {
-  const pct = max > 0 ? (count / max) * 100 : 0
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-      <div style={{ width: '160px', flexShrink: 0, fontSize: '12px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {label}
-      </div>
-      <div style={{ flex: 1, background: '#111', borderRadius: '2px', height: '6px', overflow: 'hidden' }}>
-        <div style={{ width: `${pct}%`, height: '100%', background: '#1e3a2a', borderRadius: '2px', transition: 'width 0.4s ease' }} />
-      </div>
-      <div style={{ width: '36px', flexShrink: 0, fontSize: '11px', color: '#444', textAlign: 'right' }}>
-        {count}
-      </div>
-    </div>
+type Range = '7d' | '30d' | '90d' | 'all'
+
+const RANGES: { label: string; value: Range; ms: number | null }[] = [
+  { label: '7D',  value: '7d',  ms: 7  * 86400_000 },
+  { label: '30D', value: '30d', ms: 30 * 86400_000 },
+  { label: '90D', value: '90d', ms: 90 * 86400_000 },
+  { label: 'All', value: 'all', ms: null },
+]
+
+function downloadCSV(filename: string, headers: string[], rows: string[][]) {
+  const esc = (v: string) => `"${v.replace(/"/g, '""')}"`
+  const csv  = [headers.map(esc).join(','), ...rows.map(r => r.map(esc).join(','))].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const a    = document.createElement('a')
+  a.href     = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
+function exportSection(name: string, rows: Row[], total: number) {
+  const date = new Date().toISOString().slice(0, 10)
+  downloadCSV(
+    `proof-${name}-${date}.csv`,
+    ['label', 'count', 'pct_of_total'],
+    rows.map(r => [r.label, String(r.count), total > 0 ? ((r.count / total) * 100).toFixed(2) + '%' : '0%']),
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div style={{ marginBottom: '40px' }}>
-      <div style={{ fontSize: '11px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '14px', paddingBottom: '8px', borderBottom: '1px solid #1a1a1a' }}>
-        {title}
-      </div>
-      {children}
-    </div>
-  )
-}
+function DataSection({
+  title, rows, total, emptyMsg,
+}: {
+  title: string
+  rows: Row[]
+  total: number
+  emptyMsg?: string
+}) {
+  const max = rows[0]?.count ?? 1
+  const slug = title.toLowerCase().replace(/[^a-z]+/g, '-')
 
-function DailyChart({ daily }: { daily: DayRow[] }) {
-  if (!daily.length) return <div style={{ fontSize: '12px', color: '#333' }}>No data</div>
-  const max = Math.max(...daily.map(d => d.count))
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '60px' }}>
-      {daily.map(d => (
-        <div key={d.date} title={`${d.date}: ${d.count}`} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end', cursor: 'default' }}>
-          <div style={{
-            width: '100%', background: '#1e3a2a', borderRadius: '2px 2px 0 0',
-            height: max > 0 ? `${(d.count / max) * 100}%` : '2px',
-            minHeight: '2px',
-          }} />
-        </div>
-      ))}
+    <div style={{ marginBottom: '48px' }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #1a1a1a',
+      }}>
+        <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{title}</span>
+        {rows.length > 0 && (
+          <button
+            onClick={() => exportSection(slug, rows, total)}
+            style={{
+              background: 'none', border: '1px solid #1e1e1e', borderRadius: '3px',
+              padding: '3px 10px', fontSize: '10px', color: '#444', letterSpacing: '0.08em',
+              textTransform: 'uppercase', fontFamily: 'inherit', cursor: 'pointer', outline: 'none',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#888' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.color = '#444' }}
+          >
+            Export CSV ↓
+          </button>
+        )}
+      </div>
+
+      {rows.length === 0 ? (
+        <div style={{ fontSize: '12px', color: '#2a2a2a' }}>{emptyMsg ?? 'No data'}</div>
+      ) : rows.map(r => {
+        const pct = max > 0 ? (r.count / max) * 100 : 0
+        const totalPct = total > 0 ? ((r.count / total) * 100).toFixed(1) : '0'
+        return (
+          <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '7px' }}>
+            <div style={{ width: '180px', flexShrink: 0, fontSize: '12px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {r.label}
+            </div>
+            <div style={{ flex: 1, background: '#111', borderRadius: '2px', height: '5px', overflow: 'hidden' }}>
+              <div style={{ width: `${pct}%`, height: '100%', background: '#1e3a2a', borderRadius: '2px' }} />
+            </div>
+            <div style={{ width: '28px', flexShrink: 0, fontSize: '11px', color: '#444', textAlign: 'right' }}>{r.count}</div>
+            <div style={{ width: '42px', flexShrink: 0, fontSize: '10px', color: '#2a2a2a', textAlign: 'right' }}>{totalPct}%</div>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
 export default function AdminPage() {
   const [password, setPassword] = useState('')
-  const [stats, setStats]       = useState<Stats | null>(null)
-  const [error, setError]       = useState<string | null>(null)
-  const [loading, setLoading]   = useState(false)
-  const [savedPw, setSavedPw]   = useState('')
+  const [savedPw,  setSavedPw]  = useState('')
+  const [stats,    setStats]    = useState<Stats | null>(null)
+  const [range,    setRange]    = useState<Range>('all')
+  const [error,    setError]    = useState<string | null>(null)
+  const [loading,  setLoading]  = useState(false)
 
-  async function fetchStats(pw: string) {
+  async function fetchStats(pw: string, r: Range) {
     setLoading(true)
     setError(null)
+    const ms = RANGES.find(x => x.value === r)?.ms
+    const since = ms ? Date.now() - ms : null
+    const url = '/api/admin/stats' + (since ? `?since=${since}` : '')
     try {
-      const res = await fetch('/api/admin/stats', {
-        headers: { 'x-admin-password': pw },
-      })
+      const res  = await fetch(url, { headers: { 'x-admin-password': pw } })
       const data = await res.json() as Stats & { error?: string }
-      if (!res.ok) {
-        setError(data.error ?? 'Failed')
-      } else {
-        setStats(data)
-        setSavedPw(pw)
-      }
+      if (!res.ok) setError(data.error ?? 'Failed')
+      else { setStats(data); setSavedPw(pw) }
     } catch {
       setError('Network error')
     } finally {
@@ -89,15 +125,37 @@ export default function AdminPage() {
     }
   }
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
-    await fetchStats(password)
+  // Refetch when range changes (only if already authenticated)
+  useEffect(() => {
+    if (savedPw) fetchStats(savedPw, range)
+  }, [range]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleRawExport() {
+    const ms    = RANGES.find(x => x.value === range)?.ms
+    const since = ms ? Date.now() - ms : null
+    const url   = '/api/admin/export' + (since ? `?since=${since}` : '')
+    // Open in a new tab — browser will download via Content-Disposition header
+    const a = document.createElement('a')
+    a.href  = url
+    // Pass password via sessionStorage so the fetch can pick it up
+    // Instead, open via fetch + blob to attach the header
+    fetch(url, { headers: { 'x-admin-password': savedPw } })
+      .then(r => r.blob())
+      .then(blob => {
+        const date = new Date().toISOString().slice(0, 10)
+        a.href     = URL.createObjectURL(blob)
+        a.download = `proof-raw-${date}.csv`
+        a.click()
+        URL.revokeObjectURL(a.href)
+      })
   }
 
+  // ── Login screen ────────────────────────────────────────────────────────────
   if (!stats) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#080808' }}>
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '260px' }}>
+        <form onSubmit={e => { e.preventDefault(); fetchStats(password, range) }}
+          style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '260px' }}>
           <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Admin</span>
           <input
             type="password"
@@ -128,21 +186,22 @@ export default function AdminPage() {
     )
   }
 
-  const maxKeyword = stats.topKeywords[0]?.count ?? 1
-  const maxConcept = stats.topConcepts[0]?.count ?? 1
-  const maxType    = stats.byType[0]?.count ?? 1
-  const maxYear    = stats.byYear[0]?.count ?? 1
+  // ── Dashboard ────────────────────────────────────────────────────────────────
+  const total = stats.total
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080808', padding: '56px 40px', maxWidth: '860px', margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: '#080808', padding: '48px 40px', maxWidth: '800px', margin: '0 auto' }}>
 
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '40px' }}>
-        <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Admin — Proof</span>
-        <div style={{ display: 'flex', gap: '20px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '36px' }}>
+        <span style={{ fontSize: '11px', color: '#333', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Admin — Proof
+        </span>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <button
-            onClick={() => fetchStats(savedPw)}
+            onClick={() => fetchStats(savedPw, range)}
             disabled={loading}
-            style={{ background: 'none', border: 'none', fontSize: '11px', color: loading ? '#2a2a2a' : '#333', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'inherit', cursor: loading ? 'default' : 'pointer', padding: 0, outline: 'none' }}
+            style={{ background: 'none', border: 'none', fontSize: '11px', color: loading ? '#222' : '#333', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'inherit', cursor: loading ? 'default' : 'pointer', padding: 0, outline: 'none' }}
           >
             {loading ? '...' : 'Refresh'}
           </button>
@@ -155,76 +214,53 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Top stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '40px' }}>
-        {[
-          { label: 'Total sources', value: stats.total.toLocaleString() },
-          { label: 'Last 7 days', value: stats.recentCount.toLocaleString() },
-          { label: 'Input types', value: stats.byInput.length.toString() },
-        ].map(({ label, value }) => (
-          <div key={label} style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '6px', padding: '16px 20px' }}>
-            <div style={{ fontSize: '24px', fontWeight: 300, color: '#ccc', marginBottom: '4px' }}>{value}</div>
-            <div style={{ fontSize: '11px', color: '#444', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Daily volume */}
-      <Section title="Daily volume — last 30 days">
-        <DailyChart daily={stats.daily} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-          <span style={{ fontSize: '10px', color: '#333' }}>{stats.daily[0]?.date ?? ''}</span>
-          <span style={{ fontSize: '10px', color: '#333' }}>{stats.daily[stats.daily.length - 1]?.date ?? ''}</span>
+      {/* Time range + summary row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '40px' }}>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          {RANGES.map(r => (
+            <button
+              key={r.value}
+              onClick={() => setRange(r.value)}
+              style={{
+                background: range === r.value ? '#141414' : 'none',
+                border: `1px solid ${range === r.value ? '#2a2a2a' : 'transparent'}`,
+                borderRadius: '3px', padding: '4px 12px',
+                fontSize: '11px', color: range === r.value ? '#888' : '#333',
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+                fontFamily: 'inherit', cursor: 'pointer', outline: 'none',
+              }}
+            >
+              {r.label}
+            </button>
+          ))}
         </div>
-      </Section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
-        {/* Source types */}
-        <Section title="Source type">
-          {stats.byType.length === 0
-            ? <div style={{ fontSize: '12px', color: '#333' }}>No data</div>
-            : stats.byType.map(r => <Bar key={r.label} label={r.label} count={r.count} max={maxType} />)
-
-          }
-        </Section>
-
-        {/* Input type */}
-        <Section title="Input type">
-          {stats.byInput.length === 0
-            ? <div style={{ fontSize: '12px', color: '#333' }}>No data</div>
-            : stats.byInput.map(r => <Bar key={r.label} label={r.label} count={r.count} max={stats.byInput[0]?.count ?? 1}  />)
-          }
-        </Section>
-
-        {/* Year */}
-        <Section title="Year">
-          {stats.byYear.length === 0
-            ? <div style={{ fontSize: '12px', color: '#333' }}>No data</div>
-            : stats.byYear
-                .sort((a, b) => b.label.localeCompare(a.label))
-                .map(r => <Bar key={r.label} label={r.label} count={r.count} max={maxYear}  />)
-          }
-        </Section>
-
-        {/* Placeholder for symmetry */}
-        <div />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <span style={{ fontSize: '12px', color: '#444' }}>
+            {total.toLocaleString()} {total === 1 ? 'source' : 'sources'}
+          </span>
+          <button
+            onClick={handleRawExport}
+            style={{
+              background: 'none', border: '1px solid #1e1e1e', borderRadius: '3px',
+              padding: '4px 12px', fontSize: '10px', color: '#444', letterSpacing: '0.08em',
+              textTransform: 'uppercase', fontFamily: 'inherit', cursor: 'pointer', outline: 'none',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#888' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.color = '#444' }}
+          >
+            Export raw CSV ↓
+          </button>
+        </div>
       </div>
 
-      {/* Keywords */}
-      <Section title="Top keywords">
-        {stats.topKeywords.length === 0
-          ? <div style={{ fontSize: '12px', color: '#333' }}>No data yet — keywords populate as sources are analyzed</div>
-          : stats.topKeywords.map(r => <Bar key={r.label} label={r.label} count={r.count} max={maxKeyword} />)
-        }
-      </Section>
-
-      {/* Concepts */}
-      <Section title="Top concepts &amp; frameworks">
-        {stats.topConcepts.length === 0
-          ? <div style={{ fontSize: '12px', color: '#333' }}>No data yet</div>
-          : stats.topConcepts.map(r => <Bar key={r.label} label={r.label} count={r.count} max={maxConcept}  />)
-        }
-      </Section>
+      {/* Data sections */}
+      <DataSection title="Keywords"              rows={stats.topKeywords} total={total} emptyMsg="No keyword data yet — analyze sources to populate" />
+      <DataSection title="Concepts & Frameworks" rows={stats.topConcepts} total={total} emptyMsg="No concept data yet" />
+      <DataSection title="Publishers & Journals" rows={stats.byPublisher} total={total} emptyMsg="No publisher data yet" />
+      <DataSection title="Source Type"           rows={stats.byType}      total={total} />
+      <DataSection title="Input Method"          rows={stats.byInput}     total={total} />
+      <DataSection title="Publication Year"      rows={stats.byYear.sort((a, b) => b.label.localeCompare(a.label))} total={total} />
 
     </div>
   )

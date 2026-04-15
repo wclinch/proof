@@ -6,15 +6,17 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
-function tally(items: (string | null)[]): Record<string, number> {
+function tally(items: (string | null)[]): { label: string; count: number }[] {
   const counts: Record<string, number> = {}
   for (const item of items) {
-    if (item) counts[item] = (counts[item] ?? 0) + 1
+    if (item?.trim()) counts[item.trim()] = (counts[item.trim()] ?? 0) + 1
   }
-  return counts
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, count]) => ({ label, count }))
 }
 
-function tallyArrays(rows: (string[] | null)[]): Record<string, number> {
+function tallyArrays(rows: (string[] | null)[]): { label: string; count: number }[] {
   const counts: Record<string, number> = {}
   for (const arr of rows) {
     if (!arr) continue
@@ -23,13 +25,8 @@ function tallyArrays(rows: (string[] | null)[]): Record<string, number> {
       if (k) counts[k] = (counts[k] ?? 0) + 1
     }
   }
-  return counts
-}
-
-function topN(counts: Record<string, number>, n: number): { label: string; count: number }[] {
   return Object.entries(counts)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, n)
     .map(([label, count]) => ({ label, count }))
 }
 
@@ -39,48 +36,36 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Fetch all rows we need (lightweight columns only)
-  const { data, error } = await supabase
+  const since = req.nextUrl.searchParams.get('since')
+  let query = supabase
     .from('sources')
-    .select('type, input_type, year, keywords, concepts, created_at')
+    .select('type, input_type, year, publisher, keywords, concepts, created_at')
     .order('created_at', { ascending: false })
 
+  if (since) query = query.gte('created_at', new Date(Number(since)).toISOString())
+
+  const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  if (!data) return NextResponse.json({ error: 'No data' }, { status: 500 })
+  if (!data)  return NextResponse.json({ error: 'No data' }, { status: 500 })
 
   const total      = data.length
-  const byType     = topN(tally(data.map(r => r.type)), 20)
-  const byInput    = topN(tally(data.map(r => r.input_type)), 10)
-  const byYear     = topN(tally(data.map(r => r.year ? String(r.year) : null)), 30)
-  const topKeywords = topN(tallyArrays(data.map(r => r.keywords)), 30)
-  const topConcepts = topN(tallyArrays(data.map(r => r.concepts)), 30)
+  const byType      = tally(data.map(r => r.type))
+  const byInput     = tally(data.map(r => r.input_type))
+  const byYear      = tally(data.map(r => r.year ? String(r.year) : null))
+  const byPublisher = tally(data.map(r => r.publisher)).slice(0, 50)
+  const topKeywords = tallyArrays(data.map(r => r.keywords)).slice(0, 50)
+  const topConcepts = tallyArrays(data.map(r => r.concepts)).slice(0, 50)
 
-  // Daily volume — last 30 days
-  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000
+  // Daily volume — last 30 days relative to the since window
   const dailyCounts: Record<string, number> = {}
   for (const row of data) {
     if (!row.created_at) continue
-    const ts = new Date(row.created_at).getTime()
-    if (ts < cutoff) continue
-    const day = row.created_at.slice(0, 10) // YYYY-MM-DD
+    const day = row.created_at.slice(0, 10)
     dailyCounts[day] = (dailyCounts[day] ?? 0) + 1
   }
   const daily = Object.entries(dailyCounts)
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([date, count]) => ({ date, count }))
 
-  // Last 7 days total
-  const week = Date.now() - 7 * 24 * 60 * 60 * 1000
-  const recentCount = data.filter(r => r.created_at && new Date(r.created_at).getTime() >= week).length
-
-  return NextResponse.json({
-    total,
-    recentCount,
-    byType,
-    byInput,
-    byYear,
-    topKeywords,
-    topConcepts,
-    daily,
-  })
+  return NextResponse.json({ total, byType, byInput, byYear, byPublisher, topKeywords, topConcepts, daily })
 }
