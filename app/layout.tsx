@@ -8,9 +8,32 @@ const dmMono = DM_Mono({
   display: 'swap',
 })
 
+const BASE = 'https://proof-kxfz.onrender.com'
+
 export const metadata: Metadata = {
-  title: 'Proof',
-  description: 'Paste URLs, DOIs, or upload PDFs. Break down sources, write, and cite — all in one place.',
+  title: {
+    default: 'Proof',
+    template: '%s — Proof',
+  },
+  description: 'Drop in a URL, DOI, or PDF. Proof breaks down your sources and puts the breakdown next to where you write.',
+  metadataBase: new URL(BASE),
+  openGraph: {
+    siteName: 'Proof',
+    title: 'Proof — Research, broken down.',
+    description: 'Drop in a URL, DOI, or PDF. Proof breaks down your sources and puts the breakdown next to where you write.',
+    url: BASE,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Proof — Research, broken down.',
+    description: 'Drop in a URL, DOI, or PDF. Proof breaks down your sources and puts the breakdown next to where you write.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

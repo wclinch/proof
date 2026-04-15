@@ -260,7 +260,7 @@ export default function AdminPage() {
       <DataSection title="Publishers & Journals" rows={stats.byPublisher} total={total} emptyMsg="No publisher data yet" />
       <DataSection title="Source Type"           rows={stats.byType}      total={total} />
       <DataSection title="Input Method"          rows={stats.byInput}     total={total} />
-      <DataSection title="Publication Year"      rows={stats.byYear.sort((a, b) => b.label.localeCompare(a.label))} total={total} />
+      <DataSection title="Publication Year"      rows={[...stats.byYear].sort((a, b) => Number(b.label) - Number(a.label))} total={total} />
 
     </div>
   )

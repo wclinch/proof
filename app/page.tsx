@@ -1,107 +1,121 @@
-'use client'
-import { useState, useRef } from 'react'
-import { AppProvider } from '@/context/AppContext'
-import Nav               from '@/components/Nav'
-import ProjectBar        from '@/components/ProjectBar'
-import SourcePanel       from '@/components/SourcePanel'
-import AnalysisPanel     from '@/components/AnalysisPanel'
-import DraftPanel        from '@/components/DraftPanel'
-import ProjectsModal     from '@/components/ProjectsModal'
-import SourceContextMenu from '@/components/SourceContextMenu'
-import { useApp }        from '@/context/AppContext'
+import Link from 'next/link'
 
-function ResizeHandle({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) => void }) {
-  const [hovered, setHovered] = useState(false)
+const FEATURES = [
+  {
+    label: 'Breakdown',
+    desc: 'Every source becomes structured data — authors, abstract, sample, methodology, statistics, findings, conclusions, direct quotes, limitations, concepts, and keywords.',
+  },
+  {
+    label: 'Source view',
+    desc: 'The full original text sits alongside the breakdown. Click Find in source on any extracted item and Proof scrolls to the exact passage, highlighted in green.',
+  },
+  {
+    label: 'Synthesis',
+    desc: 'Write in the same window. Your sources stay beside you. Export your draft as .txt or .md when done.',
+  },
+  {
+    label: 'Citation ledger',
+    desc: 'Drag any analyzed source into your reference list. Switch between MLA, APA, and Chicago. Full entry and in-text parenthetical — both copyable.',
+  },
+  {
+    label: 'Projects',
+    desc: 'Organize work into separate projects, each with its own source list, synthesis, and ledger. Export everything as a JSON backup and restore it on any device.',
+  },
+]
+
+export default function Landing() {
   return (
-    <div
-      onMouseDown={onMouseDown}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        width: '4px', flexShrink: 0, cursor: 'col-resize', zIndex: 10,
-        background: hovered ? '#2e2e2e' : '#1a1a1a',
-        transition: 'background 0.15s',
-      }}
-    />
-  )
-}
+    <div style={{ minHeight: '100vh', background: '#080808', display: 'flex', flexDirection: 'column' }}>
 
-function Layout() {
-  const { mounted } = useApp()
-  const [sourceWidth, setSourceWidth] = useState(() => {
-    if (typeof window === 'undefined') return 260
-    return parseInt(localStorage.getItem('proof-ui-source-width') || '260', 10)
-  })
-  const [draftWidth, setDraftWidth] = useState(() => {
-    if (typeof window === 'undefined') return 420
-    return parseInt(localStorage.getItem('proof-ui-draft-width') || '420', 10)
-  })
-  // Refs so event handlers always see current values without stale closures
-  const sourceWidthRef = useRef(sourceWidth)
-  const draftWidthRef  = useRef(draftWidth)
+      {/* Nav */}
+      <nav style={{
+        padding: '24px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        borderBottom: '1px solid #1a1a1a',
+      }}>
+        <span style={{ fontSize: '22px', fontWeight: 300, color: '#e8e8e8' }}>{`{`}</span>
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+          <Link href="/about"   style={{ fontSize: '12px', color: '#444', textDecoration: 'none', letterSpacing: '0.06em' }}>About</Link>
+          <Link href="/privacy" style={{ fontSize: '12px', color: '#444', textDecoration: 'none', letterSpacing: '0.06em' }}>Privacy</Link>
+          <Link href="/app" style={{
+            fontSize: '12px', color: '#bbb', textDecoration: 'none', letterSpacing: '0.06em',
+            border: '1px solid #2a2a2a', borderRadius: '4px', padding: '6px 14px',
+          }}>
+            Open →
+          </Link>
+        </div>
+      </nav>
 
-  function startDrag(side: 'left' | 'right', e: React.MouseEvent) {
-    e.preventDefault()
-    const startX = e.clientX
-    const startW = side === 'left' ? sourceWidthRef.current : draftWidthRef.current
-
-    function onMove(ev: MouseEvent) {
-      const delta = ev.clientX - startX
-      if (side === 'left') {
-        const w = Math.max(24, Math.min(700, startW + delta))
-        sourceWidthRef.current = w
-        setSourceWidth(w)
-        localStorage.setItem('proof-ui-source-width', String(w))
-      } else {
-        const w = Math.max(24, Math.min(900, startW - delta))
-        draftWidthRef.current = w
-        setDraftWidth(w)
-        localStorage.setItem('proof-ui-draft-width', String(w))
-      }
-    }
-
-    function onUp() {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-      document.body.style.userSelect = ''
-      document.body.style.cursor = ''
-    }
-
-    document.body.style.userSelect = 'none'
-    document.body.style.cursor = 'col-resize'
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-  }
-
-  if (!mounted) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#080808' }}>
-        <Nav />
+      {/* Hero */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 40px 60px', textAlign: 'center' }}>
+        <h1 style={{ fontSize: '13px', fontWeight: 400, color: '#444', letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 28px' }}>
+          Proof
+        </h1>
+        <p style={{ fontSize: '28px', fontWeight: 300, color: '#ccc', margin: '0 0 16px', lineHeight: 1.3, maxWidth: '520px' }}>
+          Research, broken down.
+        </p>
+        <p style={{ fontSize: '15px', color: '#555', margin: '0 0 48px', lineHeight: 1.75, maxWidth: '440px' }}>
+          Drop in a URL, DOI, or PDF. Proof reads the source and extracts everything worth keeping — right next to where you write.
+        </p>
+        <Link href="/app" style={{
+          display: 'inline-block', padding: '11px 28px',
+          background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: '4px',
+          fontSize: '13px', color: '#bbb', textDecoration: 'none', letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+        }}>
+          Open Proof →
+        </Link>
+        <p style={{ marginTop: '14px', fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em' }}>
+          Free. No account required.
+        </p>
       </div>
-    )
-  }
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#080808' }}>
-      <Nav />
-      <ProjectBar />
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <SourcePanel width={sourceWidth} />
-        <ResizeHandle onMouseDown={e => startDrag('left', e)} />
-        <AnalysisPanel />
-        <ResizeHandle onMouseDown={e => startDrag('right', e)} />
-        <DraftPanel width={draftWidth} />
+      {/* Divider */}
+      <div style={{ borderTop: '1px solid #1a1a1a', maxWidth: '640px', width: '100%', margin: '0 auto' }} />
+
+      {/* Features */}
+      <div style={{ maxWidth: '640px', width: '100%', margin: '0 auto', padding: '60px 40px' }}>
+        {FEATURES.map(({ label, desc }) => (
+          <div key={label} style={{ display: 'flex', gap: '32px', marginBottom: '32px', alignItems: 'flex-start' }}>
+            <div style={{ width: '120px', flexShrink: 0, fontSize: '12px', color: '#555', letterSpacing: '0.06em', paddingTop: '2px' }}>
+              {label}
+            </div>
+            <p style={{ flex: 1, fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+              {desc}
+            </p>
+          </div>
+        ))}
       </div>
-      <ProjectsModal />
-      <SourceContextMenu />
+
+      {/* Bottom CTA */}
+      <div style={{ borderTop: '1px solid #1a1a1a' }}>
+        <div style={{ maxWidth: '640px', margin: '0 auto', padding: '48px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ fontSize: '14px', color: '#444', margin: 0 }}>
+            Free. No account. Open it and start.
+          </p>
+          <Link href="/app" style={{
+            display: 'inline-block', padding: '9px 22px',
+            background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: '4px',
+            fontSize: '12px', color: '#bbb', textDecoration: 'none', letterSpacing: '0.08em',
+            textTransform: 'uppercase', flexShrink: 0,
+          }}>
+            Open →
+          </Link>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{ borderTop: '1px solid #111', padding: '20px 40px', display: 'flex', gap: '20px', justifyContent: 'center' }}>
+        {[
+          { label: 'About',   href: '/about' },
+          { label: 'Privacy', href: '/privacy' },
+          { label: 'Contact', href: 'mailto:proof_official@protonmail.com' },
+        ].map(({ label, href }) => (
+          <Link key={label} href={href} style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em' }}>
+            {label}
+          </Link>
+        ))}
+      </div>
+
     </div>
-  )
-}
-
-export default function Home() {
-  return (
-    <AppProvider>
-      <Layout />
-    </AppProvider>
   )
 }
