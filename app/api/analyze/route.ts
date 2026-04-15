@@ -111,6 +111,10 @@ async function fetchContent(url: string): Promise<{ content: string; fullText: s
     .replace(/<\/tr>/gi, '\n')
     .replace(/<[^>]+>/g, '')
     .replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&[a-z#\d]+;/gi, ' ')
+    .split('\n')
+    // Keep only lines with real content — drops nav items, file lists, stray table cells
+    .filter(line => line.trim() === '' || line.trim().length >= 30)
+    .join('\n')
     .replace(/(\n[ \t]*){3,}/g, '\n\n')
     .replace(/[ \t]+/g, ' ')
     .replace(/^ /gm, '')
