@@ -48,14 +48,17 @@ export async function POST(req: NextRequest) {
     const raw      = await callGroq(process.env.GROQ_API_KEY, content, name)
     const analysis = parseGroqResponse(raw)
 
+    const a = analysis as Record<string, unknown>
     supabase.from('sources').insert({
-      title:       (analysis as Record<string, unknown>).title ?? name,
-      publisher:   (analysis as Record<string, unknown>).journal ?? null,
-      type:        (analysis as Record<string, unknown>).type ?? null,
-      year:        (analysis as Record<string, unknown>).year ?? null,
-      doi:         (analysis as Record<string, unknown>).doi ?? null,
-      input_type:  'file',
-      session_id:  session_id ?? null,
+      title:      a.title ?? name,
+      publisher:  a.journal ?? null,
+      type:       a.type ?? null,
+      year:       a.year ?? null,
+      doi:        a.doi ?? null,
+      input_type: 'file',
+      session_id: session_id ?? null,
+      keywords:   Array.isArray(a.keywords) ? a.keywords : null,
+      concepts:   Array.isArray(a.concepts) ? a.concepts : null,
     }).then(({ error }) => { if (error) console.error('[supabase]', error.message) })
 
     return NextResponse.json({ analysis, content: fullText })
