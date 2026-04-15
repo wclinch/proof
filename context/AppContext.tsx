@@ -144,7 +144,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function checkSubscription(userId: string) {
     const sb = getSupabaseBrowser()
-    const { data } = await sb.from('profiles').select('subscribed').eq('id', userId).single()
+    const { data } = await sb.from('profiles').select('subscribed').eq('id', userId).single() as { data: { subscribed: boolean } | null }
     const sub = data?.subscribed ?? false
     setIsSubscribed(sub)
     isSubscribedRef.current = sub

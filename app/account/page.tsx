@@ -26,7 +26,7 @@ export default function AccountPage() {
     sb.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { router.push('/auth'); return }
       setUser(session.user)
-      const { data } = await sb.from('profiles').select('subscribed').eq('id', session.user.id).single()
+      const { data } = await sb.from('profiles').select('subscribed').eq('id', session.user.id).single() as { data: { subscribed: boolean } | null }
       setIsSubscribed(data?.subscribed ?? false)
       setLoading(false)
     })
