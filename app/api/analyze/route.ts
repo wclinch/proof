@@ -52,89 +52,43 @@ async function fetchContent(url: string): Promise<{ content: string; fullText: s
     return { content, fullText: content, title, publisher }
   }
 
-  const res = await fetch(url, {
+  // Use Jina Reader for clean markdown extraction
+  const jinaRes = await fetch(`https://r.jina.ai/${url}`, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache',
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'none',
-      'Upgrade-Insecure-Requests': '1',
+      'Accept': 'text/plain',
+      'X-Return-Format': 'markdown',
+      'X-Remove-Selector': 'nav, header, footer, aside, .nav, .sidebar, .menu, .advertisement',
+      'User-Agent': 'Proof/2.0 (mailto:proof_official@protonmail.com)',
     },
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(25000),
   })
-  if (!res.ok) {
-    if (res.status === 403 || res.status === 401)
-      throw new Error('This site blocks external access. Try the DOI instead if available.')
-    if (res.status === 404)
+  if (!jinaRes.ok) {
+    if (jinaRes.status === 422 || jinaRes.status === 403)
+      throw new Error('This site could not be read. Try the DOI instead if available.')
+    if (jinaRes.status === 404)
       throw new Error('Page not found (404).')
-    throw new Error(`Failed to fetch page (${res.status})`)
+    throw new Error(`Failed to fetch page (${jinaRes.status})`)
   }
-  const html = await res.text()
 
-  const getMeta = (name: string) =>
-    html.match(new RegExp(`<meta[^>]+(?:name|property)=["']${name}["'][^>]+content=["']([^"']+)["']`, 'i'))?.[1] ??
-    html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:name|property)=["']${name}["']`, 'i'))?.[1] ?? null
+  const raw      = await jinaRes.text()
+  // Jina prepends metadata lines — extract title and strip the header block
+  const titleMatch = raw.match(/^Title:\s*(.+)$/m)
+  const title      = titleMatch?.[1]?.trim() ?? null
+  const urlMatch   = raw.match(/^URL Source:\s*(.+)$/m)
+  const publisher  = urlMatch?.[1] ? new URL(urlMatch[1].trim()).hostname.replace(/^www\./, '') : null
 
-  const title       = getMeta('og:title') ?? getMeta('twitter:title') ?? html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() ?? null
-  const publisher   = getMeta('og:site_name') ?? null
-  const description = getMeta('og:description') ?? getMeta('description') ?? null
-
-  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] ?? html
-
-  const stripped = bodyMatch
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<svg[\s\S]*?<\/svg>/gi, '')
-    .replace(/<canvas[^>]*>[\s\S]*?<\/canvas>/gi, '')
-    .replace(/<nav[\s\S]*?<\/nav>/gi, '')
-    .replace(/<header[\s\S]*?<\/header>/gi, '')
-    .replace(/<footer[\s\S]*?<\/footer>/gi, '')
-    .replace(/<aside[\s\S]*?<\/aside>/gi, '')
-
-  const contentBlock =
-    stripped.match(/<article[^>]*>([\s\S]*?)<\/article>/i)?.[1] ??
-    stripped.match(/<main[^>]*>([\s\S]*?)<\/main>/i)?.[1] ??
-    stripped.match(/role=["']main["'][^>]*>([\s\S]*?)<\//i)?.[1] ??
-    stripped
-
-  const fullText = contentBlock
-    // Strip file download links including their text (e.g. "2022 PDF" anchor tags)
-    .replace(/<a[^>]+href=["'][^"']*\.(pdf|doc|docx|xls|xlsx|csv|zip)["'][^>]*>[\s\S]*?<\/a>/gi, '')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n\n')
-    .replace(/<\/div>/gi, '\n')
-    .replace(/<\/h[1-6]>/gi, '\n\n')
-    .replace(/<\/t[dh]>/gi, ' ')
-    .replace(/<\/tr>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&[a-z#\d]+;/gi, ' ')
-    .split('\n')
-    .filter(line => {
-      const t = line.trim()
-      if (t === '') return true
-      // Drop short lines (nav items, stray labels)
-      if (t.length < 30) return false
-      // Drop lines that are just "YEAR FILETYPE" repetitions
-      if (/^(\d{4}\s+(?:PDF|DOC|DOCX|XLS|CSV|ZIP)\s*)+$/i.test(t)) return false
-      return true
-    })
-    .join('\n')
-    .replace(/(\n[ \t]*){3,}/g, '\n\n')
-    .replace(/[ \t]+/g, ' ')
-    .replace(/^ /gm, '')
+  // Strip Jina's metadata header (everything before the first blank line after the header block)
+  const bodyStart = raw.indexOf('\n\n')
+  const fullText  = (bodyStart !== -1 ? raw.slice(bodyStart) : raw)
+    .replace(/!\[.*?\]\(.*?\)/g, '')   // strip markdown images
+    .replace(/\[([^\]]*)\]\([^)]*\.(pdf|doc|docx|xls|csv|zip)[^)]*\)/gi, '')  // strip file links
+    .replace(/\n{3,}/g, '\n\n')
     .trim()
 
-  const flat    = fullText.replace(/\n+/g, ' ')
   const content = [
-    title       && `Title: ${title}`,
-    publisher   && `Site: ${publisher}`,
-    description && `Description: ${description}`,
-    `Content: ${flat.slice(0, 28000)}`,
+    title     && `Title: ${title}`,
+    publisher && `Site: ${publisher}`,
+    `Content: ${fullText.replace(/\n+/g, ' ').slice(0, 28000)}`,
   ].filter(Boolean).join('\n')
 
   return { content, fullText, title, publisher }
