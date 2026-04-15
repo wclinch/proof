@@ -21,7 +21,7 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we collect</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            When you analyze a source, we log the title, publisher, publication type, year, and DOI where available. We also log a randomly generated session identifier — a string stored in your browser that lets us understand how sources are used together, without identifying you as an individual. If you have started a draft, we log its title to understand research intent.
+            When you analyze a source, we log the title, publisher, publication type, year, DOI, keywords, and key concepts where available. We also log a randomly generated session identifier — a string stored in your browser that lets us understand how sources are used together, without identifying you as an individual.
           </p>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
             We do not collect your name, email address, IP address, or any information that identifies you personally.
@@ -58,7 +58,7 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Data sharing</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            We do not sell data. Anonymized, aggregate trend data — such as which sources or research areas are most commonly analyzed — may be shared with or licensed to academic institutions or publishers. This data cannot be used to identify any individual.
+            Anonymized, aggregate trend data — such as which sources, keywords, or research areas are most commonly analyzed — may be licensed to academic institutions or publishers. Individual records are never shared. This data cannot be used to identify any individual.
           </p>
         </div>
 

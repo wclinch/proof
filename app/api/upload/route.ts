@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { callGroq, parseGroqResponse, formatGroqError } from '@/lib/groq'
 import { extractPdfText } from '@/lib/pdf'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,6 +10,11 @@ const supabase = createClient(
 )
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+  if (!checkRateLimit(ip, 10, 60_000)) {
+    return NextResponse.json({ error: 'Too many uploads — slow down a bit.' }, { status: 429 })
+  }
+
   if (!process.env.GROQ_API_KEY) {
     return NextResponse.json({ error: 'GROQ_API_KEY not configured' }, { status: 500 })
   }

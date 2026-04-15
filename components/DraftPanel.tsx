@@ -37,6 +37,21 @@ export default function DraftPanel({ width }: { width: number }) {
   }, [localTitle]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasDraft = !!(activeProject?.draftCreated || localTitle || localDraft)
+
+  // ⌘↵ / Ctrl+↵ to start a new draft when nothing is focused
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (!hasDraft && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        const tag = (document.activeElement as HTMLElement)?.tagName?.toLowerCase()
+        if (tag !== 'input' && tag !== 'textarea') {
+          e.preventDefault()
+          handleNewDraft()
+        }
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [hasDraft, activeId]) // eslint-disable-line react-hooks/exhaustive-deps
   const wordCount = localDraft.split(/\s+/).filter(Boolean).length
 
   function handleNewDraft() {
@@ -164,7 +179,7 @@ export default function DraftPanel({ width }: { width: number }) {
           >
             New
           </button>
-          <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em' }}>nothing here yet</span>
+          <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em' }}>nothing here yet · ⌘↵</span>
         </div>
       ) : (
         <>
