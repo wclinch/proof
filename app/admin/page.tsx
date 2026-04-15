@@ -15,15 +15,15 @@ interface Stats {
   daily: DayRow[]
 }
 
-function Bar({ label, count, max, color = '#2a5' }: { label: string; count: number; max: number; color?: string }) {
+function Bar({ label, count, max }: { label: string; count: number; max: number }) {
   const pct = max > 0 ? (count / max) * 100 : 0
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-      <div style={{ width: '160px', flexShrink: 0, fontSize: '12px', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ width: '160px', flexShrink: 0, fontSize: '12px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {label}
       </div>
-      <div style={{ flex: 1, background: '#111', borderRadius: '2px', height: '8px', overflow: 'hidden' }}>
-        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: '2px', transition: 'width 0.4s ease' }} />
+      <div style={{ flex: 1, background: '#111', borderRadius: '2px', height: '6px', overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: '#1e3a2a', borderRadius: '2px', transition: 'width 0.4s ease' }} />
       </div>
       <div style={{ width: '36px', flexShrink: 0, fontSize: '11px', color: '#444', textAlign: 'right' }}>
         {count}
@@ -184,6 +184,7 @@ export default function AdminPage() {
           {stats.byType.length === 0
             ? <div style={{ fontSize: '12px', color: '#333' }}>No data</div>
             : stats.byType.map(r => <Bar key={r.label} label={r.label} count={r.count} max={maxType} />)
+
           }
         </Section>
 
@@ -191,7 +192,7 @@ export default function AdminPage() {
         <Section title="Input type">
           {stats.byInput.length === 0
             ? <div style={{ fontSize: '12px', color: '#333' }}>No data</div>
-            : stats.byInput.map(r => <Bar key={r.label} label={r.label} count={r.count} max={stats.byInput[0]?.count ?? 1} color="#2a4a7a" />)
+            : stats.byInput.map(r => <Bar key={r.label} label={r.label} count={r.count} max={stats.byInput[0]?.count ?? 1}  />)
           }
         </Section>
 
@@ -201,7 +202,7 @@ export default function AdminPage() {
             ? <div style={{ fontSize: '12px', color: '#333' }}>No data</div>
             : stats.byYear
                 .sort((a, b) => b.label.localeCompare(a.label))
-                .map(r => <Bar key={r.label} label={r.label} count={r.count} max={maxYear} color="#4a3a6a" />)
+                .map(r => <Bar key={r.label} label={r.label} count={r.count} max={maxYear}  />)
           }
         </Section>
 
@@ -221,7 +222,7 @@ export default function AdminPage() {
       <Section title="Top concepts &amp; frameworks">
         {stats.topConcepts.length === 0
           ? <div style={{ fontSize: '12px', color: '#333' }}>No data yet</div>
-          : stats.topConcepts.map(r => <Bar key={r.label} label={r.label} count={r.count} max={maxConcept} color="#5a3a2a" />)
+          : stats.topConcepts.map(r => <Bar key={r.label} label={r.label} count={r.count} max={maxConcept}  />)
         }
       </Section>
 
