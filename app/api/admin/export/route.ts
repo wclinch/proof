@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   const since = req.nextUrl.searchParams.get('since')
   let query = supabase
     .from('sources')
-    .select('created_at, title, publisher, type, year, doi, input_type, session_id, keywords, concepts')
+    .select('created_at, title, authors, publisher, type, year, doi, input_type, session_id, abstract, methodology, sample_n, sample_desc, findings, stats, conclusions, keywords, concepts')
     .order('created_at', { ascending: false })
 
   if (since) query = query.gte('created_at', new Date(Number(since)).toISOString())
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   if (error) return new NextResponse(error.message, { status: 500 })
   if (!data)  return new NextResponse('No data', { status: 500 })
 
-  const headers = ['created_at', 'title', 'publisher', 'type', 'year', 'doi', 'input_type', 'session_id', 'keywords', 'concepts']
+  const headers = ['created_at', 'title', 'authors', 'publisher', 'type', 'year', 'doi', 'input_type', 'session_id', 'abstract', 'methodology', 'sample_n', 'sample_desc', 'findings', 'stats', 'conclusions', 'keywords', 'concepts']
   const rows = data.map(r => headers.map(h => escapeCSV(r[h as keyof typeof r])).join(','))
   const csv  = [headers.join(','), ...rows].join('\n')
 
