@@ -172,11 +172,11 @@ export default function SourceTextView({ text, highlight }: { text: string; high
           return <p key={bi} style={blockStyle}>{block}</p>
         }
 
-        // Numeric anchor fallback: matchStart===matchEnd===0, wrap whole block
+        // Anchor fallback: matchStart===matchEnd===0, highlight whole block green
         if (matchStart === 0 && matchEnd === 0) {
           return (
             <p key={bi} style={blockStyle}>
-              <mark ref={markRef as React.RefObject<HTMLElement>} style={{ ...highlightStyle, background: 'transparent', outline: '1px solid #2a3a2e', borderRadius: '2px', padding: '2px 0' }}>
+              <mark ref={markRef as React.RefObject<HTMLElement>} style={highlightStyle}>
                 {block}
               </mark>
             </p>
