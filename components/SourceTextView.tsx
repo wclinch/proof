@@ -1,7 +1,7 @@
 'use client'
 import { useRef, useEffect } from 'react'
 
-const TRUNCATION_THRESHOLD = 19000
+const TRUNCATION_THRESHOLD = 30000
 
 // Strip residual markdown that may exist in sources fetched before server-side stripping
 function cleanText(raw: string): string {
@@ -33,20 +33,22 @@ export default function SourceTextView({ text, highlight }: { text: string; high
     }
   }, [highlight])
 
-  const blocks = parseBlocks(truncated ? cleaned.slice(0, TRUNCATION_THRESHOLD) : cleaned)
+  const rawBlocks  = parseBlocks(truncated ? cleaned.slice(0, TRUNCATION_THRESHOLD) : cleaned)
+  // Normalize whitespace once per block — matching AND rendering use this same string
+  // so that matchStart/matchEnd indices are always valid slice positions.
+  const blocks = rawBlocks.map(b => b.replace(/\s+/g, ' ').trim())
 
   // Find which block + char range contains the highlight.
   // The model receives newline-collapsed text, so a finding may span block
-  // boundaries in the original. We search the joined text first, then map
-  // back to the block that contains the match start.
+  // boundaries in the original. We search the joined text and per-block.
   let matchBlock  = -1
   let matchStart  = -1
   let matchEnd    = -1
 
   if (highlight) {
-    const joined = blocks.map(b => b.replace(/\s+/g, ' ')).join(' ')
+    const joined = blocks.join(' ')
 
-    // Try progressively shorter slices of the needle (model may append extra context)
+    // Try progressively shorter slices of the needle
     const fullNeedle = highlight.replace(/\s+/g, ' ').trim().toLowerCase()
     const candidates = [
       fullNeedle.slice(0, 400),
@@ -56,10 +58,9 @@ export default function SourceTextView({ text, highlight }: { text: string; high
 
     outer:
     for (const needle of candidates) {
-      // Try per-block first (fast path, avoids cross-block ambiguity)
+      // Per-block search (fast path)
       for (let bi = 0; bi < blocks.length; bi++) {
-        const norm = blocks[bi].replace(/\s+/g, ' ')
-        const idx  = norm.toLowerCase().indexOf(needle)
+        const idx = blocks[bi].toLowerCase().indexOf(needle)
         if (idx !== -1) {
           matchBlock = bi; matchStart = idx; matchEnd = idx + needle.length
           break outer
@@ -71,14 +72,14 @@ export default function SourceTextView({ text, highlight }: { text: string; high
       if (joinedIdx !== -1) {
         let offset = 0
         for (let bi = 0; bi < blocks.length; bi++) {
-          const norm = blocks[bi].replace(/\s+/g, ' ')
-          if (joinedIdx >= offset && joinedIdx < offset + norm.length + 1) {
+          const end = offset + blocks[bi].length
+          if (joinedIdx >= offset && joinedIdx <= end) {
             matchBlock = bi
             matchStart = Math.max(0, joinedIdx - offset)
-            matchEnd   = Math.min(norm.length, matchStart + needle.length)
+            matchEnd   = Math.min(blocks[bi].length, matchStart + needle.length)
             break outer
           }
-          offset += norm.length + 1
+          offset += blocks[bi].length + 1 // +1 for the space separator
         }
       }
     }
@@ -108,7 +109,8 @@ export default function SourceTextView({ text, highlight }: { text: string; high
           return <p key={bi} style={blockStyle}>{block}</p>
         }
 
-        // Render the matched block with the highlighted span inside
+        // Render the matched block — block is already whitespace-normalized
+        // so matchStart/matchEnd indices are valid
         const before = block.slice(0, matchStart)
         const match  = block.slice(matchStart, matchEnd)
         const after  = block.slice(matchEnd)
@@ -132,7 +134,7 @@ export default function SourceTextView({ text, highlight }: { text: string; high
 
       {truncated && (
         <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: '1px solid #1a1a1a', fontSize: '11px', color: '#666', letterSpacing: '0.04em' }}>
-          Source text truncated at ~20k characters. Full text was sent for analysis.
+          Source text truncated at ~30k characters. Full text was sent for analysis.
         </div>
       )}
     </div>
