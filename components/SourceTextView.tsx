@@ -114,8 +114,7 @@ export default function SourceTextView({ text, highlight }: { text: string; high
       }
     }
 
-    // Last resort: numeric anchor — find the block containing the most numbers/
-    // percentages from the needle. Handles table-sourced stats that get paraphrased.
+    // Numeric anchor — find the block containing the most numbers/percentages from the needle
     if (matchBlock === -1) {
       const nums = fullNeedle.match(/\d[\d,.]*%?/g) ?? []
       if (nums.length >= 2) {
@@ -125,8 +124,26 @@ export default function SourceTextView({ text, highlight }: { text: string; high
           const hits = nums.filter(n => b.includes(n)).length
           if (hits > best) { best = hits; matchBlock = bi }
         }
-        if (best < 2) matchBlock = -1  // not confident enough
-        if (matchBlock !== -1) { matchStart = 0; matchEnd = 0 } // no inline highlight, just scroll
+        if (best < 2) matchBlock = -1
+        if (matchBlock !== -1) { matchStart = 0; matchEnd = 0 }
+      }
+    }
+
+    // Word-overlap anchor — for text with no numbers (findings, limitations, claims).
+    // Find the block that shares the most meaningful words with the needle.
+    if (matchBlock === -1) {
+      const stopWords = new Set(['the','a','an','and','or','for','of','to','in','is','are','was','with','by','at','on','as','it','its','this','that','from','not','does','do','have','has','been','between','into','account'])
+      const needleWords = fullNeedle.split(/\s+/).filter(w => w.length > 4 && !stopWords.has(w))
+      if (needleWords.length >= 3) {
+        let bestScore = 0
+        for (let bi = 0; bi < blocks.length; bi++) {
+          const b = blocks[bi].toLowerCase()
+          const hits = needleWords.filter(w => b.includes(w)).length
+          const score = hits / needleWords.length
+          if (score > bestScore) { bestScore = score; matchBlock = bi }
+        }
+        if (bestScore < 0.45) matchBlock = -1  // less than 45% overlap, skip
+        if (matchBlock !== -1) { matchStart = 0; matchEnd = 0 }
       }
     }
   }
