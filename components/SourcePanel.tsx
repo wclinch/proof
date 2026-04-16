@@ -163,7 +163,7 @@ export default function SourcePanel({ width }: { width: number }) {
             />
           </div>
         )}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={{ flex: 1, overflowY: 'auto', marginTop: '4px' }}>
           {sources.length === 0
             ? <div style={{ padding: '10px 14px', fontSize: '12px', color: '#444', letterSpacing: '0.05em' }}>No documents yet.</div>
             : (() => {
