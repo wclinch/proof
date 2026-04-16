@@ -32,7 +32,7 @@ export default function Home() {
             }}>
               Start verifying →
             </a>
-            <span style={{ fontSize: '12px', color: '#2a2a2a', letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: '12px', color: '#444', letterSpacing: '0.04em' }}>
               First 5 PDFs free. $3/month after.
             </span>
           </div>
@@ -40,12 +40,12 @@ export default function Home() {
 
         {/* How it works */}
         <section style={{ borderTop: '1px solid #111', maxWidth: '620px', width: '100%', margin: '0 auto', padding: '64px 24px' }}>
-          <div style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
+          <div style={{ fontSize: '11px', color: '#444', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
             How it works
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
-              ['Drop a PDF', 'One document at a time. No URLs, no scraping — just the source file.'],
+              ['Drop a PDF or paste a link', 'Add source documents by dropping a PDF or pasting a URL. Each source is analyzed automatically.'],
               ['Structured extraction', 'Statistics, findings, direct quotes, and conclusions are pulled out and ranked by verifiability.'],
               ['Locate in source', 'Click any fact to jump to its exact location in the document text. No manual searching.'],
               ['Verified fact index', 'Every fact you verify is hashed and indexed. Builds an audit trail across your session.'],
@@ -53,8 +53,8 @@ export default function Home() {
               <div key={title} style={{ display: 'flex', gap: '24px' }}>
                 <div style={{ width: '4px', flexShrink: 0, background: '#111', borderRadius: '2px', alignSelf: 'stretch' }} />
                 <div>
-                  <div style={{ fontSize: '13px', color: '#888', fontWeight: 500, marginBottom: '6px' }}>{title}</div>
-                  <div style={{ fontSize: '13px', color: '#3a3a3a', lineHeight: 1.7 }}>{body}</div>
+                  <div style={{ fontSize: '13px', color: '#aaa', fontWeight: 500, marginBottom: '6px' }}>{title}</div>
+                  <div style={{ fontSize: '13px', color: '#444', lineHeight: 1.7 }}>{body}</div>
                 </div>
               </div>
             ))}
@@ -63,7 +63,7 @@ export default function Home() {
 
         {/* Positioning */}
         <section style={{ borderTop: '1px solid #111', maxWidth: '620px', width: '100%', margin: '0 auto', padding: '64px 24px' }}>
-          <div style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
+          <div style={{ fontSize: '11px', color: '#444', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
             What this is not
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -72,8 +72,8 @@ export default function Home() {
               ['Not a writing assistant', 'No auto-generated text. Your synthesis, your words — Proof just gets you to the evidence faster.'],
               ['Not a search engine', 'You bring the documents. Proof gives you precision access to what is already in them.'],
             ] as const).map(([title, body]) => (
-              <div key={title} style={{ fontSize: '13px', color: '#3a3a3a', lineHeight: 1.75 }}>
-                <span style={{ color: '#555' }}>{title}. </span>{body}
+              <div key={title} style={{ fontSize: '13px', color: '#444', lineHeight: 1.75 }}>
+                <span style={{ color: '#aaa' }}>{title}. </span>{body}
               </div>
             ))}
           </div>
@@ -85,10 +85,10 @@ export default function Home() {
             <span style={{ fontSize: '28px', fontWeight: 500, color: '#555' }}>$3</span>
             <span style={{ fontSize: '13px', color: '#333' }}>/ month</span>
           </div>
-          <p style={{ fontSize: '13px', color: '#333', lineHeight: 1.75, margin: '0 0 28px' }}>
-            First 5 PDFs free, no account needed. After that, $3/month — cheap enough to not think about it.
+          <p style={{ fontSize: '13px', color: '#444', lineHeight: 1.75, margin: '0 0 28px' }}>
+            First 5 sources free, no account needed. After that, $3/month — cheap enough to not think about it.
           </p>
-          <a href="/app" style={{ fontSize: '12px', color: '#333', letterSpacing: '0.08em', textDecoration: 'none', textTransform: 'uppercase' }}>
+          <a href="/app" style={{ fontSize: '12px', color: '#444', letterSpacing: '0.08em', textDecoration: 'none', textTransform: 'uppercase' }}>
             Start verifying →
           </a>
         </section>
@@ -99,8 +99,8 @@ export default function Home() {
       <footer style={{ borderTop: '1px solid #111', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '620px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         <span style={{ fontSize: '11px', color: '#222', letterSpacing: '0.06em' }}>Proof</span>
         <div style={{ display: 'flex', gap: '20px' }}>
-          <a href="/about"   style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em' }}>About</a>
-          <a href="/privacy" style={{ fontSize: '11px', color: '#2a2a2a', textDecoration: 'none', letterSpacing: '0.06em' }}>Privacy</a>
+          <a href="/about"   style={{ fontSize: '11px', color: '#333', textDecoration: 'none', letterSpacing: '0.06em' }}>About</a>
+          <a href="/privacy" style={{ fontSize: '11px', color: '#333', textDecoration: 'none', letterSpacing: '0.06em' }}>Privacy</a>
         </div>
       </footer>
     </div>
