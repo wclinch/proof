@@ -11,7 +11,7 @@ const supabaseAdmin = createClient(
 )
 
 export async function POST(req: NextRequest) {
-  const supabase = getSupabaseServer()
+  const supabase = await getSupabaseServer()
   const { data: { session } } = await supabase.auth.getSession()
 
   if (!session?.user) {

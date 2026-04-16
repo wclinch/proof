@@ -5,7 +5,7 @@ import { getSupabaseServer } from '@/lib/supabase-server'
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST(req: NextRequest) {
-  const supabase = getSupabaseServer()
+  const supabase = await getSupabaseServer()
   const { data: { session } } = await supabase.auth.getSession()
 
   if (!session?.user) {
