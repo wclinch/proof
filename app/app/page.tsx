@@ -55,12 +55,13 @@ function ResizeHandle({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) => v
 function Layout() {
   const { mounted } = useApp()
   const [draftWidth, setDraftWidth] = useState(() => {
-    if (typeof window === 'undefined') return 340
-    return Math.max(160, parseInt(localStorage.getItem('proof-ui-draft-width') || '340', 10))
+    if (typeof window === 'undefined') return 460
+    const saved = parseInt(localStorage.getItem('proof-ui-draft-width') || '0', 10)
+    return Math.max(300, saved || 460)
   })
   const draftWidthRef = useRef(draftWidth)
   const MIN_MIDDLE = 300  // center panel never collapses below this
-  const MIN_DRAFT  = 160
+  const MIN_DRAFT  = 300
 
   function startDrag(e: React.MouseEvent) {
     e.preventDefault()
