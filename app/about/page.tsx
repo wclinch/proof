@@ -77,7 +77,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Layout</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            The three panels are resizable — drag the dividers between them. The left panel lists your sources. The center panel shows the extracted breakdown or the raw source text (toggle via Breakdown / Source). The right panel is the synthesis editor — when a draft is open, <span style={{ color: '#999' }}>···</span> in its header opens export and discard options.
+            Three panels. The left panel lists your sources — fixed width. The center panel shows the extracted breakdown or the raw source text (toggle via Breakdown / Source). The right panel is the synthesis editor — drag the divider to resize it. When a draft is open, <span style={{ color: '#999' }}>···</span> in its header opens export and discard options.
           </p>
         </div>
 

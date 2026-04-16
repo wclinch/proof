@@ -136,6 +136,17 @@ export default function SourceTextView({ text, highlight }: { text: string; high
           return <p key={bi} style={blockStyle}>{block}</p>
         }
 
+        // Numeric anchor fallback: matchStart===matchEnd===0, wrap whole block
+        if (matchStart === 0 && matchEnd === 0) {
+          return (
+            <p key={bi} style={blockStyle}>
+              <mark ref={markRef as React.RefObject<HTMLElement>} style={{ ...highlightStyle, background: 'transparent', outline: '1px solid #2a3a2e', borderRadius: '2px', padding: '2px 0' }}>
+                {block}
+              </mark>
+            </p>
+          )
+        }
+
         // Render the matched block — block is already whitespace-normalized
         // so matchStart/matchEnd indices are valid
         const before = block.slice(0, matchStart)

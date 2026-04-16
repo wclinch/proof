@@ -109,7 +109,7 @@ export default function DraftPanel({ width }: { width: number }) {
         <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Synthesis</span>
         {hasDraft && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0, marginLeft: '8px' }}>
-            <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
               {wordCount}w
             </span>
             <button
@@ -145,7 +145,7 @@ export default function DraftPanel({ width }: { width: number }) {
           >
             New
           </button>
-          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.04em' }}>
+          <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.04em' }}>
             nothing here yet · {typeof navigator !== 'undefined' && /mac/i.test(navigator.platform) ? '⌘↵' : 'Ctrl+↵'}
           </span>
         </div>
@@ -177,7 +177,7 @@ export default function DraftPanel({ width }: { width: number }) {
             placeholder={localTitle.trim() ? 'Start writing...' : 'Add a title first...'}
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
-              color: localTitle.trim() ? '#999' : '#444',
+              color: localTitle.trim() ? '#999' : '#666',
               fontSize: '14px', lineHeight: 1.9, padding: '20px 28px',
               resize: 'none', fontFamily: 'inherit', overflowY: 'auto',
               cursor: localTitle.trim() ? 'text' : 'default',
