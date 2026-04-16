@@ -8,6 +8,8 @@ export async function extractPdfText(buffer: Buffer): Promise<string> {
   const data = await pdfParse(buffer)
   return data.text
     .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')                     // standalone carriage returns
+    .replace(/[\u21B5\u00B6\u204B\u2029]/g, '\n') // paragraph markers → newline
     .replace(/([a-z])-\n([a-z])/g, '$1$2')   // rejoin hyphenated line-breaks
     .replace(/([^\n])\n([^\n])/g, '$1 $2')    // collapse visual line-wraps to spaces
     .replace(/\n{2,}/g, '\n\n')               // normalise paragraph breaks

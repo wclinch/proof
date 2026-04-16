@@ -6,6 +6,7 @@ const TRUNCATION_THRESHOLD = 30000
 // Strip residual markdown that may exist in sources fetched before server-side stripping
 function cleanText(raw: string): string {
   return raw
+    .replace(/[\u21B5\u00B6\u204B\u2029]/g, ' ') // strip paragraph markers
     .replace(/^(Title|URL Source|Markdown Content):[^\n]*/gm, '')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, '')          // strip images before links
     .replace(/\[\[\d+\]\]\([^)]*\)/g, '')          // strip [[n]](url) footnotes
