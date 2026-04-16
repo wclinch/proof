@@ -84,6 +84,22 @@ export default function SourceTextView({ text, highlight }: { text: string; high
         }
       }
     }
+
+    // Last resort: numeric anchor — find the block containing the most numbers/
+    // percentages from the needle. Handles table-sourced stats that get paraphrased.
+    if (matchBlock === -1) {
+      const nums = fullNeedle.match(/\d[\d,.]*%?/g) ?? []
+      if (nums.length >= 2) {
+        let best = 0
+        for (let bi = 0; bi < blocks.length; bi++) {
+          const b = blocks[bi].toLowerCase()
+          const hits = nums.filter(n => b.includes(n)).length
+          if (hits > best) { best = hits; matchBlock = bi }
+        }
+        if (best < 2) matchBlock = -1  // not confident enough
+        if (matchBlock !== -1) { matchStart = 0; matchEnd = 0 } // no inline highlight, just scroll
+      }
+    }
   }
 
   const blockStyle: React.CSSProperties = {
