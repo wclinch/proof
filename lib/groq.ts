@@ -1,6 +1,6 @@
-export const PROMPT = `You are a precise academic data extraction engine. Return ONLY a valid JSON object — no markdown, no code fences, no commentary.
+export const PROMPT = `You are a precise data extraction engine. Return ONLY a valid JSON object — no markdown, no code fences, no commentary.
 
-Extract verbatim where possible. Never invent, guess, or paraphrase data not present in the text. Never output placeholder strings like "not mentioned", "not provided", "no data", etc. — if data is absent, use null or [].
+Extract verbatim where possible. Never invent or paraphrase data not present in the text. Never output placeholder strings like "not mentioned", "not provided", "no data" — if data is absent, use null or [].
 
 {
   "title": "exact title",
@@ -8,18 +8,20 @@ Extract verbatim where possible. Never invent, guess, or paraphrase data not pre
   "year": "publication year as string, or null",
   "journal": "journal or publication name, or null",
   "doi": "DOI string if present, or null",
-  "type": "journal-article | book | book-chapter | report | preprint | website | other",
+  "type": "journal-article | book | book-chapter | report | preprint | website | video | other",
   "abstract": "full abstract verbatim, or null",
   "sample_n": "sample size as stated e.g. 'n = 1,151', or null",
   "sample_desc": "who was studied — population, demographics, setting — verbatim, or null",
   "methodology": "research design, instruments, measures, analytic approach — verbatim, or null",
-  "stats": ["Numerical results with full context — always include the label, subject, and unit alongside the number. Format as a complete phrase e.g. '42 firefighters died from cardiovascular events', '72% of participants reported...', 'p = 0.03 for the correlation between X and Y'. Never extract a bare number without its label. Do NOT include sample size here. Leave [] if no numerical results are present."],
-  "findings": ["Key results from the results section — verbatim or near-verbatim — up to 8. Leave [] if results section is not in the provided text."],
-  "conclusions": ["Notable statements, positions, or recommendations from the document — verbatim or near-verbatim — up to 5. Do not interpret or infer. Only extract what is explicitly stated."],
-  "quotes": ["Direct quotes worth citing — exact text with punctuation — up to 4, or []"],
-  "limitations": ["Limitations the authors acknowledge — verbatim — up to 5, or []"],
+  "stats": ["Every numerical result with full context — always include the label, subject, and unit alongside the number. Format as a complete phrase e.g. '42 firefighters died from cardiovascular events', '72% of participants reported...', 'p = 0.03 for the correlation between X and Y'. Never a bare number. Do NOT include sample size here. Extract ALL that are present."],
+  "findings": ["Key results, outcomes, or factual assertions — verbatim or near-verbatim. Extract up to 15. Prioritize the most specific and substantive."],
+  "claims": ["Specific factual or causal claims explicitly made — e.g. 'X causes Y', 'Z has been shown to...', 'Evidence suggests...'. Up to 8. Must be directly stated, not inferred."],
+  "conclusions": ["Notable statements, positions, or takeaways explicitly stated in the document — verbatim or near-verbatim — up to 8. Do not interpret or infer."],
+  "recommendations": ["Explicit recommendations, action items, or calls to action stated in the document — verbatim or near-verbatim — up to 6, or []"],
+  "quotes": ["Direct quotes worth citing — exact text with punctuation — up to 6, or []"],
+  "limitations": ["Limitations the authors acknowledge — verbatim — up to 6, or []"],
   "concepts": ["Named theories, frameworks, constructs, or models only — no proper nouns, no names of people, organizations, or cases — up to 8"],
-  "keywords": ["Broad subject-area terms only. No proper nouns, no names of people, organizations, locations, or case identifiers. Think discipline-level categories: 'contract law', 'cardiovascular disease', 'machine learning', 'criminal procedure'. 5 to 12 terms."]
+  "keywords": ["Broad subject-area terms only. No proper nouns. Think discipline-level categories: 'contract law', 'cardiovascular disease', 'machine learning'. 5 to 12 terms."]
 }
 
 Rules: null for absent strings, [] for absent arrays. Never repeat the sample size in the stats array.`
@@ -34,6 +36,7 @@ export async function callGroq(key: string, content: string, source: string): Pr
     body: JSON.stringify({
       model:       'llama-3.3-70b-versatile',
       temperature: 0.2,
+      max_tokens:  4096,
       messages: [
         { role: 'system', content: PROMPT },
         { role: 'user',   content: `Source: ${source}\n\nSource content:\n${content}` },

@@ -55,7 +55,7 @@ export default function SourceTextView({ text, highlight }: { text: string; high
 
   const blockStyle: React.CSSProperties = {
     fontSize: '13px',
-    color: '#555',
+    color: '#999',
     lineHeight: 1.8,
     margin: 0,
     padding: '0 0 16px 0',
@@ -94,13 +94,13 @@ export default function SourceTextView({ text, highlight }: { text: string; high
       })}
 
       {highlight && matchBlock === -1 && (
-        <div style={{ fontSize: '11px', color: '#333', letterSpacing: '0.04em', paddingTop: '4px' }}>
+        <div style={{ fontSize: '11px', color: '#666', letterSpacing: '0.04em', paddingTop: '4px' }}>
           Excerpt not found in source text.
         </div>
       )}
 
       {truncated && (
-        <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: '1px solid #1a1a1a', fontSize: '11px', color: '#333', letterSpacing: '0.04em' }}>
+        <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: '1px solid #1a1a1a', fontSize: '11px', color: '#666', letterSpacing: '0.04em' }}>
           Source text truncated at ~20k characters. Full text was sent for analysis.
         </div>
       )}

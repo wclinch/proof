@@ -30,8 +30,6 @@ export default function AnalysisView({
         </div>
       </div>
 
-      {/* ── Facts first ─────────────────────────────────────── */}
-
       {result.stats?.length > 0 && (
         <Field label="Statistics">
           {result.stats.map((s, i) => <Row key={i} value={s} onJump={onJump} />)}
@@ -41,6 +39,12 @@ export default function AnalysisView({
       {result.findings?.length > 0 && (
         <Field label="Findings">
           {result.findings.map((f, i) => <Row key={i} value={f} onJump={onJump} />)}
+        </Field>
+      )}
+
+      {result.claims?.length > 0 && (
+        <Field label="Claims">
+          {result.claims.map((c, i) => <Row key={i} value={c} onJump={onJump} />)}
         </Field>
       )}
 
@@ -67,7 +71,11 @@ export default function AnalysisView({
         </Field>
       )}
 
-      {/* ── Context ─────────────────────────────────────────── */}
+      {result.recommendations?.length > 0 && (
+        <Field label="Recommendations">
+          {result.recommendations.map((r, i) => <Row key={i} value={r} onJump={onJump} />)}
+        </Field>
+      )}
 
       {result.methodology && (
         <Field label="Methodology">
@@ -104,8 +112,6 @@ export default function AnalysisView({
         </Field>
       )}
 
-      {/* ── Tags ────────────────────────────────────────────── */}
-
       {(result.concepts?.length > 0 || result.keywords?.length > 0) && (
         <div style={{ paddingTop: '16px', marginTop: '4px', borderTop: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {result.concepts?.length > 0 && (
@@ -120,7 +126,7 @@ export default function AnalysisView({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ fontSize: '10px', color: '#999', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Keywords</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                {result.keywords.map((k, i) => <Tag key={i} dim>{k}</Tag>)}
+                {result.keywords.map((k, i) => <Tag key={i}>{k}</Tag>)}
               </div>
             </div>
           )}

@@ -33,8 +33,14 @@ function formatBreakdown(result: AnalysisResult, fmt: 'txt' | 'md'): string {
   if (result.findings?.length) {
     lines.push(h('Findings'), ...result.findings.map(li), '')
   }
+  if (result.claims?.length) {
+    lines.push(h('Claims'), ...result.claims.map(li), '')
+  }
   if (result.conclusions?.length) {
     lines.push(h('Key Points'), ...result.conclusions.map(li), '')
+  }
+  if (result.recommendations?.length) {
+    lines.push(h('Recommendations'), ...result.recommendations.map(li), '')
   }
   if (result.quotes?.length) {
     lines.push(h('Direct Quotes'), ...result.quotes.map(q => li(`"${q}"`)), '')
@@ -115,7 +121,10 @@ export default function AnalysisPanel() {
                 background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
                 fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase',
                 fontFamily: 'inherit', color: centerView === 'analysis' ? '#bbb' : '#777',
+                transition: 'color 0.15s',
               }}
+              onMouseEnter={e => { if (centerView !== 'analysis') e.currentTarget.style.color = '#aaa' }}
+              onMouseLeave={e => { if (centerView !== 'analysis') e.currentTarget.style.color = '#777' }}
             >
               Breakdown
             </button>
@@ -125,7 +134,10 @@ export default function AnalysisPanel() {
                 background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
                 fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase',
                 fontFamily: 'inherit', color: centerView === 'source' ? '#bbb' : '#777',
+                transition: 'color 0.15s',
               }}
+              onMouseEnter={e => { if (centerView !== 'source') e.currentTarget.style.color = '#aaa' }}
+              onMouseLeave={e => { if (centerView !== 'source') e.currentTarget.style.color = '#777' }}
             >
               Source
             </button>

@@ -13,7 +13,9 @@ export interface AnalysisResult {
   methodology: string | null
   stats: string[]
   findings: string[]
+  claims: string[]
   conclusions: string[]
+  recommendations: string[]
   quotes: string[]
   limitations: string[]
   concepts: string[]

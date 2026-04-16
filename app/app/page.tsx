@@ -10,6 +10,8 @@ import PaywallModal      from '@/components/PaywallModal'
 import { useApp }        from '@/context/AppContext'
 import { useState, useRef, useEffect } from 'react'
 
+const SOURCE_WIDTH = 260
+
 function StorageWarning() {
   const [msg, setMsg] = useState<string | null>(null)
   useEffect(() => {
@@ -52,58 +54,27 @@ function ResizeHandle({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) => v
 
 function Layout() {
   const { mounted } = useApp()
-  const [sourceWidth, setSourceWidth] = useState(() => {
-    if (typeof window === 'undefined') return 240
-    return parseInt(localStorage.getItem('proof-ui-source-width') || '240', 10)
-  })
   const [draftWidth, setDraftWidth] = useState(() => {
     if (typeof window === 'undefined') return 340
     return Math.max(160, parseInt(localStorage.getItem('proof-ui-draft-width') || '340', 10))
   })
-  const sourceWidthRef = useRef(sourceWidth)
-  const draftWidthRef  = useRef(draftWidth)
+  const draftWidthRef = useRef(draftWidth)
   const MIN_MIDDLE = 40
   const MIN_DRAFT  = 160
 
-  // Clamp stored widths on mount so middle panel always has room
-  useEffect(() => {
-    const available = window.innerWidth - MIN_MIDDLE - 8
-    const sw = sourceWidthRef.current
-    const dw = draftWidthRef.current
-    if (sw + dw > available) {
-      const scale = available / (sw + dw)
-      const newSw = Math.max(24, Math.floor(sw * scale))
-      const newDw = Math.max(MIN_DRAFT, Math.floor(dw * scale))
-      sourceWidthRef.current = newSw
-      draftWidthRef.current  = newDw
-      setSourceWidth(newSw)
-      setDraftWidth(newDw)
-      localStorage.setItem('proof-ui-source-width', String(newSw))
-      localStorage.setItem('proof-ui-draft-width',  String(newDw))
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  function startDrag(side: 'left' | 'right', e: React.MouseEvent) {
+  function startDrag(e: React.MouseEvent) {
     e.preventDefault()
     const startX = e.clientX
-    const startW = side === 'left' ? sourceWidthRef.current : draftWidthRef.current
+    const startW = draftWidthRef.current
 
     function onMove(ev: MouseEvent) {
       if (ev.buttons === 0) { onUp(); return }
       const delta = ev.clientX - startX
-      if (side === 'left') {
-        const maxW = Math.max(24, window.innerWidth - draftWidthRef.current - MIN_MIDDLE)
-        const w = Math.max(24, Math.min(maxW, startW + delta))
-        sourceWidthRef.current = w
-        setSourceWidth(w)
-        localStorage.setItem('proof-ui-source-width', String(w))
-      } else {
-        const maxW = Math.max(MIN_DRAFT, window.innerWidth - sourceWidthRef.current - MIN_MIDDLE)
-        const w = Math.max(MIN_DRAFT, Math.min(maxW, startW - delta))
-        draftWidthRef.current = w
-        setDraftWidth(w)
-        localStorage.setItem('proof-ui-draft-width', String(w))
-      }
+      const maxW = Math.max(MIN_DRAFT, window.innerWidth - SOURCE_WIDTH - MIN_MIDDLE)
+      const w = Math.max(MIN_DRAFT, Math.min(maxW, startW - delta))
+      draftWidthRef.current = w
+      setDraftWidth(w)
+      localStorage.setItem('proof-ui-draft-width', String(w))
     }
 
     function onUp() {
@@ -131,10 +102,10 @@ function Layout() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#080808' }}>
       <ProjectBar />
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <SourcePanel width={sourceWidth} />
-        <ResizeHandle onMouseDown={e => startDrag('left', e)} />
+        <SourcePanel width={SOURCE_WIDTH} />
+        <div style={{ width: '1px', flexShrink: 0, background: '#1a1a1a' }} />
         <AnalysisPanel />
-        <ResizeHandle onMouseDown={e => startDrag('right', e)} />
+        <ResizeHandle onMouseDown={startDrag} />
         <DraftPanel width={draftWidth} />
       </div>
       <ProjectsModal />
