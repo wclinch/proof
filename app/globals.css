@@ -11,12 +11,12 @@ body {
 input, button, textarea, select { font-family: inherit; }
 
 /* Source panel — force placeholder to match span text, override Chrome dark-mode tinting */
-.sp-input::placeholder { color: #444 !important; opacity: 1 !important; }
-.sp-input { color: #444 !important; }
+.sp-input::placeholder { color: #555 !important; opacity: 1 !important; }
+.sp-input { color: #777 !important; }
 
 /* Synthesis panel placeholders */
-.draft-title::placeholder { color: #444; opacity: 1; }
-.draft-body::placeholder  { color: #444; opacity: 1; }
+.draft-title::placeholder { color: #555; opacity: 1; }
+.draft-body::placeholder  { color: #555; opacity: 1; }
 
 button, nav, label { user-select: none; }
 
@@ -34,13 +34,13 @@ button, nav, label { user-select: none; }
 
 .nav-link {
   font-size: 11px;
-  color: #444;
+  color: #666;
   text-decoration: none;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   transition: color 0.15s;
 }
-.nav-link:hover { color: #777; }
+.nav-link:hover { color: #999; }
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }

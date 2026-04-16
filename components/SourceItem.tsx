@@ -5,9 +5,9 @@ import type { QueuedSource } from '@/lib/types'
 
 const DOT: Record<string, string> = {
   done:    '#2a6',
-  error:   '#555',
-  loading: '#555',
-  queued:  '#2a2a2a',
+  error:   '#777',
+  loading: '#777',
+  queued:  '#555',
 }
 
 // SourceContextMenu dispatches this event to trigger inline renaming
@@ -120,19 +120,19 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
         ) : (
           <div style={{
             fontSize: '13px', lineHeight: 1.4,
-            color: src.status === 'done' ? '#ccc' : '#555',
+            color: src.status === 'done' ? '#ccc' : '#777',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {displayName}
           </div>
         )}
         {src.status === 'loading' && (
-          <div style={{ fontSize: '11px', color: '#444', marginTop: '3px', letterSpacing: '0.04em' }}>
+          <div style={{ fontSize: '11px', color: '#666', marginTop: '3px', letterSpacing: '0.04em' }}>
             analyzing...
           </div>
         )}
         {src.status === 'error' && (
-          <div style={{ fontSize: '11px', color: '#555', marginTop: '3px', letterSpacing: '0.03em' }}>
+          <div style={{ fontSize: '11px', color: '#777', marginTop: '3px', letterSpacing: '0.03em' }}>
             {src.error}
           </div>
         )}

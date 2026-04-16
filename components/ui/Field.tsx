@@ -13,7 +13,7 @@ export default function Field({
       <div
         style={{
           fontSize: "10px",
-          color: "#555",
+          color: "#777",
           letterSpacing: "0.12em",
           textTransform: "uppercase",
           marginBottom: "10px",

@@ -11,7 +11,7 @@ export default function JumpBtn({ onClick }: { onClick: () => void }) {
         padding: '0 8px',
         height: '22px',
         cursor: 'pointer',
-        color: '#444',
+        color: '#666',
         fontSize: '10px',
         lineHeight: 1,
         outline: 'none',
@@ -25,8 +25,8 @@ export default function JumpBtn({ onClick }: { onClick: () => void }) {
         marginTop: '6px',
         transition: 'border-color 0.15s, color 0.15s',
       }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#666' }}
     >
       source
     </button>

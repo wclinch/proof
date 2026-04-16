@@ -32,7 +32,7 @@ export default function ProjectBar() {
 
   const linkStyle: React.CSSProperties = {
     background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
-    fontSize: '11px', color: '#333', letterSpacing: '0.08em',
+    fontSize: '11px', color: '#666', letterSpacing: '0.08em',
     textTransform: 'uppercase', fontFamily: 'inherit', textDecoration: 'none',
     display: 'inline-block',
   }
@@ -44,7 +44,7 @@ export default function ProjectBar() {
       borderBottom: '1px solid #1a1a1a', gap: '16px',
     }}>
       {/* Logo */}
-      <a href="/" style={{ ...linkStyle, color: '#555', fontSize: '15px', fontWeight: 300, letterSpacing: 0, marginRight: '4px' }}>
+      <a href="/" style={{ ...linkStyle, color: '#777', fontSize: '15px', fontWeight: 300, letterSpacing: 0, marginRight: '4px' }}>
         {'{'}
       </a>
 
@@ -69,7 +69,7 @@ export default function ProjectBar() {
             autoFocus
             style={{
               background: 'transparent', border: 'none', outline: 'none',
-              fontSize: '11px', color: '#aaa', letterSpacing: '0.06em',
+              fontSize: '11px', color: '#bbb', letterSpacing: '0.06em',
               textTransform: 'uppercase', fontFamily: 'inherit',
               padding: 0, margin: 0, height: '20px', lineHeight: '20px',
               boxSizing: 'border-box', width: '100%',
@@ -79,12 +79,12 @@ export default function ProjectBar() {
           <button
             onClick={() => setEditingName(true)}
             style={{
-              ...linkStyle, cursor: 'text', color: '#555',
+              ...linkStyle, cursor: 'text', color: '#777',
               maxWidth: '100%', overflow: 'hidden',
               textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+            onMouseEnter={e => (e.currentTarget.style.color = '#aaa')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#777')}
           >
             {activeProject?.name ?? 'untitled'}
           </button>
@@ -93,7 +93,7 @@ export default function ProjectBar() {
 
       {/* Status */}
       {sources.length > 0 && (
-        <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em', flexShrink: 0 }}>
+        <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.06em', flexShrink: 0 }}>
           {doneCount}/{sources.length}
           {loadingCount > 0 ? ' · analyzing...' : ''}
         </span>
@@ -105,16 +105,16 @@ export default function ProjectBar() {
       <button
         onClick={() => setShowProjects(v => !v)}
         style={linkStyle}
-        onMouseEnter={e => (e.currentTarget.style.color = '#666')}
-        onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+        onMouseEnter={e => (e.currentTarget.style.color = '#999')}
+        onMouseLeave={e => (e.currentTarget.style.color = '#666')}
       >
         Projects
       </button>
       <button
         onClick={createProject}
         style={linkStyle}
-        onMouseEnter={e => (e.currentTarget.style.color = '#666')}
-        onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+        onMouseEnter={e => (e.currentTarget.style.color = '#999')}
+        onMouseLeave={e => (e.currentTarget.style.color = '#666')}
       >
         New
       </button>
@@ -122,14 +122,14 @@ export default function ProjectBar() {
       <div style={{ width: '1px', height: '14px', background: '#1a1a1a', flexShrink: 0 }} />
 
       <a href="/about" style={linkStyle}
-        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#666'}
-        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#333'}
+        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#999'}
+        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#666'}
       >
         About
       </a>
       <a href="/privacy" style={linkStyle}
-        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#666'}
-        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#333'}
+        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#999'}
+        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#666'}
       >
         Privacy
       </a>
@@ -139,15 +139,15 @@ export default function ProjectBar() {
       {user ? (
         <a href="/account" style={{ ...linkStyle, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
           title={user.email}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#666'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#333'}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#999'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#666'}
         >
           {user.email}
         </a>
       ) : (
         <a href="/auth" style={linkStyle}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#666'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#333'}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#999'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#666'}
         >
           Sign in
         </a>

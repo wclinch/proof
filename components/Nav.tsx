@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export default function Nav() {
   const linkStyle: React.CSSProperties = {
-    fontSize: '11px', color: '#444', letterSpacing: '0.08em',
+    fontSize: '11px', color: '#666', letterSpacing: '0.08em',
     textTransform: 'uppercase', textDecoration: 'none',
   }
 
@@ -17,7 +17,7 @@ export default function Nav() {
       borderBottom: '1px solid #1a1a1a',
       flexShrink: 0,
     }}>
-      <Link href="/app" style={{ textDecoration: 'none', fontSize: '15px', fontWeight: 300, color: '#555' }}>
+      <Link href="/app" style={{ textDecoration: 'none', fontSize: '15px', fontWeight: 300, color: '#777' }}>
         {'{'}
       </Link>
 

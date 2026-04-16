@@ -45,7 +45,7 @@ export default function SourcePanel({ width }: { width: number }) {
     border: '1px solid #1a1a1a',
     borderRadius: '3px',
     padding: '3px 9px',
-    color: '#444',
+    color: '#777',
     fontSize: '12px',
     fontFamily: 'inherit',
     outline: 'none',
@@ -74,14 +74,14 @@ export default function SourcePanel({ width }: { width: number }) {
           cursor: isAnalyzing ? 'default' : 'pointer',
         }}
       >
-        <span style={{ fontSize: '12px', color: '#444', letterSpacing: '0.05em', flex: 1 }}>
+        <span style={{ fontSize: '12px', color: '#777', letterSpacing: '0.05em', flex: 1 }}>
           {dragOver ? 'Drop to add' : 'Drop PDFs or click ↑'}
         </span>
         <button
           onClick={e => { e.stopPropagation(); if (!isAnalyzing) fileRef.current?.click() }}
           disabled={isAnalyzing}
-          style={{ ...actionBtn, color: isUploadingFile ? '#2a2a2a' : '#444', cursor: isUploadingFile ? 'default' : 'pointer' }}
-          onMouseEnter={e => { if (!isUploadingFile) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' } }}
+          style={{ ...actionBtn, color: isUploadingFile ? '#444' : '#777', cursor: isUploadingFile ? 'default' : 'pointer' }}
+          onMouseEnter={e => { if (!isUploadingFile) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' } }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = isUploadingFile ? '#2a2a2a' : '#444' }}
         >↑</button>
       </div>
@@ -124,7 +124,7 @@ export default function SourcePanel({ width }: { width: number }) {
             border: 'none', outline: 'none',
             fontSize: '12px', fontFamily: 'inherit',
             letterSpacing: '0.05em',
-            color: '#444',
+            color: '#777',
             opacity: isAnalyzing ? 0.5 : 1,
           }}
         />
@@ -136,7 +136,7 @@ export default function SourcePanel({ width }: { width: number }) {
             opacity: urlInput.trim() && !isAnalyzing ? 1 : 0.3,
             cursor: urlInput.trim() && !isAnalyzing ? 'pointer' : 'default',
           }}
-          onMouseEnter={e => { if (urlInput.trim() && !isAnalyzing) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' } }}
+          onMouseEnter={e => { if (urlInput.trim() && !isAnalyzing) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' } }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
         >→</button>
       </form>
@@ -158,21 +158,21 @@ export default function SourcePanel({ width }: { width: number }) {
                 flex: 1,
                 background: 'transparent', border: 'none', outline: 'none',
                 fontSize: '12px', fontFamily: 'inherit',
-                letterSpacing: '0.05em', color: '#444',
+                letterSpacing: '0.05em', color: '#777',
               }}
             />
           </div>
         )}
         <div style={{ flex: 1, overflowY: 'auto', marginTop: '4px' }}>
           {sources.length === 0
-            ? <div style={{ padding: '10px 14px', fontSize: '12px', color: '#444', letterSpacing: '0.05em' }}>No documents yet.</div>
+            ? <div style={{ padding: '10px 14px', fontSize: '12px', color: '#777', letterSpacing: '0.05em' }}>No documents yet.</div>
             : (() => {
                 const q = filter.trim().toLowerCase()
                 const visible = q
                   ? sources.filter(s => (s.label || s.result?.title || s.raw).toLowerCase().includes(q))
                   : sources
                 return visible.length === 0
-                  ? <div style={{ padding: '20px 14px', fontSize: '12px', color: '#444', letterSpacing: '0.05em' }}>No match.</div>
+                  ? <div style={{ padding: '20px 14px', fontSize: '12px', color: '#777', letterSpacing: '0.05em' }}>No match.</div>
                   : visible.map(src => <SourceItem key={src.id} src={src} />)
               })()
           }

@@ -89,10 +89,10 @@ export default function AnalysisPanel() {
               style={{
                 background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
                 fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase',
-                fontFamily: 'inherit', color: '#444',
+                fontFamily: 'inherit', color: '#777',
               }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#777')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+              onMouseEnter={e => (e.currentTarget.style.color = '#aaa')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#777')}
             >
               .txt
             </button>
@@ -101,10 +101,10 @@ export default function AnalysisPanel() {
               style={{
                 background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
                 fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase',
-                fontFamily: 'inherit', color: '#444',
+                fontFamily: 'inherit', color: '#777',
               }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#777')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+              onMouseEnter={e => (e.currentTarget.style.color = '#aaa')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#777')}
             >
               .md
             </button>
@@ -114,7 +114,7 @@ export default function AnalysisPanel() {
               style={{
                 background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
                 fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase',
-                fontFamily: 'inherit', color: centerView === 'analysis' ? '#aaa' : '#444',
+                fontFamily: 'inherit', color: centerView === 'analysis' ? '#bbb' : '#777',
               }}
             >
               Breakdown
@@ -124,7 +124,7 @@ export default function AnalysisPanel() {
               style={{
                 background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
                 fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase',
-                fontFamily: 'inherit', color: centerView === 'source' ? '#aaa' : '#444',
+                fontFamily: 'inherit', color: centerView === 'source' ? '#bbb' : '#777',
               }}
             >
               Source
@@ -136,17 +136,17 @@ export default function AnalysisPanel() {
       {/* Body */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
         {!selectedSource && (
-          <div style={{ fontSize: '13px', color: '#444', letterSpacing: '0.04em' }}>
+          <div style={{ fontSize: '13px', color: '#777', letterSpacing: '0.04em' }}>
             Select a source.
           </div>
         )}
         {selectedSource?.status === 'queued' && (
-          <div style={{ fontSize: '13px', color: '#444', letterSpacing: '0.04em' }}>
+          <div style={{ fontSize: '13px', color: '#777', letterSpacing: '0.04em' }}>
             Queued.
           </div>
         )}
         {selectedSource?.status === 'loading' && (
-          <div style={{ fontSize: '13px', color: '#444', letterSpacing: '0.04em' }}>
+          <div style={{ fontSize: '13px', color: '#777', letterSpacing: '0.04em' }}>
             Analyzing...
           </div>
         )}

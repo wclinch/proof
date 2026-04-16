@@ -88,7 +88,7 @@ export default function AccountPage() {
   }
 
   const labelStyle: React.CSSProperties = {
-    fontSize: '11px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase',
+    fontSize: '11px', color: '#777', letterSpacing: '0.1em', textTransform: 'uppercase',
   }
 
   if (loading) {
@@ -107,21 +107,21 @@ export default function AccountPage() {
       <Nav />
       <main style={{ flex: 1, maxWidth: '480px', width: '100%', margin: '0 auto', padding: '56px 20px', display: 'flex', flexDirection: 'column' }}>
 
-        <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
+        <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
           Settings
         </span>
 
         {/* Account */}
         <div style={sectionStyle}>
           <span style={labelStyle}>Account</span>
-          <div style={{ fontSize: '14px', color: '#555' }}>{user?.email}</div>
+          <div style={{ fontSize: '14px', color: '#999' }}>{user?.email}</div>
         </div>
 
         {/* Plan */}
         <div style={sectionStyle}>
           <span style={labelStyle}>Plan</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ fontSize: '14px', color: '#555' }}>
+            <div style={{ fontSize: '14px', color: '#999' }}>
               {isSubscribed
                 ? 'Pro — unlimited sources'
                 : `Free — ${pdfCount} of ${PDF_FREE_LIMIT} sources used`}
@@ -145,8 +145,8 @@ export default function AccountPage() {
                   textTransform: 'uppercase', fontFamily: 'inherit',
                   transition: 'border-color 0.15s, color 0.15s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#555' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#bbb' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#777' }}
               >
                 Upgrade to Pro — $3/month →
               </button>
@@ -165,7 +165,7 @@ export default function AccountPage() {
                   alignSelf: 'flex-start',
                   background: 'none', border: '1px solid #1a1a1a', borderRadius: '4px',
                   padding: '8px 16px', cursor: 'pointer', outline: 'none',
-                  fontSize: '11px', color: '#444', letterSpacing: '0.08em',
+                  fontSize: '11px', color: '#777', letterSpacing: '0.08em',
                   textTransform: 'uppercase', fontFamily: 'inherit',
                   transition: 'border-color 0.15s, color 0.15s',
                 }}
@@ -203,7 +203,7 @@ export default function AccountPage() {
                 alignSelf: 'flex-start',
                 background: 'none', border: '1px solid #1a1a1a', borderRadius: '4px',
                 padding: '8px 16px', cursor: pwLoading ? 'default' : 'pointer', outline: 'none',
-                fontSize: '11px', color: '#444', letterSpacing: '0.08em',
+                fontSize: '11px', color: '#777', letterSpacing: '0.08em',
                 textTransform: 'uppercase', fontFamily: 'inherit',
               }}
               onMouseEnter={e => { if (!pwLoading) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' } }}
@@ -223,11 +223,11 @@ export default function AccountPage() {
               style={{
                 background: 'none', border: '1px solid #1a1a1a', borderRadius: '4px',
                 padding: '8px 16px', cursor: 'pointer', outline: 'none',
-                fontSize: '11px', color: '#444', letterSpacing: '0.08em',
+                fontSize: '11px', color: '#777', letterSpacing: '0.08em',
                 textTransform: 'uppercase', fontFamily: 'inherit',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#777' }}
             >
               Sign out
             </button>

@@ -84,7 +84,7 @@ export default function DraftPanel({ width }: { width: number }) {
   const menuBtn: React.CSSProperties = {
     display: 'block', width: '100%', textAlign: 'left',
     background: 'none', border: 'none', padding: '9px 14px',
-    cursor: 'pointer', fontSize: '12px', color: '#555',
+    cursor: 'pointer', fontSize: '12px', color: '#777',
     letterSpacing: '0.04em', fontFamily: 'inherit',
   }
 
@@ -104,12 +104,12 @@ export default function DraftPanel({ width }: { width: number }) {
         padding: '0 20px', height: '40px', flexShrink: 0,
         borderBottom: '1px solid #1a1a1a',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        fontSize: '12px', color: '#444', letterSpacing: '0.08em', textTransform: 'uppercase',
+        fontSize: '12px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase',
       }}>
         <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Synthesis</span>
         {hasDraft && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0, marginLeft: '8px' }}>
-            <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
               {wordCount}w
             </span>
             <button
@@ -117,10 +117,10 @@ export default function DraftPanel({ width }: { width: number }) {
               onClick={openCtxMenu}
               style={{
                 background: 'none', border: 'none', padding: '0 2px', cursor: 'pointer', outline: 'none',
-                fontSize: '14px', color: '#444', letterSpacing: '0.1em', fontFamily: 'inherit', lineHeight: 1,
+                fontSize: '14px', color: '#777', letterSpacing: '0.1em', fontFamily: 'inherit', lineHeight: 1,
               }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#777')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+              onMouseEnter={e => (e.currentTarget.style.color = '#aaa')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#777')}
               title="Options"
             >
               ···
@@ -145,7 +145,7 @@ export default function DraftPanel({ width }: { width: number }) {
           >
             New
           </button>
-          <span style={{ fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.04em' }}>
+          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.04em' }}>
             nothing here yet · {typeof navigator !== 'undefined' && /mac/i.test(navigator.platform) ? '⌘↵' : 'Ctrl+↵'}
           </span>
         </div>
@@ -177,7 +177,7 @@ export default function DraftPanel({ width }: { width: number }) {
             placeholder={localTitle.trim() ? 'Start writing...' : 'Add a title first...'}
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
-              color: localTitle.trim() ? '#555' : '#2a2a2a',
+              color: localTitle.trim() ? '#999' : '#444',
               fontSize: '14px', lineHeight: 1.9, padding: '20px 28px',
               resize: 'none', fontFamily: 'inherit', overflowY: 'auto',
               cursor: localTitle.trim() ? 'text' : 'default',
