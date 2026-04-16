@@ -4,7 +4,7 @@ import { useApp } from '@/context/AppContext'
 import SourceItem from './SourceItem'
 
 export default function SourcePanel({ width }: { width: number }) {
-  const { sources, uploadFiles, isAnalyzing, addUrl } = useApp()
+  const { sources, uploadFiles, isAnalyzing, isUploadingFile, addUrl } = useApp()
   const [urlInput, setUrlInput]       = useState('')
   const [dragOver, setDragOver]       = useState(false)
   const [filterInput, setFilterInput] = useState('')
@@ -12,13 +12,20 @@ export default function SourcePanel({ width }: { width: number }) {
   const fileRef   = useRef<HTMLInputElement>(null)
   const urlRef    = useRef<HTMLInputElement>(null)
   const filterRef = useRef<HTMLInputElement>(null)
+  const formRef   = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
     const t = setTimeout(() => setFilter(filterInput), 150)
     return () => clearTimeout(t)
   }, [filterInput])
 
-  // Shared row shell — every row in the sidebar looks like this
+  // Reset form border when analysis finishes
+  useEffect(() => {
+    if (!isAnalyzing && formRef.current) {
+      formRef.current.style.borderColor = '#1a1a1a'
+    }
+  }, [isAnalyzing])
+
   const shell: React.CSSProperties = {
     margin: '10px 10px 0',
     padding: '11px 14px',
@@ -31,7 +38,6 @@ export default function SourcePanel({ width }: { width: number }) {
     transition: 'border-color 0.15s',
   }
 
-  // Shared inner action button style (↑ and →)
   const actionBtn: React.CSSProperties = {
     flexShrink: 0,
     marginLeft: 'auto',
@@ -69,37 +75,38 @@ export default function SourcePanel({ width }: { width: number }) {
         }}
       >
         <span style={{ fontSize: '12px', color: '#444', letterSpacing: '0.05em', flex: 1 }}>
-          {isAnalyzing ? 'Analyzing...' : dragOver ? 'Drop to add' : 'Drop PDFs or click ↑'}
+          {dragOver ? 'Drop to add' : 'Drop PDFs or click ↑'}
         </span>
         <button
           onClick={e => { e.stopPropagation(); if (!isAnalyzing) fileRef.current?.click() }}
           disabled={isAnalyzing}
-          style={{ ...actionBtn, color: isAnalyzing ? '#2a2a2a' : '#444', cursor: isAnalyzing ? 'default' : 'pointer' }}
-          onMouseEnter={e => { if (!isAnalyzing) { e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#777' } }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = isAnalyzing ? '#2a2a2a' : '#444' }}
+          style={{ ...actionBtn, color: isUploadingFile ? '#2a2a2a' : '#444', cursor: isUploadingFile ? 'default' : 'pointer' }}
+          onMouseEnter={e => { if (!isUploadingFile) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' } }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = isUploadingFile ? '#2a2a2a' : '#444' }}
         >↑</button>
       </div>
       <input ref={fileRef} type="file" accept=".pdf" multiple style={{ display: 'none' }}
         onChange={e => { if (e.target.files?.length) { uploadFiles(e.target.files); e.target.value = '' } }}
       />
 
-      {/* ── Row 2: URL input — same shell, transparent input + same button inside ── */}
+      {/* ── Row 2: URL input ── */}
       <form
+        ref={formRef}
         onSubmit={e => {
           e.preventDefault()
           const v = urlInput.trim()
           if (!v || isAnalyzing) return
-          addUrl(v); setUrlInput('')
+          addUrl(v)
+          setUrlInput('')
+          if (formRef.current) formRef.current.style.borderColor = '#1a1a1a'
+          urlRef.current?.blur()
         }}
         style={{ ...shell, cursor: 'text' }}
         onClick={() => urlRef.current?.focus()}
-        onFocus={() => {
-          const el = document.activeElement?.closest('form') as HTMLElement | null
-          if (el) el.style.borderColor = '#333'
-        }}
+        onFocus={() => { if (formRef.current) formRef.current.style.borderColor = '#333' }}
         onBlur={e => {
           if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-            e.currentTarget.style.borderColor = '#1a1a1a'
+            if (formRef.current) formRef.current.style.borderColor = '#1a1a1a'
           }
         }}
       >
@@ -129,7 +136,7 @@ export default function SourcePanel({ width }: { width: number }) {
             opacity: urlInput.trim() && !isAnalyzing ? 1 : 0.3,
             cursor: urlInput.trim() && !isAnalyzing ? 'pointer' : 'default',
           }}
-          onMouseEnter={e => { if (urlInput.trim() && !isAnalyzing) { e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#777' } }}
+          onMouseEnter={e => { if (urlInput.trim() && !isAnalyzing) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' } }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
         >→</button>
       </form>
@@ -140,10 +147,6 @@ export default function SourcePanel({ width }: { width: number }) {
           <div
             style={{ ...shell, cursor: 'text', padding: '9px 14px' }}
             onClick={() => filterRef.current?.focus()}
-            onFocus={() => {
-              const el = document.activeElement?.closest('div[data-filter]') as HTMLElement | null
-              if (el) el.style.borderColor = '#333'
-            }}
           >
             <input
               ref={filterRef}
@@ -162,14 +165,14 @@ export default function SourcePanel({ width }: { width: number }) {
         )}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {sources.length === 0
-            ? <div style={{ padding: '10px 14px', fontSize: '12px', color: '#333', letterSpacing: '0.05em' }}>No documents yet.</div>
+            ? <div style={{ padding: '10px 14px', fontSize: '12px', color: '#444', letterSpacing: '0.05em' }}>No documents yet.</div>
             : (() => {
                 const q = filter.trim().toLowerCase()
                 const visible = q
                   ? sources.filter(s => (s.label || s.result?.title || s.raw).toLowerCase().includes(q))
                   : sources
                 return visible.length === 0
-                  ? <div style={{ padding: '20px 14px', fontSize: '12px', color: '#333', letterSpacing: '0.05em' }}>No match.</div>
+                  ? <div style={{ padding: '20px 14px', fontSize: '12px', color: '#444', letterSpacing: '0.05em' }}>No match.</div>
                   : visible.map(src => <SourceItem key={src.id} src={src} />)
               })()
           }

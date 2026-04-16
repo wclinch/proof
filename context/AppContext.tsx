@@ -44,6 +44,7 @@ interface AppState {
   setContextMenu: (m: ContextMenu | null) => void
   setProjContextMenu: (m: ProjContextMenu | null) => void
   isAnalyzing: boolean
+  isUploadingFile: boolean
   // actions
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
   updateProject: (id: string, patch: Partial<Project>) => void
@@ -80,6 +81,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const analyzing         = useRef(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [isUploadingFile, setIsUploadingFile] = useState(false)
 
   // Escape closes all modals and menus
   useEffect(() => {
@@ -236,6 +238,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSelectedId(newSources[0].id)
     analyzing.current = true
     setIsAnalyzing(true)
+    setIsUploadingFile(true)
 
     const projId     = activeId
     for (let i = 0; i < list.length; i++) {
@@ -266,6 +269,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     analyzing.current = false
     setIsAnalyzing(false)
+    setIsUploadingFile(false)
   }
 
   function removeSource(srcId: string) {
@@ -319,6 +323,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   async function addUrl(url: string) {
     if (!activeId || analyzing.current) return
 
+    // Deduplicate — don't add the same URL twice
+    if (sources.some(s => s.raw === url)) return
+
     // Source cap for free users — based on current live count
     if (!isSubscribedRef.current) {
       if (pdfCount >= PDF_FREE_LIMIT) { setShowPaywall(true); return }
@@ -366,7 +373,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value: AppState = {
     mounted, projects, activeId, selectedId, selectedIds, anchorId,
     showProjects, centerView, highlightText, contextMenu, projContextMenu,
-    activeProject, sources, selectedSource, isAnalyzing,
+    activeProject, sources, selectedSource, isAnalyzing, isUploadingFile,
     user, isSubscribed, pdfCount, showPaywall, setShowPaywall,
     setShowProjects, setSelectedId, setSelectedIds, setAnchorId,
     setCenterView, setContextMenu, setProjContextMenu,
