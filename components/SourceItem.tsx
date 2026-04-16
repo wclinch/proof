@@ -5,7 +5,7 @@ import type { QueuedSource } from '@/lib/types'
 
 const DOT: Record<string, string> = {
   done:    '#2a6',
-  error:   '#933',
+  error:   '#555',
   loading: '#555',
   queued:  '#2a2a2a',
 }
@@ -132,7 +132,7 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
           </div>
         )}
         {src.status === 'error' && (
-          <div style={{ fontSize: '11px', color: '#733', marginTop: '3px', letterSpacing: '0.03em' }}>
+          <div style={{ fontSize: '11px', color: '#555', marginTop: '3px', letterSpacing: '0.03em' }}>
             {src.error}
           </div>
         )}

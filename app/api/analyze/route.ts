@@ -37,7 +37,10 @@ export async function POST(req: NextRequest) {
       headers: { 'Accept': 'text/plain' },
     })
     if (!jinaRes.ok) {
-      return NextResponse.json({ error: `Could not fetch page (${jinaRes.status})` }, { status: 422 })
+      const msg = jinaRes.status === 403 || jinaRes.status === 503
+        ? 'This page blocked access — try a direct PDF link instead'
+        : `Could not fetch page (${jinaRes.status})`
+      return NextResponse.json({ error: msg }, { status: 422 })
     }
     fullText = (await jinaRes.text())
       .replace(/\n{3,}/g, '\n\n')

@@ -151,7 +151,7 @@ export default function AnalysisPanel() {
           </div>
         )}
         {selectedSource?.status === 'error' && (
-          <div style={{ fontSize: '13px', color: '#733', letterSpacing: '0.04em' }}>
+          <div style={{ fontSize: '13px', color: '#555', letterSpacing: '0.04em' }}>
             {selectedSource.error}
           </div>
         )}
