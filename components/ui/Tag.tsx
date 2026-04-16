@@ -5,12 +5,12 @@ export default function Tag({ children, dim }: { children: ReactNode; dim?: bool
   return (
     <span
       style={{
-        padding: '3px 8px',
+        padding: '3px 9px',
         background: '#0f0f0f',
-        border: '1px solid #1e1e1e',
+        border: '1px solid #222',
         borderRadius: '3px',
         fontSize: '11px',
-        color: dim ? '#333' : '#4a4a4a',
+        color: dim ? '#444' : '#666',
         letterSpacing: '0.03em',
       }}
     >

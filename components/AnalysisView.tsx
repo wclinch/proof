@@ -49,8 +49,8 @@ export default function AnalysisView({
           {result.quotes.map((q, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '6px' }}>
               <div style={{
-                fontSize: '13px', color: '#666', lineHeight: 1.7,
-                padding: '8px 12px', borderLeft: '2px solid #222',
+                fontSize: '13px', color: '#777', lineHeight: 1.7,
+                padding: '8px 12px', borderLeft: '2px solid #2a2a2a',
                 fontStyle: 'italic', flex: 1,
               }}>
                 &ldquo;{q}&rdquo;
@@ -107,15 +107,21 @@ export default function AnalysisView({
       {/* ── Tags ────────────────────────────────────────────── */}
 
       {(result.concepts?.length > 0 || result.keywords?.length > 0) && (
-        <div style={{ paddingTop: '16px', marginTop: '8px', borderTop: '1px solid #111', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ paddingTop: '16px', marginTop: '4px', borderTop: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {result.concepts?.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-              {result.concepts.map((c, i) => <Tag key={i}>{c}</Tag>)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ fontSize: '10px', color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Concepts</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                {result.concepts.map((c, i) => <Tag key={i}>{c}</Tag>)}
+              </div>
             </div>
           )}
           {result.keywords?.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-              {result.keywords.map((k, i) => <Tag key={i} dim>{k}</Tag>)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ fontSize: '10px', color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Keywords</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                {result.keywords.map((k, i) => <Tag key={i} dim>{k}</Tag>)}
+              </div>
             </div>
           )}
         </div>
