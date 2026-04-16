@@ -82,7 +82,7 @@ export default function Home() {
         {/* Pricing */}
         <section style={{ borderTop: '1px solid #111', maxWidth: '620px', width: '100%', margin: '0 auto', padding: '64px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '12px' }}>
-            <span style={{ fontSize: '28px', fontWeight: 500, color: '#555' }}>$3</span>
+            <span style={{ fontSize: '28px', fontWeight: 500, color: '#aaa' }}>$3</span>
             <span style={{ fontSize: '13px', color: '#333' }}>/ month</span>
           </div>
           <p style={{ fontSize: '13px', color: '#444', lineHeight: 1.75, margin: '0 0 28px' }}>
