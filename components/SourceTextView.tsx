@@ -7,6 +7,7 @@ const TRUNCATION_THRESHOLD = 19000
 function cleanText(raw: string): string {
   return raw
     .replace(/^(Title|URL Source|Markdown Content):[^\n]*/gm, '')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')          // strip images before links
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/^#{1,6}\s+/gm, '')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
@@ -43,35 +44,41 @@ export default function SourceTextView({ text, highlight }: { text: string; high
   let matchEnd    = -1
 
   if (highlight) {
-    const needle = highlight.replace(/\s+/g, ' ').slice(0, 400).trim().toLowerCase()
+    const joined = blocks.map(b => b.replace(/\s+/g, ' ')).join(' ')
 
-    // Try exact match within each block first (fast path)
-    for (let bi = 0; bi < blocks.length; bi++) {
-      const norm = blocks[bi].replace(/\s+/g, ' ')
-      const idx  = norm.toLowerCase().indexOf(needle)
-      if (idx !== -1) {
-        matchBlock = bi; matchStart = idx; matchEnd = idx + needle.length
-        break
+    // Try progressively shorter slices of the needle (model may append extra context)
+    const fullNeedle = highlight.replace(/\s+/g, ' ').trim().toLowerCase()
+    const candidates = [
+      fullNeedle.slice(0, 400),
+      fullNeedle.slice(0, 200),
+      fullNeedle.slice(0, 120),
+    ].filter((s, i, a) => s.length > 20 && a.indexOf(s) === i)
+
+    outer:
+    for (const needle of candidates) {
+      // Try per-block first (fast path, avoids cross-block ambiguity)
+      for (let bi = 0; bi < blocks.length; bi++) {
+        const norm = blocks[bi].replace(/\s+/g, ' ')
+        const idx  = norm.toLowerCase().indexOf(needle)
+        if (idx !== -1) {
+          matchBlock = bi; matchStart = idx; matchEnd = idx + needle.length
+          break outer
+        }
       }
-    }
 
-    // Fallback: search joined text and map back to block
-    if (matchBlock === -1) {
-      const joined    = blocks.map(b => b.replace(/\s+/g, ' ')).join(' ')
+      // Fallback: search joined text and map back to block
       const joinedIdx = joined.toLowerCase().indexOf(needle)
       if (joinedIdx !== -1) {
-        // Walk blocks to find which one owns position joinedIdx
         let offset = 0
         for (let bi = 0; bi < blocks.length; bi++) {
           const norm = blocks[bi].replace(/\s+/g, ' ')
-          const end  = offset + norm.length
-          if (joinedIdx >= offset && joinedIdx < end + 1) {
+          if (joinedIdx >= offset && joinedIdx < offset + norm.length + 1) {
             matchBlock = bi
             matchStart = Math.max(0, joinedIdx - offset)
             matchEnd   = Math.min(norm.length, matchStart + needle.length)
-            break
+            break outer
           }
-          offset += norm.length + 1 // +1 for the space separator
+          offset += norm.length + 1
         }
       }
     }

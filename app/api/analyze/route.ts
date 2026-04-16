@@ -107,6 +107,7 @@ export async function POST(req: NextRequest) {
       const raw = await jinaRes.text()
       fullText = raw
         .replace(/^(Title|URL Source|Markdown Content):[^\n]*/gm, '')
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, '')          // strip images before links
         .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
         .replace(/^#{1,6}\s+/gm, '')
         .replace(/\*\*([^*]+)\*\*/g, '$1')
