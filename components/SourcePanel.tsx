@@ -16,6 +16,21 @@ export default function SourcePanel({ width }: { width: number }) {
     return () => clearTimeout(t)
   }, [filterInput])
 
+  // Shared token values for the left panel
+  const DIM   = '#2a2a2a'   // all placeholder / label text
+  const HOVER = '#555'      // hover text
+  const BG    = '#0d0d0d'   // all input / zone backgrounds
+  const BORD  = '#1a1a1a'   // all borders at rest
+  const BORD_FOCUS = '#333' // border on focus / drag
+
+  const rowBtn: React.CSSProperties = {
+    flexShrink: 0,
+    background: 'none', border: `1px solid ${BORD}`, borderRadius: '3px',
+    padding: '4px 10px', color: DIM, fontSize: '12px',
+    cursor: 'pointer', fontFamily: 'inherit', outline: 'none',
+    letterSpacing: '0.06em', transition: 'border-color 0.15s, color 0.15s',
+  }
+
   return (
     <div style={{
       width, flexShrink: 0,
@@ -36,9 +51,9 @@ export default function SourcePanel({ width }: { width: number }) {
         }}
         onClick={() => !isAnalyzing && fileRef.current?.click()}
         style={{
-          margin: '10px 10px 6px', padding: '14px 14px',
-          background: dragOver ? '#141414' : '#0d0d0d',
-          border: `1px dashed ${dragOver ? '#2a2a2a' : '#1a1a1a'}`,
+          margin: '10px 10px 0', padding: '12px 14px',
+          background: dragOver ? '#111' : BG,
+          border: `1px dashed ${dragOver ? BORD_FOCUS : BORD}`,
           borderRadius: '4px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           cursor: isAnalyzing ? 'default' : 'pointer',
@@ -46,25 +61,20 @@ export default function SourcePanel({ width }: { width: number }) {
           flexShrink: 0,
         }}
       >
-        <span style={{ fontSize: '12px', color: dragOver ? '#555' : '#2a2a2a', letterSpacing: '0.06em' }}>
+        <span style={{ fontSize: '12px', color: dragOver ? HOVER : DIM, letterSpacing: '0.06em' }}>
           {isAnalyzing ? 'Analyzing...' : dragOver ? 'Drop to add' : 'Drop PDFs or click ↑'}
         </span>
         <button
           onClick={e => { e.stopPropagation(); if (!isAnalyzing) fileRef.current?.click() }}
           disabled={isAnalyzing}
-          style={{
-            background: 'none', border: '1px solid #1e1e1e', borderRadius: '3px',
-            padding: '4px 10px', color: isAnalyzing ? '#2a2a2a' : '#444',
-            fontSize: '12px', cursor: isAnalyzing ? 'default' : 'pointer',
-            fontFamily: 'inherit', outline: 'none',
-            transition: 'border-color 0.15s, color 0.15s',
-          }}
-          onMouseEnter={e => { if (!isAnalyzing) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#888' } }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.color = isAnalyzing ? '#2a2a2a' : '#444' }}
+          style={{ ...rowBtn, color: isAnalyzing ? '#1e1e1e' : DIM, cursor: isAnalyzing ? 'default' : 'pointer' }}
+          onMouseEnter={e => { if (!isAnalyzing) { e.currentTarget.style.borderColor = BORD_FOCUS; e.currentTarget.style.color = HOVER } }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = BORD; e.currentTarget.style.color = isAnalyzing ? '#1e1e1e' : DIM }}
         >
           ↑
         </button>
       </div>
+
       <input
         ref={fileRef}
         type="file"
@@ -88,7 +98,7 @@ export default function SourcePanel({ width }: { width: number }) {
           addUrl(trimmed)
           setUrlInput('')
         }}
-        style={{ margin: '0 10px 8px', display: 'flex', gap: '6px', flexShrink: 0 }}
+        style={{ margin: '6px 10px 0', display: 'flex', gap: '0', flexShrink: 0 }}
       >
         <input
           type="text"
@@ -98,53 +108,57 @@ export default function SourcePanel({ width }: { width: number }) {
           disabled={isAnalyzing}
           style={{
             flex: 1, minWidth: 0,
-            background: '#0d0d0d', border: '1px solid #1a1a1a',
-            borderRadius: '4px', padding: '7px 10px', outline: 'none',
-            fontSize: '12px', color: '#777', fontFamily: 'inherit',
-            letterSpacing: '0.03em', opacity: isAnalyzing ? 0.4 : 1,
+            background: BG, border: `1px solid ${BORD}`,
+            borderRight: 'none',
+            borderRadius: '4px 0 0 4px', padding: '12px 14px', outline: 'none',
+            fontSize: '12px', color: DIM, fontFamily: 'inherit',
+            letterSpacing: '0.06em',
+            opacity: isAnalyzing ? 0.4 : 1,
             WebkitAppearance: 'none', appearance: 'none',
           }}
-          onFocus={e => (e.currentTarget.style.borderColor = '#2a2a2a')}
-          onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
+          onFocus={e => (e.currentTarget.style.borderColor = BORD_FOCUS)}
+          onBlur={e => (e.currentTarget.style.borderColor = BORD)}
         />
         <button
           type="submit"
           disabled={isAnalyzing || !urlInput.trim()}
           style={{
-            flexShrink: 0,
-            background: 'none', border: '1px solid #1e1e1e', borderRadius: '4px',
-            padding: '4px 10px', color: '#444', fontSize: '12px',
+            ...rowBtn,
+            borderRadius: '0 4px 4px 0',
+            padding: '12px 14px',
+            opacity: isAnalyzing || !urlInput.trim() ? 0.4 : 1,
             cursor: isAnalyzing || !urlInput.trim() ? 'default' : 'pointer',
-            fontFamily: 'inherit', outline: 'none', opacity: isAnalyzing || !urlInput.trim() ? 0.4 : 1,
-            transition: 'border-color 0.15s, color 0.15s',
           }}
-          onMouseEnter={e => { if (!isAnalyzing && urlInput.trim()) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#888' } }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.color = '#444' }}
+          onMouseEnter={e => { if (!isAnalyzing && urlInput.trim()) { e.currentTarget.style.borderColor = BORD_FOCUS; e.currentTarget.style.color = HOVER } }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = BORD; e.currentTarget.style.color = DIM }}
         >
           →
         </button>
       </form>
 
       {/* Source list */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '10px' }}>
         {sources.length > 0 && (
-          <div style={{ padding: '0 12px 8px', flexShrink: 0 }}>
+          <div style={{ padding: '0 10px 8px', flexShrink: 0 }}>
             <input
               value={filterInput}
               onChange={e => setFilterInput(e.target.value)}
               placeholder="Filter..."
               style={{
-                width: '100%', background: '#0d0d0d', border: '1px solid #1e1e1e',
-                borderRadius: '3px', outline: 'none', padding: '5px 8px',
-                fontSize: '11px', color: '#777', fontFamily: 'inherit',
-                letterSpacing: '0.04em', boxSizing: 'border-box',
+                width: '100%', background: BG, border: `1px solid ${BORD}`,
+                borderRadius: '4px', outline: 'none', padding: '7px 14px',
+                fontSize: '12px', color: DIM, fontFamily: 'inherit',
+                letterSpacing: '0.06em', boxSizing: 'border-box',
+                WebkitAppearance: 'none', appearance: 'none',
               }}
+              onFocus={e => (e.currentTarget.style.borderColor = BORD_FOCUS)}
+              onBlur={e => (e.currentTarget.style.borderColor = BORD)}
             />
           </div>
         )}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {sources.length === 0 ? (
-            <div style={{ padding: '8px 16px', fontSize: '12px', color: '#222', letterSpacing: '0.04em' }}>
+            <div style={{ padding: '8px 14px', fontSize: '12px', color: DIM, letterSpacing: '0.06em' }}>
               No documents yet.
             </div>
           ) : (() => {
@@ -155,7 +169,7 @@ export default function SourcePanel({ width }: { width: number }) {
                 )
               : sources
             return visible.length === 0
-              ? <div style={{ padding: '20px 16px', fontSize: '12px', color: '#333', letterSpacing: '0.04em' }}>No match.</div>
+              ? <div style={{ padding: '20px 14px', fontSize: '12px', color: DIM, letterSpacing: '0.06em' }}>No match.</div>
               : visible.map(src => <SourceItem key={src.id} src={src} />)
           })()}
         </div>
