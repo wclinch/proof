@@ -175,6 +175,7 @@ export default function DraftPanel({ width }: { width: number }) {
               value={localTitle}
               onChange={e => setLocalTitle(e.target.value)}
               placeholder="Untitled"
+              className="draft-title"
               style={{
                 width: '100%', background: 'transparent', border: 'none', outline: 'none',
                 fontSize: '18px', fontWeight: 500, color: '#aaa',
@@ -185,6 +186,7 @@ export default function DraftPanel({ width }: { width: number }) {
 
           {/* Textarea */}
           <textarea
+            className="draft-body"
             value={localDraft}
             onChange={e => setLocalDraft(e.target.value)}
             disabled={!localTitle.trim()}
@@ -192,7 +194,7 @@ export default function DraftPanel({ width }: { width: number }) {
             placeholder={localTitle.trim() ? 'Start writing...' : 'Add a title first...'}
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
-              color: localTitle.trim() ? '#bbb' : '#2a2a2a',
+              color: localTitle.trim() ? '#666' : '#2a2a2a',
               fontSize: '14px', lineHeight: 1.9, padding: '20px 28px',
               resize: 'none', fontFamily: 'inherit', overflowY: 'auto',
               cursor: localTitle.trim() ? 'text' : 'default',
