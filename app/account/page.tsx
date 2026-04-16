@@ -236,21 +236,21 @@ export default function AccountPage() {
 
         {/* Danger zone */}
         <div style={{ ...sectionStyle, borderBottom: 'none' }}>
-          <span style={{ ...labelStyle, color: '#622' }}>Danger zone</span>
+          <span style={{ ...labelStyle, color: '#a44' }}>Danger zone</span>
           <div>
             <button
               onClick={handleDeleteAccount}
               style={{
-                background: 'none', border: `1px solid ${confirmDelete ? '#622' : '#1a1a1a'}`,
+                background: 'none', border: `1px solid ${confirmDelete ? '#933' : '#1a1a1a'}`,
                 borderRadius: '4px', padding: '8px 16px', cursor: 'pointer', outline: 'none',
-                fontSize: '11px', color: confirmDelete ? '#c44' : '#444',
+                fontSize: '11px', color: confirmDelete ? '#e55' : '#a44',
                 letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'inherit',
                 transition: 'border-color 0.15s, color 0.15s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#733'; e.currentTarget.style.color = '#c44' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#a44'; e.currentTarget.style.color = '#f66' }}
               onMouseLeave={e => {
-                e.currentTarget.style.borderColor = confirmDelete ? '#622' : '#1a1a1a'
-                e.currentTarget.style.color = confirmDelete ? '#c44' : '#444'
+                e.currentTarget.style.borderColor = confirmDelete ? '#933' : '#1a1a1a'
+                e.currentTarget.style.color = confirmDelete ? '#e55' : '#a44'
               }}
             >
               {confirmDelete ? 'Confirm — this cannot be undone' : 'Delete account'}
@@ -260,7 +260,7 @@ export default function AccountPage() {
                 onClick={() => setConfirmDelete(false)}
                 style={{
                   marginLeft: '12px', background: 'none', border: 'none',
-                  cursor: 'pointer', fontSize: '11px', color: '#444',
+                  cursor: 'pointer', fontSize: '11px', color: '#777',
                   letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'inherit',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#777')}
