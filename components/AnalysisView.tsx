@@ -110,7 +110,7 @@ export default function AnalysisView({
         <div style={{ paddingTop: '16px', marginTop: '4px', borderTop: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {result.concepts?.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ fontSize: '10px', color: '#777', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Concepts</div>
+              <div style={{ fontSize: '10px', color: '#999', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Concepts</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                 {result.concepts.map((c, i) => <Tag key={i}>{c}</Tag>)}
               </div>
@@ -118,7 +118,7 @@ export default function AnalysisView({
           )}
           {result.keywords?.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ fontSize: '10px', color: '#777', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Keywords</div>
+              <div style={{ fontSize: '10px', color: '#999', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Keywords</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                 {result.keywords.map((k, i) => <Tag key={i} dim>{k}</Tag>)}
               </div>

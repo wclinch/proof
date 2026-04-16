@@ -10,7 +10,7 @@ export default function Tag({ children, dim }: { children: ReactNode; dim?: bool
         border: '1px solid #1a1a1a',
         borderRadius: '3px',
         fontSize: '11px',
-        color: dim ? '#666' : '#777',
+        color: dim ? '#777' : '#999',
         letterSpacing: '0.03em',
       }}
     >
