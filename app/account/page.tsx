@@ -9,6 +9,7 @@ import { loadProjects, PDF_FREE_LIMIT } from '@/lib/storage'
 export default function AccountPage() {
   const [pdfCount, setPdfCount]         = useState(0)
   const [user, setUser]                 = useState<User | null>(null)
+  const [accessToken, setAccessToken]   = useState<string | null>(null)
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [loading, setLoading]           = useState(true)
 
@@ -33,6 +34,7 @@ export default function AccountPage() {
     sb.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { router.push('/auth'); return }
       setUser(session.user)
+      setAccessToken(session.access_token)
       const { data } = await (sb.from as any)('profiles').select('subscribed').eq('id', session.user.id).single() as { data: { subscribed: boolean } | null }
       setIsSubscribed(data?.subscribed ?? false)
       setLoading(false)
@@ -127,12 +129,10 @@ export default function AccountPage() {
             {!isSubscribed ? (
               <button
                 onClick={async () => {
-                  const sb = getSupabaseBrowser()
-                  const { data: { session } } = await sb.auth.getSession()
-                  if (!session) return
+                  if (!accessToken) return
                   const res = await fetch('/api/stripe/checkout', {
                     method: 'POST',
-                    headers: { authorization: `Bearer ${session.access_token}` },
+                    headers: { authorization: `Bearer ${accessToken}` },
                   })
                   const { url } = await res.json()
                   if (url) window.location.href = url
@@ -153,12 +153,10 @@ export default function AccountPage() {
             ) : (
               <button
                 onClick={async () => {
-                  const sb = getSupabaseBrowser()
-                  const { data: { session } } = await sb.auth.getSession()
-                  if (!session) return
+                  if (!accessToken) return
                   const res = await fetch('/api/stripe/portal', {
                     method: 'POST',
-                    headers: { authorization: `Bearer ${session.access_token}` },
+                    headers: { authorization: `Bearer ${accessToken}` },
                   })
                   const { url } = await res.json()
                   if (url) window.location.href = url
