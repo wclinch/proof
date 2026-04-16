@@ -63,9 +63,24 @@ export default function PaywallModal() {
               </a>
             </>
           ) : (
-            <div style={{ fontSize: '13px', color: '#444', textAlign: 'center', padding: '8px 0' }}>
-              Payment coming soon — <a href="/account" style={{ color: '#555', textDecoration: 'none' }}>view account</a>
-            </div>
+            <button
+              onClick={async () => {
+                const res = await fetch('/api/stripe/checkout', { method: 'POST' })
+                const { url } = await res.json()
+                if (url) window.location.href = url
+              }}
+              style={{
+                background: '#0f0f0f', border: '1px solid #1a1a1a', borderRadius: '4px',
+                padding: '10px 20px', cursor: 'pointer', outline: 'none',
+                fontSize: '12px', color: '#555', letterSpacing: '0.08em',
+                textTransform: 'uppercase', fontFamily: 'inherit',
+                transition: 'border-color 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#555' }}
+            >
+              Subscribe — $3/month →
+            </button>
           )}
         </div>
 

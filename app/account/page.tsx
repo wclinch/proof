@@ -118,16 +118,52 @@ export default function AccountPage() {
         {/* Plan */}
         <div style={sectionStyle}>
           <span style={labelStyle}>Plan</span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{ fontSize: '14px', color: '#555' }}>
               {isSubscribed
                 ? 'Pro — unlimited sources'
                 : `Free — ${pdfCount} of ${PDF_FREE_LIMIT} sources used`}
             </div>
-            {!isSubscribed && (
-              <div style={{ fontSize: '13px', color: '#444' }}>
-                Upgrade to Pro for $3/month — payment coming soon.
-              </div>
+            {!isSubscribed ? (
+              <button
+                onClick={async () => {
+                  const res = await fetch('/api/stripe/checkout', { method: 'POST' })
+                  const { url } = await res.json()
+                  if (url) window.location.href = url
+                }}
+                style={{
+                  alignSelf: 'flex-start',
+                  background: '#0f0f0f', border: '1px solid #1a1a1a', borderRadius: '4px',
+                  padding: '8px 16px', cursor: 'pointer', outline: 'none',
+                  fontSize: '11px', color: '#555', letterSpacing: '0.08em',
+                  textTransform: 'uppercase', fontFamily: 'inherit',
+                  transition: 'border-color 0.15s, color 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#555' }}
+              >
+                Upgrade to Pro — $3/month →
+              </button>
+            ) : (
+              <button
+                onClick={async () => {
+                  const res = await fetch('/api/stripe/portal', { method: 'POST' })
+                  const { url } = await res.json()
+                  if (url) window.location.href = url
+                }}
+                style={{
+                  alignSelf: 'flex-start',
+                  background: 'none', border: '1px solid #1a1a1a', borderRadius: '4px',
+                  padding: '8px 16px', cursor: 'pointer', outline: 'none',
+                  fontSize: '11px', color: '#444', letterSpacing: '0.08em',
+                  textTransform: 'uppercase', fontFamily: 'inherit',
+                  transition: 'border-color 0.15s, color 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
+              >
+                Manage subscription
+              </button>
             )}
           </div>
         </div>
