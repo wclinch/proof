@@ -4,7 +4,8 @@ import { useApp } from '@/context/AppContext'
 import SourceItem from './SourceItem'
 
 export default function SourcePanel({ width }: { width: number }) {
-  const { sources, uploadFiles, isAnalyzing } = useApp()
+  const { sources, uploadFiles, isAnalyzing, addUrl } = useApp()
+  const [urlInput, setUrlInput] = useState('')
   const [dragOver, setDragOver]       = useState(false)
   const [filterInput, setFilterInput] = useState('')
   const [filter, setFilter]           = useState('')
@@ -77,6 +78,51 @@ export default function SourcePanel({ width }: { width: number }) {
           }
         }}
       />
+
+      {/* URL input */}
+      <form
+        onSubmit={e => {
+          e.preventDefault()
+          const trimmed = urlInput.trim()
+          if (!trimmed || isAnalyzing) return
+          addUrl(trimmed)
+          setUrlInput('')
+        }}
+        style={{ margin: '0 10px 8px', display: 'flex', gap: '6px', flexShrink: 0 }}
+      >
+        <input
+          type="url"
+          placeholder="Paste a link..."
+          value={urlInput}
+          onChange={e => setUrlInput(e.target.value)}
+          disabled={isAnalyzing}
+          style={{
+            flex: 1, minWidth: 0,
+            background: '#0d0d0d', border: '1px solid #1a1a1a',
+            borderRadius: '4px', padding: '7px 10px', outline: 'none',
+            fontSize: '12px', color: '#777', fontFamily: 'inherit',
+            letterSpacing: '0.03em', opacity: isAnalyzing ? 0.4 : 1,
+          }}
+          onFocus={e => (e.currentTarget.style.borderColor = '#2a2a2a')}
+          onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
+        />
+        <button
+          type="submit"
+          disabled={isAnalyzing || !urlInput.trim()}
+          style={{
+            flexShrink: 0,
+            background: 'none', border: '1px solid #1e1e1e', borderRadius: '4px',
+            padding: '4px 10px', color: '#444', fontSize: '12px',
+            cursor: isAnalyzing || !urlInput.trim() ? 'default' : 'pointer',
+            fontFamily: 'inherit', outline: 'none', opacity: isAnalyzing || !urlInput.trim() ? 0.4 : 1,
+            transition: 'border-color 0.15s, color 0.15s',
+          }}
+          onMouseEnter={e => { if (!isAnalyzing && urlInput.trim()) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#888' } }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.color = '#444' }}
+        >
+          →
+        </button>
+      </form>
 
       {/* Source list */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>

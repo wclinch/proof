@@ -55,6 +55,7 @@ interface AppState {
   switchProject: (id: string) => void
   deleteProject: (id: string) => void
   jumpToSource: (text: string) => void
+  addUrl: (url: string) => Promise<void>
 }
 
 const AppContext = createContext<AppState | null>(null)
@@ -322,6 +323,54 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function addUrl(url: string) {
+    if (!activeId || analyzing.current) return
+
+    // URL sources count toward the PDF cap for free users
+    if (!isSubscribedRef.current) {
+      const used = getPdfCount()
+      const remaining = Math.max(0, PDF_FREE_LIMIT - used)
+      if (remaining === 0) { setShowPaywall(true); return }
+    }
+
+    const src: QueuedSource = {
+      id: uid(), raw: url, status: 'queued',
+      result: null, rawText: null, error: null, label: url,
+    }
+
+    updateProject(activeId, { sources: [...sources, src] })
+    setSelectedId(src.id)
+    analyzing.current = true
+    setIsAnalyzing(true)
+
+    const projId = activeId
+    patchSource(projId, src.id, { status: 'loading' })
+    try {
+      const res  = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      })
+      const data = await res.json() as { error?: string; analysis?: unknown; content?: string }
+      if (data.error) {
+        patchSource(projId, src.id, { status: 'error', error: data.error })
+      } else {
+        patchSource(projId, src.id, { status: 'done', result: data.analysis as QueuedSource['result'], rawText: data.content ?? null })
+        if (!isSubscribedRef.current) {
+          const newCount = getPdfCount() + 1
+          setPdfCount(newCount)
+          setPdfCountState(newCount)
+          if (newCount >= PDF_FREE_LIMIT) setShowPaywall(true)
+        }
+      }
+    } catch {
+      patchSource(projId, src.id, { status: 'error', error: 'Failed to fetch URL — check your connection' })
+    }
+
+    analyzing.current = false
+    setIsAnalyzing(false)
+  }
+
   function jumpToSource(text: string) {
     setCenterView('source')
     setHighlightText(text)
@@ -347,7 +396,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     uploadFiles,
     removeSource, removeSelected,
     createProject, switchProject, deleteProject,
-    jumpToSource,
+    jumpToSource, addUrl,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
