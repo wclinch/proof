@@ -10,17 +10,17 @@ export default function Home() {
         {/* Hero */}
         <section style={{ maxWidth: '620px', width: '100%', margin: '0 auto', padding: '96px 24px 80px' }}>
           <div style={{ fontSize: '11px', color: '#666', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '32px' }}>
-            Proof — Verification Workbench
+            Proof — Research Workspace
           </div>
 
           <h1 style={{ fontSize: '32px', fontWeight: 500, color: '#bbb', lineHeight: 1.25, margin: '0 0 20px', letterSpacing: '-0.01em' }}>
-            Every claim, pinned to its<br />exact source.
+            Read the source.<br />Find the fact. Write from it.
           </h1>
 
           <p style={{ fontSize: '15px', color: '#777', lineHeight: 1.8, margin: '0 0 40px', maxWidth: '480px' }}>
-            Drop a PDF or paste a link. Every statistic, finding, and quote is extracted and
-            structured. Click any fact to jump to exactly where it appears in the source —
-            no manual searching, no guessing.
+            Drop a PDF, paste a URL, or add a YouTube video. Proof extracts every statistic,
+            finding, claim, and quote — then lets you jump to the exact passage it came from
+            and write from the same workspace.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -30,7 +30,7 @@ export default function Home() {
               padding: '10px 24px', fontSize: '12px', color: '#bbb', textDecoration: 'none',
               letterSpacing: '0.08em', textTransform: 'uppercase',
             }}>
-              Start verifying →
+              Open Proof →
             </a>
             <span style={{ fontSize: '12px', color: '#666', letterSpacing: '0.04em' }}>
               First 5 sources free. $3/month after.
@@ -45,10 +45,10 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
-              ['Add a source', 'Drop a PDF or paste a URL. Proof reads the full text and extracts every verifiable claim automatically.'],
-              ['Structured extraction', 'Statistics, findings, direct quotes, and key points are pulled out and organized — not summarized, not paraphrased.'],
-              ['Jump to the source', 'Click any fact to jump to its exact location in the original text. See it in context, not in isolation.'],
-              ['Build an audit trail', 'Every fact you verify is hashed and logged. Useful for citation tracking, case prep, or academic review.'],
+              ['Add a source', 'Drop a PDF, paste a URL, or add a YouTube video. Proof reads the full content and extracts every verifiable fact automatically.'],
+              ['Structured extraction', 'Statistics, findings, claims, direct quotes, and key points are pulled out and organized — not summarized, not paraphrased.'],
+              ['Jump to the passage', 'Click any fact to jump to exactly where it appears in the source. See it in context, not in isolation.'],
+              ['Write from it', 'The synthesis panel sits right next to your sources. Draft notes, a report, or a full document — without switching tabs or losing your place.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ display: 'flex', gap: '24px' }}>
                 <div style={{ width: '4px', flexShrink: 0, background: '#1a1a1a', borderRadius: '2px', alignSelf: 'stretch' }} />
@@ -68,9 +68,9 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {([
-              ['Not an AI summary', 'Proof does not paraphrase or interpret. It extracts verbatim and ties every fact to its source location.'],
-              ['Not a writing tool', 'Proof does not write for you. The synthesis panel is a scratchpad — your words, grounded in what you actually read.'],
-              ['Not a search engine', 'You bring the sources. Proof gives you structured, precise access to what is inside them.'],
+              ['Not an AI summary', 'Proof does not paraphrase or interpret. It extracts verbatim and ties every fact back to its source.'],
+              ['Not a chatbot', 'There is no prompt, no conversation. You read, you verify, you write. Proof just makes that faster.'],
+              ['Not a search engine', 'You bring the sources. Proof gives you structured, verifiable access to what is inside them.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ fontSize: '13px', color: '#777', lineHeight: 1.75 }}>
                 <span style={{ color: '#aaa' }}>{title}. </span>{body}
@@ -89,7 +89,7 @@ export default function Home() {
             First 5 sources free — no account needed. After that, $3/month. No tiers, no limits.
           </p>
           <a href="/app" style={{ fontSize: '12px', color: '#777', letterSpacing: '0.08em', textDecoration: 'none', textTransform: 'uppercase' }}>
-            Start verifying →
+            Open Proof →
           </a>
         </section>
 
