@@ -30,17 +30,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
   }
 
-  // Fetch via Jina Reader
+  // Fetch via Jina Reader — retry once on 503 (transient overload)
   let fullText: string
   try {
-    const jinaRes = await fetch(`https://r.jina.ai/${parsed.href}`, {
-      headers: { 'Accept': 'text/plain' },
-    })
+    async function jinaFetch() {
+      return fetch(`https://r.jina.ai/${parsed.href}`, {
+        headers: { 'Accept': 'text/plain' },
+      })
+    }
+    let jinaRes = await jinaFetch()
+    if (jinaRes.status === 503) {
+      await new Promise(r => setTimeout(r, 1500))
+      jinaRes = await jinaFetch()
+    }
     if (!jinaRes.ok) {
-      const msg = jinaRes.status === 403 || jinaRes.status === 503
-        ? 'This page blocked access — try a direct PDF link instead'
-        : `Could not fetch page (${jinaRes.status})`
-      return NextResponse.json({ error: msg }, { status: 422 })
+      return NextResponse.json({ error: `Could not fetch page (${jinaRes.status})` }, { status: 422 })
     }
     fullText = (await jinaRes.text())
       .replace(/\n{3,}/g, '\n\n')
