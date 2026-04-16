@@ -54,6 +54,7 @@ export default function SourceTextView({ text, highlight }: { text: string; high
       fullNeedle.slice(0, 400),
       fullNeedle.slice(0, 200),
       fullNeedle.slice(0, 120),
+      fullNeedle.slice(0, 60),
     ].filter((s, i, a) => s.length > 20 && a.indexOf(s) === i)
 
     outer:
