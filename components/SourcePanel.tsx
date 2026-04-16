@@ -89,7 +89,7 @@ export default function SourcePanel({ width }: { width: number }) {
         }}
       />
 
-      {/* URL input */}
+      {/* URL input — container styled like the drop zone so browser can't fight it */}
       <form
         onSubmit={e => {
           e.preventDefault()
@@ -98,7 +98,16 @@ export default function SourcePanel({ width }: { width: number }) {
           addUrl(trimmed)
           setUrlInput('')
         }}
-        style={{ margin: '6px 10px 0', display: 'flex', gap: '0', flexShrink: 0 }}
+        style={{
+          margin: '6px 10px 0', padding: '12px 14px',
+          background: BG, border: `1px dashed ${BORD}`,
+          borderRadius: '4px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexShrink: 0,
+          transition: 'border-color 0.15s',
+        }}
+        onFocusCapture={e => (e.currentTarget.style.borderColor = BORD_FOCUS)}
+        onBlurCapture={e => (e.currentTarget.style.borderColor = BORD)}
       >
         <input
           type="text"
@@ -108,29 +117,18 @@ export default function SourcePanel({ width }: { width: number }) {
           disabled={isAnalyzing}
           style={{
             flex: 1, minWidth: 0,
-            background: BG, border: `1px solid ${BORD}`,
-            borderRight: 'none',
-            borderRadius: '4px 0 0 4px', padding: '12px 14px', outline: 'none',
+            background: 'transparent', border: 'none', outline: 'none',
             fontSize: '12px', color: DIM, fontFamily: 'inherit',
             letterSpacing: '0.06em',
             opacity: isAnalyzing ? 0.4 : 1,
-            WebkitAppearance: 'none', appearance: 'none',
           }}
-          onFocus={e => (e.currentTarget.style.borderColor = BORD_FOCUS)}
-          onBlur={e => (e.currentTarget.style.borderColor = BORD)}
         />
         <button
           type="submit"
           disabled={isAnalyzing || !urlInput.trim()}
-          style={{
-            ...rowBtn,
-            borderRadius: '0 4px 4px 0',
-            padding: '12px 14px',
-            opacity: isAnalyzing || !urlInput.trim() ? 0.4 : 1,
-            cursor: isAnalyzing || !urlInput.trim() ? 'default' : 'pointer',
-          }}
-          onMouseEnter={e => { if (!isAnalyzing && urlInput.trim()) { e.currentTarget.style.borderColor = BORD_FOCUS; e.currentTarget.style.color = HOVER } }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = BORD; e.currentTarget.style.color = DIM }}
+          style={{ ...rowBtn, border: 'none', padding: '0', opacity: isAnalyzing || !urlInput.trim() ? 0.3 : 1, cursor: isAnalyzing || !urlInput.trim() ? 'default' : 'pointer' }}
+          onMouseEnter={e => { if (!isAnalyzing && urlInput.trim()) e.currentTarget.style.color = HOVER }}
+          onMouseLeave={e => { e.currentTarget.style.color = DIM }}
         >
           →
         </button>
@@ -139,20 +137,25 @@ export default function SourcePanel({ width }: { width: number }) {
       {/* Source list */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '10px' }}>
         {sources.length > 0 && (
-          <div style={{ padding: '0 10px 8px', flexShrink: 0 }}>
+          <div
+            style={{
+              margin: '0 10px 8px', padding: '7px 14px',
+              background: BG, border: `1px dashed ${BORD}`,
+              borderRadius: '4px', flexShrink: 0,
+              transition: 'border-color 0.15s',
+            }}
+            onFocusCapture={e => (e.currentTarget.style.borderColor = BORD_FOCUS)}
+            onBlurCapture={e => (e.currentTarget.style.borderColor = BORD)}
+          >
             <input
               value={filterInput}
               onChange={e => setFilterInput(e.target.value)}
               placeholder="Filter..."
               style={{
-                width: '100%', background: BG, border: `1px solid ${BORD}`,
-                borderRadius: '4px', outline: 'none', padding: '7px 14px',
+                width: '100%', background: 'transparent', border: 'none', outline: 'none',
                 fontSize: '12px', color: DIM, fontFamily: 'inherit',
-                letterSpacing: '0.06em', boxSizing: 'border-box',
-                WebkitAppearance: 'none', appearance: 'none',
+                letterSpacing: '0.06em',
               }}
-              onFocus={e => (e.currentTarget.style.borderColor = BORD_FOCUS)}
-              onBlur={e => (e.currentTarget.style.borderColor = BORD)}
             />
           </div>
         )}
