@@ -4,11 +4,10 @@ import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
 import type { User } from '@supabase/supabase-js'
-import { PDF_FREE_LIMIT } from '@/lib/storage'
-import { useApp } from '@/context/AppContext'
+import { loadProjects, PDF_FREE_LIMIT } from '@/lib/storage'
 
 export default function AccountPage() {
-  const { pdfCount } = useApp()
+  const [pdfCount, setPdfCount]         = useState(0)
   const [user, setUser]                 = useState<User | null>(null)
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [loading, setLoading]           = useState(true)
@@ -24,6 +23,12 @@ export default function AccountPage() {
   const router = useRouter()
 
   useEffect(() => {
+    const projects = loadProjects()
+    const count = projects.reduce(
+      (acc, p) => acc + p.sources.filter((s: { status: string }) => s.status !== 'error').length, 0
+    )
+    setPdfCount(count)
+
     const sb = getSupabaseBrowser()
     sb.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { router.push('/auth'); return }
