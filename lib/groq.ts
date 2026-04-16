@@ -15,7 +15,7 @@ Extract verbatim where possible. Never invent, guess, or paraphrase data not pre
   "methodology": "research design, instruments, measures, analytic approach — verbatim, or null",
   "stats": ["Numerical results with full context — always include the label, subject, and unit alongside the number. Format as a complete phrase e.g. '42 firefighters died from cardiovascular events', '72% of participants reported...', 'p = 0.03 for the correlation between X and Y'. Never extract a bare number without its label. Do NOT include sample size here. Leave [] if no numerical results are present."],
   "findings": ["Key results from the results section — verbatim or near-verbatim — up to 8. Leave [] if results section is not in the provided text."],
-  "conclusions": ["What the authors conclude or recommend — verbatim or near-verbatim — up to 5"],
+  "conclusions": ["Notable statements, positions, or recommendations from the document — verbatim or near-verbatim — up to 5. Do not interpret or infer. Only extract what is explicitly stated."],
   "quotes": ["Direct quotes worth citing — exact text with punctuation — up to 4, or []"],
   "limitations": ["Limitations the authors acknowledge — verbatim — up to 5, or []"],
   "concepts": ["Named theories, frameworks, constructs, or models only — no proper nouns, no names of people, organizations, or cases — up to 8"],

@@ -34,7 +34,7 @@ function formatBreakdown(result: AnalysisResult, fmt: 'txt' | 'md'): string {
     lines.push(h('Findings'), ...result.findings.map(li), '')
   }
   if (result.conclusions?.length) {
-    lines.push(h('Conclusions'), ...result.conclusions.map(li), '')
+    lines.push(h('Key Points'), ...result.conclusions.map(li), '')
   }
   if (result.quotes?.length) {
     lines.push(h('Direct Quotes'), ...result.quotes.map(q => li(`"${q}"`)), '')

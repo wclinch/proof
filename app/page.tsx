@@ -46,7 +46,7 @@ export default function Home() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
               ['Add a source', 'Drop a PDF or paste a URL. Proof reads the full text and extracts every verifiable claim automatically.'],
-              ['Structured extraction', 'Statistics, findings, direct quotes, and conclusions are pulled out and organized — not summarized, not paraphrased.'],
+              ['Structured extraction', 'Statistics, findings, direct quotes, and key points are pulled out and organized — not summarized, not paraphrased.'],
               ['Jump to the source', 'Click any fact to jump to its exact location in the original text. See it in context, not in isolation.'],
               ['Build an audit trail', 'Every fact you verify is hashed and logged. Useful for citation tracking, case prep, or academic review.'],
             ] as const).map(([title, body]) => (

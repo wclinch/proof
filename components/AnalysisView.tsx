@@ -62,7 +62,7 @@ export default function AnalysisView({
       )}
 
       {result.conclusions?.length > 0 && (
-        <Field label="Conclusions">
+        <Field label="Key Points">
           {result.conclusions.map((c, i) => <Row key={i} value={c} onJump={onJump} />)}
         </Field>
       )}
