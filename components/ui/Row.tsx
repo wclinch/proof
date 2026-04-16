@@ -15,7 +15,7 @@ export default function Row({ value, onJump }: { value: string; onJump?: (t: str
       <div
         style={{
           fontSize: '13px',
-          color: '#555',
+          color: '#777',
           lineHeight: 1.7,
           padding: '5px 12px',
           flex: 1,
