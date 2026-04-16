@@ -255,6 +255,11 @@ export default function AccountPage() {
             >
               {confirmDelete ? 'Confirm — this cannot be undone' : 'Delete account'}
             </button>
+            {!confirmDelete && (
+              <div style={{ marginTop: '8px', fontSize: '11px', color: '#555', letterSpacing: '0.03em' }}>
+                A confirmation step is required.
+              </div>
+            )}
             {confirmDelete && (
               <button
                 onClick={() => setConfirmDelete(false)}
