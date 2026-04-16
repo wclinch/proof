@@ -3,6 +3,27 @@ import { useState, useRef, useEffect } from 'react'
 import { useApp } from '@/context/AppContext'
 import SourceItem from './SourceItem'
 
+// Design tokens — shared across every row in the left panel
+const BG         = '#0d0d0d'
+const BORD       = '#1a1a1a'
+const BORD_FOCUS = '#333'
+const TEXT       = '#444'   // hint text + placeholder (matched via .sp-input::placeholder in globals.css)
+const TEXT_HOVER = '#888'
+
+// The same visual shell used for every row
+const rowShell: React.CSSProperties = {
+  margin: '10px 10px 0',
+  padding: '11px 14px',
+  background: BG,
+  border: `1px dashed ${BORD}`,
+  borderRadius: '4px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  flexShrink: 0,
+  transition: 'border-color 0.15s',
+}
+
 export default function SourcePanel({ width }: { width: number }) {
   const { sources, uploadFiles, isAnalyzing, addUrl } = useApp()
   const [urlInput, setUrlInput] = useState('')
@@ -16,101 +37,67 @@ export default function SourcePanel({ width }: { width: number }) {
     return () => clearTimeout(t)
   }, [filterInput])
 
-  // Shared token values for the left panel
-  const DIM   = '#2a2a2a'   // all placeholder / label text
-  const HOVER = '#555'      // hover text
-  const BG    = '#0d0d0d'   // all input / zone backgrounds
-  const BORD  = '#1a1a1a'   // all borders at rest
-  const BORD_FOCUS = '#333' // border on focus / drag
-
-  const rowBtn: React.CSSProperties = {
-    flexShrink: 0,
-    background: 'none', border: `1px solid ${BORD}`, borderRadius: '3px',
-    padding: '4px 10px', color: DIM, fontSize: '12px',
-    cursor: 'pointer', fontFamily: 'inherit', outline: 'none',
-    letterSpacing: '0.06em', transition: 'border-color 0.15s, color 0.15s',
-  }
-
   return (
-    <div style={{
-      width, flexShrink: 0,
-      display: 'flex', flexDirection: 'column',
-      overflow: 'hidden',
-    }}>
-      {/* Drop zone */}
+    <div style={{ width, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+      {/* Row 1 — PDF drop zone */}
       <div
         onDragOver={e => { e.preventDefault(); setDragOver(true) }}
         onDragLeave={() => setDragOver(false)}
         onDrop={e => {
-          e.preventDefault()
-          setDragOver(false)
-          const allowed = Array.from(e.dataTransfer.files).filter(f =>
-            f.type === 'application/pdf' || f.name.endsWith('.pdf')
-          )
-          if (allowed.length) uploadFiles(allowed as unknown as FileList)
+          e.preventDefault(); setDragOver(false)
+          const pdfs = Array.from(e.dataTransfer.files).filter(f =>
+            f.type === 'application/pdf' || f.name.endsWith('.pdf'))
+          if (pdfs.length) uploadFiles(pdfs as unknown as FileList)
         }}
         onClick={() => !isAnalyzing && fileRef.current?.click()}
         style={{
-          margin: '10px 10px 0', padding: '12px 14px',
+          ...rowShell,
           background: dragOver ? '#111' : BG,
-          border: `1px dashed ${dragOver ? BORD_FOCUS : BORD}`,
-          borderRadius: '4px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderColor: dragOver ? BORD_FOCUS : BORD,
           cursor: isAnalyzing ? 'default' : 'pointer',
-          transition: 'border-color 0.15s, background 0.15s',
-          flexShrink: 0,
         }}
       >
-        <span style={{ fontSize: '12px', color: dragOver ? HOVER : DIM, letterSpacing: '0.06em' }}>
-          {isAnalyzing ? 'Analyzing...' : dragOver ? 'Drop to add' : 'Drop PDFs or click ↑'}
+        <span style={{ flex: 1, fontSize: '12px', color: dragOver ? TEXT_HOVER : TEXT, letterSpacing: '0.06em' }}>
+          {isAnalyzing ? 'Analyzing...' : dragOver ? 'Drop to add' : 'Drop PDFs or click'}
         </span>
         <button
           onClick={e => { e.stopPropagation(); if (!isAnalyzing) fileRef.current?.click() }}
           disabled={isAnalyzing}
-          style={{ ...rowBtn, color: isAnalyzing ? '#1e1e1e' : DIM, cursor: isAnalyzing ? 'default' : 'pointer' }}
-          onMouseEnter={e => { if (!isAnalyzing) { e.currentTarget.style.borderColor = BORD_FOCUS; e.currentTarget.style.color = HOVER } }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = BORD; e.currentTarget.style.color = isAnalyzing ? '#1e1e1e' : DIM }}
+          style={{
+            flexShrink: 0, background: 'none', border: `1px solid ${BORD}`,
+            borderRadius: '3px', padding: '3px 8px',
+            color: isAnalyzing ? BORD : TEXT, fontSize: '12px',
+            cursor: isAnalyzing ? 'default' : 'pointer',
+            fontFamily: 'inherit', outline: 'none',
+            transition: 'border-color 0.15s, color 0.15s',
+          }}
+          onMouseEnter={e => { if (!isAnalyzing) { e.currentTarget.style.borderColor = BORD_FOCUS; e.currentTarget.style.color = TEXT_HOVER } }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = BORD; e.currentTarget.style.color = isAnalyzing ? BORD : TEXT }}
         >
           ↑
         </button>
       </div>
 
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".pdf"
-        multiple
-        style={{ display: 'none' }}
-        onChange={e => {
-          if (e.target.files?.length) {
-            uploadFiles(e.target.files)
-            e.target.value = ''
-          }
-        }}
+      <input ref={fileRef} type="file" accept=".pdf" multiple style={{ display: 'none' }}
+        onChange={e => { if (e.target.files?.length) { uploadFiles(e.target.files); e.target.value = '' } }}
       />
 
-      {/* URL input — container styled like the drop zone so browser can't fight it */}
+      {/* Row 2 — URL input (same shell, transparent input inside) */}
       <form
         onSubmit={e => {
           e.preventDefault()
-          const trimmed = urlInput.trim()
-          if (!trimmed || isAnalyzing) return
-          addUrl(trimmed)
-          setUrlInput('')
+          const v = urlInput.trim()
+          if (!v || isAnalyzing) return
+          addUrl(v); setUrlInput('')
         }}
-        style={{
-          margin: '6px 10px 0', padding: '12px 14px',
-          background: BG, border: `1px dashed ${BORD}`,
-          borderRadius: '4px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexShrink: 0,
-          transition: 'border-color 0.15s',
-        }}
+        style={{ ...rowShell }}
         onFocusCapture={e => (e.currentTarget.style.borderColor = BORD_FOCUS)}
         onBlurCapture={e => (e.currentTarget.style.borderColor = BORD)}
       >
         <input
           type="text"
+          className="sp-input"
           placeholder="Paste a link..."
           value={urlInput}
           onChange={e => setUrlInput(e.target.value)}
@@ -118,63 +105,62 @@ export default function SourcePanel({ width }: { width: number }) {
           style={{
             flex: 1, minWidth: 0,
             background: 'transparent', border: 'none', outline: 'none',
-            fontSize: '12px', color: DIM, fontFamily: 'inherit',
+            fontSize: '12px', color: TEXT, fontFamily: 'inherit',
             letterSpacing: '0.06em',
-            opacity: isAnalyzing ? 0.4 : 1,
+            opacity: isAnalyzing ? 0.5 : 1,
           }}
         />
         <button
           type="submit"
           disabled={isAnalyzing || !urlInput.trim()}
-          style={{ ...rowBtn, border: 'none', padding: '0', opacity: isAnalyzing || !urlInput.trim() ? 0.3 : 1, cursor: isAnalyzing || !urlInput.trim() ? 'default' : 'pointer' }}
-          onMouseEnter={e => { if (!isAnalyzing && urlInput.trim()) e.currentTarget.style.color = HOVER }}
-          onMouseLeave={e => { e.currentTarget.style.color = DIM }}
+          style={{
+            flexShrink: 0, background: 'none', border: 'none',
+            padding: 0, color: urlInput.trim() ? TEXT : BORD,
+            fontSize: '12px', cursor: urlInput.trim() && !isAnalyzing ? 'pointer' : 'default',
+            fontFamily: 'inherit', outline: 'none',
+            transition: 'color 0.15s',
+          }}
+          onMouseEnter={e => { if (urlInput.trim() && !isAnalyzing) e.currentTarget.style.color = TEXT_HOVER }}
+          onMouseLeave={e => { e.currentTarget.style.color = urlInput.trim() ? TEXT : BORD }}
         >
           →
         </button>
       </form>
 
       {/* Source list */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '10px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
         {sources.length > 0 && (
           <div
-            style={{
-              margin: '0 10px 8px', padding: '7px 14px',
-              background: BG, border: `1px dashed ${BORD}`,
-              borderRadius: '4px', flexShrink: 0,
-              transition: 'border-color 0.15s',
-            }}
+            style={{ ...rowShell, padding: '9px 14px' }}
             onFocusCapture={e => (e.currentTarget.style.borderColor = BORD_FOCUS)}
             onBlurCapture={e => (e.currentTarget.style.borderColor = BORD)}
           >
             <input
+              className="sp-input"
               value={filterInput}
               onChange={e => setFilterInput(e.target.value)}
               placeholder="Filter..."
               style={{
-                width: '100%', background: 'transparent', border: 'none', outline: 'none',
-                fontSize: '12px', color: DIM, fontFamily: 'inherit',
+                flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                fontSize: '12px', color: TEXT, fontFamily: 'inherit',
                 letterSpacing: '0.06em',
               }}
             />
           </div>
         )}
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          {sources.length === 0 ? (
-            <div style={{ padding: '8px 14px', fontSize: '12px', color: DIM, letterSpacing: '0.06em' }}>
-              No documents yet.
-            </div>
-          ) : (() => {
-            const q = filter.trim().toLowerCase()
-            const visible = q
-              ? sources.filter(s =>
-                  (s.label || s.result?.title || s.raw).toLowerCase().includes(q)
-                )
-              : sources
-            return visible.length === 0
-              ? <div style={{ padding: '20px 14px', fontSize: '12px', color: DIM, letterSpacing: '0.06em' }}>No match.</div>
-              : visible.map(src => <SourceItem key={src.id} src={src} />)
-          })()}
+          {sources.length === 0
+            ? <div style={{ padding: '10px 14px', fontSize: '12px', color: TEXT, letterSpacing: '0.06em' }}>No documents yet.</div>
+            : (() => {
+                const q = filter.trim().toLowerCase()
+                const visible = q
+                  ? sources.filter(s => (s.label || s.result?.title || s.raw).toLowerCase().includes(q))
+                  : sources
+                return visible.length === 0
+                  ? <div style={{ padding: '20px 14px', fontSize: '12px', color: TEXT, letterSpacing: '0.06em' }}>No match.</div>
+                  : visible.map(src => <SourceItem key={src.id} src={src} />)
+              })()
+          }
         </div>
       </div>
     </div>
