@@ -18,8 +18,8 @@ export default function Home() {
           </h1>
 
           <p style={{ fontSize: '15px', color: '#444', lineHeight: 1.8, margin: '0 0 40px', maxWidth: '480px' }}>
-            Drop a PDF. Every statistic, finding, and quote is extracted and structured.
-            Click any fact to jump to where it lives in the document.
+            Drop a PDF or paste a link. Every statistic, finding, and quote is extracted and structured.
+            Click any fact to jump to where it lives in the source.
             Built for researchers, lawyers, and analysts who need to verify fast.
           </p>
 
@@ -33,7 +33,7 @@ export default function Home() {
               Start verifying →
             </a>
             <span style={{ fontSize: '12px', color: '#444', letterSpacing: '0.04em' }}>
-              First 5 PDFs free. $3/month after.
+              First 5 sources free. $3/month after.
             </span>
           </div>
         </section>
