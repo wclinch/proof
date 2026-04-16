@@ -333,7 +333,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const src: QueuedSource = {
       id: uid(), raw: url, status: 'queued',
-      result: null, rawText: null, error: null, label: url,
+      result: null, rawText: null, error: null, label: undefined,
     }
 
     updateProject(activeId, { sources: [...sources, src] })
