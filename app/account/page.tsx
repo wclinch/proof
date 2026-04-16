@@ -127,7 +127,13 @@ export default function AccountPage() {
             {!isSubscribed ? (
               <button
                 onClick={async () => {
-                  const res = await fetch('/api/stripe/checkout', { method: 'POST' })
+                  const sb = getSupabaseBrowser()
+                  const { data: { session } } = await sb.auth.getSession()
+                  if (!session) return
+                  const res = await fetch('/api/stripe/checkout', {
+                    method: 'POST',
+                    headers: { authorization: `Bearer ${session.access_token}` },
+                  })
                   const { url } = await res.json()
                   if (url) window.location.href = url
                 }}
@@ -147,7 +153,13 @@ export default function AccountPage() {
             ) : (
               <button
                 onClick={async () => {
-                  const res = await fetch('/api/stripe/portal', { method: 'POST' })
+                  const sb = getSupabaseBrowser()
+                  const { data: { session } } = await sb.auth.getSession()
+                  if (!session) return
+                  const res = await fetch('/api/stripe/portal', {
+                    method: 'POST',
+                    headers: { authorization: `Bearer ${session.access_token}` },
+                  })
                   const { url } = await res.json()
                   if (url) window.location.href = url
                 }}

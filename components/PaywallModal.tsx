@@ -1,6 +1,7 @@
 'use client'
 import { useApp } from '@/context/AppContext'
 import { PDF_FREE_LIMIT } from '@/lib/storage'
+import { getSupabaseBrowser } from '@/lib/supabase-browser'
 
 export default function PaywallModal() {
   const { showPaywall, setShowPaywall, user } = useApp()
@@ -65,7 +66,13 @@ export default function PaywallModal() {
           ) : (
             <button
               onClick={async () => {
-                const res = await fetch('/api/stripe/checkout', { method: 'POST' })
+                const sb = getSupabaseBrowser()
+                const { data: { session } } = await sb.auth.getSession()
+                if (!session) return
+                const res = await fetch('/api/stripe/checkout', {
+                  method: 'POST',
+                  headers: { authorization: `Bearer ${session.access_token}` },
+                })
                 const { url } = await res.json()
                 if (url) window.location.href = url
               }}
