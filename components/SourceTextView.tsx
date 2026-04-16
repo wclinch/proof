@@ -8,6 +8,7 @@ function cleanText(raw: string): string {
   return raw
     .replace(/^(Title|URL Source|Markdown Content):[^\n]*/gm, '')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, '')          // strip images before links
+    .replace(/\[\[\d+\]\]\([^)]*\)/g, '')          // strip [[n]](url) footnotes
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/^#{1,6}\s+/gm, '')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
@@ -15,6 +16,13 @@ function cleanText(raw: string): string {
     .replace(/^[•·]\s*/gm, '- ')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
+}
+
+// Extend a match range to the end of the sentence (next '. ', '.' EOL, or block end)
+function extendToSentence(block: string, start: number, end: number): number {
+  const sentenceEnd = block.indexOf('.', end)
+  if (sentenceEnd === -1 || sentenceEnd - start > 600) return Math.min(block.length, end + 20)
+  return sentenceEnd + 1
 }
 
 // Split into blocks: blank-line-separated paragraphs
@@ -63,7 +71,8 @@ export default function SourceTextView({ text, highlight }: { text: string; high
       for (let bi = 0; bi < blocks.length; bi++) {
         const idx = blocks[bi].toLowerCase().indexOf(needle)
         if (idx !== -1) {
-          matchBlock = bi; matchStart = idx; matchEnd = idx + needle.length
+          matchBlock = bi; matchStart = idx
+          matchEnd = extendToSentence(blocks[bi], idx, idx + needle.length)
           break outer
         }
       }
@@ -77,7 +86,8 @@ export default function SourceTextView({ text, highlight }: { text: string; high
           if (joinedIdx >= offset && joinedIdx <= end) {
             matchBlock = bi
             matchStart = Math.max(0, joinedIdx - offset)
-            matchEnd   = Math.min(blocks[bi].length, matchStart + needle.length)
+            const rawEnd = Math.min(blocks[bi].length, matchStart + needle.length)
+            matchEnd = extendToSentence(blocks[bi], matchStart, rawEnd)
             break outer
           }
           offset += blocks[bi].length + 1 // +1 for the space separator

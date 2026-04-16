@@ -108,6 +108,7 @@ export async function POST(req: NextRequest) {
       fullText = raw
         .replace(/^(Title|URL Source|Markdown Content):[^\n]*/gm, '')
         .replace(/!\[[^\]]*\]\([^)]*\)/g, '')          // strip images before links
+        .replace(/\[\[\d+\]\]\([^)]*\)/g, '')          // strip [[n]](url) footnotes
         .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
         .replace(/^#{1,6}\s+/gm, '')
         .replace(/\*\*([^*]+)\*\*/g, '$1')
