@@ -10,8 +10,9 @@ body {
 
 input, button, textarea, select { font-family: inherit; }
 
-/* Source panel inputs — keep placeholder dim to match hint text */
+/* Source panel inputs */
 .sp-input::placeholder { color: #444; opacity: 1; }
+.sp-input { -webkit-text-fill-color: #888; }
 
 button, nav, label { user-select: none; }
 
