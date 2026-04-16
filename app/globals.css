@@ -15,17 +15,17 @@ input, button, textarea, select { font-family: inherit; }
 .sp-input { color: #444 !important; }
 
 /* Synthesis panel placeholders */
-.draft-title::placeholder { color: #333; opacity: 1; }
-.draft-body::placeholder  { color: #333; opacity: 1; }
+.draft-title::placeholder { color: #444; opacity: 1; }
+.draft-body::placeholder  { color: #444; opacity: 1; }
 
 button, nav, label { user-select: none; }
 
 /* Scrollbars */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #1e1e1e; border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: #2a2a2a; }
-* { scrollbar-width: thin; scrollbar-color: #1e1e1e transparent; }
+* { scrollbar-width: thin; scrollbar-color: #1a1a1a transparent; }
 
 ::selection {
   background: #2a2a2a;

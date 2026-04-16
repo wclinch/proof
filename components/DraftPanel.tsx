@@ -7,32 +7,23 @@ type CtxMenu = { x: number; y: number }
 export default function DraftPanel({ width }: { width: number }) {
   const { activeProject, activeId, updateProject } = useApp()
 
-  // Draft title: synced immediately (short, infrequent, needed by API calls)
   const [localTitle, setLocalTitle] = useState(activeProject?.draftTitle ?? '')
-
-  // Draft body: local state with debounced sync — zero typing lag
   const [localDraft, setLocalDraft] = useState(activeProject?.draft ?? '')
-
   const [ctxMenu, setCtxMenu]       = useState<CtxMenu | null>(null)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const draftTitleRef = useRef<HTMLInputElement>(null)
 
-  // Reinitialize local state when active project switches
   useEffect(() => {
     setLocalTitle(activeProject?.draftTitle ?? '')
     setLocalDraft(activeProject?.draft ?? '')
   }, [activeProject?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Debounced sync of draft body to context/localStorage (800ms)
   useEffect(() => {
     if (!activeId) return
-    const t = setTimeout(() => {
-      updateProject(activeId, { draft: localDraft })
-    }, 800)
+    const t = setTimeout(() => { updateProject(activeId, { draft: localDraft }) }, 800)
     return () => clearTimeout(t)
   }, [localDraft]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Immediate sync of draft title
   useEffect(() => {
     if (!activeId) return
     updateProject(activeId, { draftTitle: localTitle })
@@ -40,21 +31,16 @@ export default function DraftPanel({ width }: { width: number }) {
 
   const hasDraft = !!(activeProject?.draftCreated || localTitle || localDraft)
 
-  // ⌘↵ / Ctrl+↵ to start a new draft when nothing is focused
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if (!hasDraft && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
         const tag = (document.activeElement as HTMLElement)?.tagName?.toLowerCase()
-        if (tag !== 'input' && tag !== 'textarea') {
-          e.preventDefault()
-          handleNewDraft()
-        }
+        if (tag !== 'input' && tag !== 'textarea') { e.preventDefault(); handleNewDraft() }
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [hasDraft, activeId]) // eslint-disable-line react-hooks/exhaustive-deps
-
 
   const wordCount = localDraft.split(/\s+/).filter(Boolean).length
 
@@ -66,14 +52,13 @@ export default function DraftPanel({ width }: { width: number }) {
 
   function handleDiscard() {
     if (!activeId) return
-    setLocalTitle('')
-    setLocalDraft('')
+    setLocalTitle(''); setLocalDraft('')
     updateProject(activeId, { draftCreated: false, draft: '', draftTitle: '' })
   }
 
   function handleExport(fmt: 'txt' | 'md') {
-    const title = localTitle.trim() || 'draft'
-    const slug  = title.replace(/\s+/g, '-').toLowerCase()
+    const title   = localTitle.trim() || 'draft'
+    const slug    = title.replace(/\s+/g, '-').toLowerCase()
     const content = fmt === 'md'
       ? `# ${title}\n\n${localDraft}`
       : `${title}\n${'—'.repeat(title.length)}\n\n${localDraft}`
@@ -99,7 +84,7 @@ export default function DraftPanel({ width }: { width: number }) {
   const menuBtn: React.CSSProperties = {
     display: 'block', width: '100%', textAlign: 'left',
     background: 'none', border: 'none', padding: '9px 14px',
-    cursor: 'pointer', fontSize: '12px', color: '#777',
+    cursor: 'pointer', fontSize: '12px', color: '#555',
     letterSpacing: '0.04em', fontFamily: 'inherit',
   }
 
@@ -109,7 +94,6 @@ export default function DraftPanel({ width }: { width: number }) {
     if (!menuBtnRef.current) return
     setConfirmDiscard(false)
     const rect = menuBtnRef.current.getBoundingClientRect()
-    // anchor to right edge of button so menu doesn't overflow viewport
     setCtxMenu({ x: window.innerWidth - rect.right, y: rect.bottom + 4 })
   }
 
@@ -133,11 +117,10 @@ export default function DraftPanel({ width }: { width: number }) {
               onClick={openCtxMenu}
               style={{
                 background: 'none', border: 'none', padding: '0 2px', cursor: 'pointer', outline: 'none',
-                fontSize: '14px', color: '#333', letterSpacing: '0.1em', fontFamily: 'inherit',
-                lineHeight: 1,
+                fontSize: '14px', color: '#444', letterSpacing: '0.1em', fontFamily: 'inherit', lineHeight: 1,
               }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#666')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+              onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#444')}
               title="Options"
             >
               ···
@@ -157,7 +140,7 @@ export default function DraftPanel({ width }: { width: number }) {
               letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'inherit',
               outline: 'none', transition: 'border-color 0.15s, color 0.15s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#999' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#555' }}
           >
             New
@@ -169,7 +152,7 @@ export default function DraftPanel({ width }: { width: number }) {
       ) : (
         <>
           {/* Title */}
-          <div style={{ padding: '20px 28px 0', flexShrink: 0, borderBottom: '1px solid #111' }}>
+          <div style={{ padding: '20px 28px 0', flexShrink: 0, borderBottom: '1px solid #1a1a1a' }}>
             <input
               ref={draftTitleRef}
               value={localTitle}
@@ -194,7 +177,7 @@ export default function DraftPanel({ width }: { width: number }) {
             placeholder={localTitle.trim() ? 'Start writing...' : 'Add a title first...'}
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
-              color: localTitle.trim() ? '#666' : '#2a2a2a',
+              color: localTitle.trim() ? '#555' : '#2a2a2a',
               fontSize: '14px', lineHeight: 1.9, padding: '20px 28px',
               resize: 'none', fontFamily: 'inherit', overflowY: 'auto',
               cursor: localTitle.trim() ? 'text' : 'default',
@@ -211,47 +194,45 @@ export default function DraftPanel({ width }: { width: number }) {
             onClick={() => { setCtxMenu(null); setConfirmDiscard(false) }}
             style={{ position: 'fixed', inset: 0, zIndex: 199 }}
           />
-          <div
-            style={{
+          <div style={{
             position: 'fixed', right: ctxMenu.x, top: ctxMenu.y,
-            background: '#141414', border: '1px solid #2a2a2a',
+            background: '#0d0d0d', border: '1px solid #1a1a1a',
             borderRadius: '4px', zIndex: 200, minWidth: '140px',
             overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-          }}
-        >
-          {localDraft.trim() && (
-            <>
-              <button
-                onClick={() => { handleExport('txt'); setCtxMenu(null) }}
-                style={menuBtn}
-                onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-              >
-                Export .txt
-              </button>
-              <button
-                onClick={() => { handleExport('md'); setCtxMenu(null) }}
-                style={menuBtn}
-                onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-              >
-                Export .md
-              </button>
-              <div style={{ height: '1px', background: '#1e1e1e' }} />
-            </>
-          )}
-          <button
-            onClick={() => {
-              if (confirmDiscard) { handleDiscard(); setCtxMenu(null) }
-              else setConfirmDiscard(true)
-            }}
-            style={{ ...menuBtn, color: confirmDiscard ? '#e55' : '#c55' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-          >
-            {confirmDiscard ? 'Confirm?' : 'Discard'}
-          </button>
-        </div>
+          }}>
+            {localDraft.trim() && (
+              <>
+                <button
+                  onClick={() => { handleExport('txt'); setCtxMenu(null) }}
+                  style={menuBtn}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#1a1a1a')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  Export .txt
+                </button>
+                <button
+                  onClick={() => { handleExport('md'); setCtxMenu(null) }}
+                  style={menuBtn}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#1a1a1a')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  Export .md
+                </button>
+                <div style={{ height: '1px', background: '#1a1a1a' }} />
+              </>
+            )}
+            <button
+              onClick={() => {
+                if (confirmDiscard) { handleDiscard(); setCtxMenu(null) }
+                else setConfirmDiscard(true)
+              }}
+              style={{ ...menuBtn, color: confirmDiscard ? '#e55' : '#c55' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#1a1a1a')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              {confirmDiscard ? 'Confirm?' : 'Discard'}
+            </button>
+          </div>
         </>
       )}
     </div>

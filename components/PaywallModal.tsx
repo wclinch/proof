@@ -37,14 +37,14 @@ export default function PaywallModal() {
                 href="/auth?mode=signup"
                 style={{
                   display: 'block', textAlign: 'center',
-                  background: '#1a1a1a', border: '1px solid #2a2a2a',
+                  background: '#1a1a1a', border: '1px solid #1a1a1a',
                   borderRadius: '4px', padding: '10px 20px',
                   fontSize: '12px', color: '#bbb', letterSpacing: '0.08em',
                   textTransform: 'uppercase', textDecoration: 'none',
                   transition: 'border-color 0.15s, color 0.15s',
                 }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#444'; (e.currentTarget as HTMLElement).style.color = '#fff' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2a2a2a'; (e.currentTarget as HTMLElement).style.color = '#bbb' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1a1a1a'; (e.currentTarget as HTMLElement).style.color = '#bbb' }}
               >
                 Create account
               </a>
@@ -53,10 +53,10 @@ export default function PaywallModal() {
                 style={{
                   display: 'block', textAlign: 'center',
                   padding: '10px 20px',
-                  fontSize: '12px', color: '#333', letterSpacing: '0.08em',
+                  fontSize: '12px', color: '#444', letterSpacing: '0.08em',
                   textTransform: 'uppercase', textDecoration: 'none',
                 }}
-                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#555')}
+                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#777')}
                 onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#333')}
               >
                 Sign in
@@ -74,9 +74,9 @@ export default function PaywallModal() {
           style={{
             position: 'absolute', top: '16px', right: '16px',
             background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: '16px', color: '#333', padding: '4px', lineHeight: 1,
+            fontSize: '16px', color: '#444', padding: '4px', lineHeight: 1,
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#666')}
+          onMouseEnter={e => (e.currentTarget.style.color = '#777')}
           onMouseLeave={e => (e.currentTarget.style.color = '#333')}
         >
           ×

@@ -78,7 +78,7 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
         padding: '10px 16px',
         cursor: 'pointer',
         background: isSelected ? '#111' : 'transparent',
-        borderLeft: `2px solid ${isPrimary ? '#333' : isSelected ? '#222' : 'transparent'}`,
+        borderLeft: `2px solid ${isPrimary ? '#333' : isSelected ? '#1a1a1a' : 'transparent'}`,
         display: 'flex',
         alignItems: 'flex-start',
         gap: '9px',

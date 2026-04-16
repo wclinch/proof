@@ -7,7 +7,7 @@ export default function JumpBtn({ onClick }: { onClick: () => void }) {
       title="Locate in source"
       style={{
         background: 'none',
-        border: '1px solid #252525',
+        border: '1px solid #1a1a1a',
         padding: '0 8px',
         height: '22px',
         cursor: 'pointer',
@@ -25,8 +25,8 @@ export default function JumpBtn({ onClick }: { onClick: () => void }) {
         marginTop: '6px',
         transition: 'border-color 0.15s, color 0.15s',
       }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#888' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = '#252525'; e.currentTarget.style.color = '#444' }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
     >
       source
     </button>

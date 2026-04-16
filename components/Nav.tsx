@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export default function Nav() {
   const linkStyle: React.CSSProperties = {
-    fontSize: '11px', color: '#333', letterSpacing: '0.08em',
+    fontSize: '11px', color: '#444', letterSpacing: '0.08em',
     textTransform: 'uppercase', textDecoration: 'none',
   }
 
@@ -22,9 +22,9 @@ export default function Nav() {
       </Link>
 
       <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-        <Link href="/about"   style={linkStyle} onMouseEnter={undefined}>About</Link>
-        <Link href="/privacy" style={linkStyle}>Privacy</Link>
-        <a href="mailto:proof_official@protonmail.com" style={linkStyle}>Contact</a>
+        <Link href="/about"   className="nav-link" style={linkStyle}>About</Link>
+        <Link href="/privacy" className="nav-link" style={linkStyle}>Privacy</Link>
+        <a href="mailto:proof_official@protonmail.com" className="nav-link" style={linkStyle}>Contact</a>
       </div>
     </nav>
   )

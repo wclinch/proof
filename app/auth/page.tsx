@@ -34,17 +34,13 @@ export default function AuthPage() {
       if (data.user) {
         await (sb.from as any)('profiles').upsert({ id: data.user.id, subscribed: false }, { onConflict: 'id' })
       }
-      setSentType('confirm')
-      setSentTo(email)
-      setLoading(false)
-      return
+      setSentType('confirm'); setSentTo(email); setLoading(false); return
     }
 
     if (mode === 'login') {
       const { error: err } = await sb.auth.signInWithPassword({ email, password })
       if (err) { setError(err.message); setLoading(false); return }
-      router.push('/app')
-      return
+      router.push('/app'); return
     }
 
     if (mode === 'forgot') {
@@ -53,15 +49,12 @@ export default function AuthPage() {
         redirectTo: `${origin}/auth/callback?next=/auth/reset`,
       })
       if (err) { setError(err.message); setLoading(false); return }
-      setSentType('reset')
-      setSentTo(email)
-      setLoading(false)
-      return
+      setSentType('reset'); setSentTo(email); setLoading(false); return
     }
   }
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', background: '#0a0a0a', border: '1px solid #1e1e1e',
+    width: '100%', background: '#0d0d0d', border: '1px solid #1a1a1a',
     borderRadius: '4px', padding: '10px 14px', outline: 'none',
     fontSize: '13px', color: '#bbb', fontFamily: 'inherit',
     boxSizing: 'border-box', letterSpacing: '0.03em',
@@ -69,9 +62,17 @@ export default function AuthPage() {
 
   const backBtn: React.CSSProperties = {
     background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-    fontSize: '12px', color: '#333', letterSpacing: '0.06em',
+    fontSize: '12px', color: '#444', letterSpacing: '0.06em',
     textTransform: 'uppercase', fontFamily: 'inherit', textAlign: 'left',
   }
+
+  const submitBtn = (disabled: boolean): React.CSSProperties => ({
+    marginTop: '6px', background: '#0f0f0f', border: '1px solid #1a1a1a',
+    borderRadius: '4px', padding: '10px 20px', cursor: disabled ? 'default' : 'pointer',
+    fontSize: '12px', color: disabled ? '#2a2a2a' : '#555', letterSpacing: '0.08em',
+    textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
+    transition: 'border-color 0.15s, color 0.15s',
+  })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -86,15 +87,15 @@ export default function AuthPage() {
               </div>
               <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.75, margin: 0 }}>
                 {sentType === 'confirm'
-                  ? <>We sent a confirmation link to <span style={{ color: '#777' }}>{sentTo}</span>. Click it to activate your account and you&apos;ll land straight in the app.</>
+                  ? <>We sent a confirmation link to <span style={{ color: '#777' }}>{sentTo}</span>. Click it to activate your account.</>
                   : <>We sent a password reset link to <span style={{ color: '#777' }}>{sentTo}</span>. Click it to set a new password.</>
                 }
               </p>
               <button
                 onClick={() => switchMode('login')}
                 style={backBtn}
-                onMouseEnter={e => (e.currentTarget.style.color = '#555')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+                onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#444')}
               >
                 ← Back to sign in
               </button>
@@ -109,27 +110,18 @@ export default function AuthPage() {
               </div>
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
+                  type="email" placeholder="Email" value={email}
+                  onChange={e => setEmail(e.target.value)} required
                   style={inputStyle}
                   onFocus={e => (e.currentTarget.style.borderColor = '#333')}
-                  onBlur={e => (e.currentTarget.style.borderColor = '#1e1e1e')}
+                  onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
                 />
                 {error && <div style={{ fontSize: '12px', color: '#a44', letterSpacing: '0.03em' }}>{error}</div>}
                 <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    marginTop: '6px', background: '#141414', border: '1px solid #2a2a2a',
-                    borderRadius: '4px', padding: '10px 20px', cursor: loading ? 'default' : 'pointer',
-                    fontSize: '12px', color: loading ? '#333' : '#777', letterSpacing: '0.08em',
-                    textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
-                  }}
-                  onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#bbb' } }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = loading ? '#333' : '#777' }}
+                  type="submit" disabled={loading}
+                  style={submitBtn(loading)}
+                  onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' } }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = loading ? '#2a2a2a' : '#555' }}
                 >
                   {loading ? 'Sending...' : 'Send reset link →'}
                 </button>
@@ -137,8 +129,8 @@ export default function AuthPage() {
               <button
                 onClick={() => switchMode('login')}
                 style={backBtn}
-                onMouseEnter={e => (e.currentTarget.style.color = '#555')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+                onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#444')}
               >
                 ← Back to sign in
               </button>
@@ -154,7 +146,7 @@ export default function AuthPage() {
                     style={{
                       background: 'none', border: 'none', padding: 0, cursor: 'pointer',
                       fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase',
-                      fontFamily: 'inherit', color: mode === m ? '#aaa' : '#333',
+                      fontFamily: 'inherit', color: mode === m ? '#aaa' : '#444',
                     }}
                   >
                     {m === 'login' ? 'Sign in' : 'Create account'}
@@ -164,39 +156,25 @@ export default function AuthPage() {
 
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
+                  type="email" placeholder="Email" value={email}
+                  onChange={e => setEmail(e.target.value)} required
                   style={inputStyle}
                   onFocus={e => (e.currentTarget.style.borderColor = '#333')}
-                  onBlur={e => (e.currentTarget.style.borderColor = '#1e1e1e')}
+                  onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
                 />
                 <input
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                  minLength={6}
+                  type="password" placeholder="Password" value={password}
+                  onChange={e => setPassword(e.target.value)} required minLength={6}
                   style={inputStyle}
                   onFocus={e => (e.currentTarget.style.borderColor = '#333')}
-                  onBlur={e => (e.currentTarget.style.borderColor = '#1e1e1e')}
+                  onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
                 />
                 {error && <div style={{ fontSize: '12px', color: '#a44', letterSpacing: '0.03em', padding: '4px 0' }}>{error}</div>}
                 <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    marginTop: '6px', background: '#141414', border: '1px solid #2a2a2a',
-                    borderRadius: '4px', padding: '10px 20px', cursor: loading ? 'default' : 'pointer',
-                    fontSize: '12px', color: loading ? '#333' : '#777', letterSpacing: '0.08em',
-                    textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
-                    transition: 'border-color 0.15s, color 0.15s',
-                  }}
-                  onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#bbb' } }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = loading ? '#333' : '#777' }}
+                  type="submit" disabled={loading}
+                  style={submitBtn(loading)}
+                  onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' } }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = loading ? '#2a2a2a' : '#555' }}
                 >
                   {loading ? 'Please wait...' : mode === 'login' ? 'Sign in →' : 'Create account →'}
                 </button>
@@ -205,18 +183,18 @@ export default function AuthPage() {
               {mode === 'login' && (
                 <button
                   onClick={() => switchMode('forgot')}
-                  style={{ ...backBtn, color: '#2a2a2a' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#555')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+                  style={backBtn}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#444')}
                 >
                   Forgot password?
                 </button>
               )}
 
               {mode === 'signup' && (
-                <p style={{ fontSize: '12px', color: '#2a2a2a', lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontSize: '12px', color: '#444', lineHeight: 1.6, margin: 0 }}>
                   By creating an account you agree that your use of this service is subject to the{' '}
-                  <a href="/privacy" style={{ color: '#333', textDecoration: 'none' }}>privacy policy</a>.
+                  <a href="/privacy" className="nav-link" style={{ fontSize: '12px' }}>privacy policy</a>.
                 </p>
               )}
             </>

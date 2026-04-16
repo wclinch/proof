@@ -23,7 +23,7 @@ export default function SourcePanel({ width }: { width: number }) {
     margin: '10px 10px 0',
     padding: '11px 14px',
     background: '#0d0d0d',
-    border: '1px solid #1e1e1e',
+    border: '1px solid #1a1a1a',
     borderRadius: '4px',
     display: 'flex',
     alignItems: 'center',
@@ -36,7 +36,7 @@ export default function SourcePanel({ width }: { width: number }) {
     flexShrink: 0,
     marginLeft: 'auto',
     background: 'none',
-    border: '1px solid #1e1e1e',
+    border: '1px solid #1a1a1a',
     borderRadius: '3px',
     padding: '3px 9px',
     color: '#444',
@@ -64,7 +64,7 @@ export default function SourcePanel({ width }: { width: number }) {
         style={{
           ...shell,
           background: dragOver ? '#141414' : '#0d0d0d',
-          borderColor: dragOver ? '#333' : '#1e1e1e',
+          borderColor: dragOver ? '#333' : '#1a1a1a',
           cursor: isAnalyzing ? 'default' : 'pointer',
         }}
       >
@@ -75,8 +75,8 @@ export default function SourcePanel({ width }: { width: number }) {
           onClick={e => { e.stopPropagation(); if (!isAnalyzing) fileRef.current?.click() }}
           disabled={isAnalyzing}
           style={{ ...actionBtn, color: isAnalyzing ? '#2a2a2a' : '#444', cursor: isAnalyzing ? 'default' : 'pointer' }}
-          onMouseEnter={e => { if (!isAnalyzing) { e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#888' } }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.color = isAnalyzing ? '#2a2a2a' : '#444' }}
+          onMouseEnter={e => { if (!isAnalyzing) { e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#777' } }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = isAnalyzing ? '#2a2a2a' : '#444' }}
         >↑</button>
       </div>
       <input ref={fileRef} type="file" accept=".pdf" multiple style={{ display: 'none' }}
@@ -99,7 +99,7 @@ export default function SourcePanel({ width }: { width: number }) {
         }}
         onBlur={e => {
           if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-            e.currentTarget.style.borderColor = '#1e1e1e'
+            e.currentTarget.style.borderColor = '#1a1a1a'
           }
         }}
       >
@@ -129,8 +129,8 @@ export default function SourcePanel({ width }: { width: number }) {
             opacity: urlInput.trim() && !isAnalyzing ? 1 : 0.3,
             cursor: urlInput.trim() && !isAnalyzing ? 'pointer' : 'default',
           }}
-          onMouseEnter={e => { if (urlInput.trim() && !isAnalyzing) { e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#888' } }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.color = '#444' }}
+          onMouseEnter={e => { if (urlInput.trim() && !isAnalyzing) { e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#777' } }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
         >→</button>
       </form>
 
