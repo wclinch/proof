@@ -29,7 +29,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Proof is a verification workbench. Drop a source PDF — Proof extracts every claim, statistic, finding, and quote and structures them in order of verifiability. Click any fact to jump to its exact location in the document. Every jump is hashed and indexed.
+            Proof is a verification workbench. Drop a PDF or paste a URL — Proof extracts every claim, statistic, finding, and quote and structures them in order of verifiability. Click any fact to jump to its exact location in the source. Every jump is hashed and indexed.
           </p>
         </div>
 
@@ -37,7 +37,7 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How to use it</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#555' }}>1. Drop PDFs</span> — drag one or more PDF files into the left panel, or click the upload button. Each document is analyzed automatically.
+              <span style={{ color: '#555' }}>1. Add sources</span> — drop a PDF into the left panel, click the upload button, or paste a URL into the link field. Each source is analyzed automatically.
             </p>
             <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
               <span style={{ color: '#555' }}>2. Read the breakdown</span> — select a source from the list. The center panel shows extracted facts in order: statistics, findings, quotes, conclusions, then supporting context below.
@@ -68,7 +68,7 @@ export default function About() {
                 <div style={{ display: 'flex', gap: '4px', flexShrink: 0, minWidth: '110px' }}>
                   {row.keys.map((k, j) => <Kbd key={j}>{k}</Kbd>)}
                 </div>
-                <span style={{ fontSize: '13px', color: '#3a3a3a', lineHeight: 1.5 }}>{row.desc}</span>
+                <span style={{ fontSize: '13px', color: '#444', lineHeight: 1.5 }}>{row.desc}</span>
               </div>
             ))}
           </div>
@@ -84,7 +84,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Pricing</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            The first 5 PDFs are free — no account required. After that, $3/month with no PDF limit. Create an account to subscribe.
+            The first 5 sources are free — no account required. After that, $3/month with no limit. Create an account to subscribe.
           </p>
         </div>
 
