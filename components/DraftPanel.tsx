@@ -172,15 +172,13 @@ export default function DraftPanel({ width }: { width: number }) {
             className="draft-body"
             value={localDraft}
             onChange={e => setLocalDraft(e.target.value)}
-            disabled={!localTitle.trim()}
             onKeyDown={handleTab}
-            placeholder={localTitle.trim() ? 'Start writing...' : 'Add a title first...'}
+            placeholder="Start writing..."
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
-              color: localTitle.trim() ? '#999' : '#666',
+              color: '#999',
               fontSize: '14px', lineHeight: 1.9, padding: '20px 28px',
               resize: 'none', fontFamily: 'inherit', overflowY: 'auto',
-              cursor: localTitle.trim() ? 'text' : 'default',
               WebkitTextFillColor: 'inherit', opacity: 1,
             }}
           />
