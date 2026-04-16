@@ -148,6 +148,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const sub = data?.subscribed ?? false
     setIsSubscribed(sub)
     isSubscribedRef.current = sub
+    // Reset PDF cap counter when user is subscribed — no longer relevant
+    if (sub) {
+      setPdfCount(0)
+      setPdfCountState(0)
+    }
   }
 
   // Hydrate from localStorage once on mount

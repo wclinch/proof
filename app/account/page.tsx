@@ -51,8 +51,17 @@ export default function AccountPage() {
 
   async function handleDeleteAccount() {
     if (!confirmDelete) { setConfirmDelete(true); return }
-    // Requires service role — for now sign out and inform
-    await handleSignOut()
+    const sb = getSupabaseBrowser()
+    const { data: { session } } = await sb.auth.getSession()
+    if (!session) return
+    const res = await fetch('/api/account/delete', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${session.access_token}` },
+    })
+    if (res.ok) {
+      await sb.auth.signOut()
+      router.push('/')
+    }
   }
 
   const inputStyle: React.CSSProperties = {
