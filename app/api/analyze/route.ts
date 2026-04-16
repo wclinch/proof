@@ -13,23 +13,25 @@ function stripNavBlocks(text: string): string {
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i].trim()
     if (!b) continue
-    if (i >= 20) { out.push(b); continue }  // trust content deeper in
+    if (i >= 20) { out.push(b); continue }
 
-    // Blocks with sentence structure are real content — keep
-    if (/[.?!]/.test(b) && b.length > 40) { out.push(b); continue }
+    if (/[.?!]/.test(b) && b.length > 40) { out.push(b); continue }  // real sentence
 
     const words = b.split(/\s+/).filter(Boolean)
-    if (words.length > 50) { out.push(b); continue }  // too long to be nav
+    if (words.length > 50) { out.push(b); continue }
 
-    // Count meaningful word repetitions
+    // First 5 blocks: strip short UI chrome unless it has a year or comma
+    if (i < 5 && words.length >= 2 && words.length <= 9 && !b.includes(',') && !/\b(19|20)\d{2}\b/.test(b)) {
+      continue
+    }
+
+    // Blocks 5–20: repeated meaningful word check
     const meaningful = words
       .map(w => w.toLowerCase().replace(/[^a-z]/g, ''))
       .filter(w => w.length > 3 && !NAV_STOP_WORDS.has(w))
     const counts = new Map<string, number>()
     for (const w of meaningful) counts.set(w, (counts.get(w) ?? 0) + 1)
     const repeated = [...counts.entries()].filter(([, c]) => c >= 2)
-
-    // Nav dump: 2+ different words repeat, or any word appears 3+ times
     const isNav = repeated.length >= 2 || repeated.some(([, c]) => c >= 3)
     if (!isNav) out.push(b)
   }

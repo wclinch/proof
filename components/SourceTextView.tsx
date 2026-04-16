@@ -46,13 +46,22 @@ function trimTrailingBoilerplate(blocks: string[]): string[] {
   return blocks.slice(0, cutoff)
 }
 
-// Strip nav/UI blocks from the first 20 blocks (real headings are short with no repeats)
+// Strip nav/UI blocks from the first 20 blocks
 function filterNavBlocks(blocks: string[]): string[] {
   return blocks.filter((b, i) => {
     if (i >= 20) return true
-    if (/[.?!]/.test(b) && b.length > 40) return true  // sentence → keep
+    if (/[.?!]/.test(b) && b.length > 40) return true  // real sentence → keep
+
     const words = b.split(/\s+/).filter(Boolean)
-    if (words.length > 50) return true
+    if (words.length > 50) return true  // too long to be nav
+
+    // First 5 blocks: aggressively strip short UI chrome.
+    // Exception: blocks with a 4-digit year (likely a document title) or commas (real content).
+    if (i < 5 && words.length >= 2 && words.length <= 9 && !b.includes(',') && !/\b(19|20)\d{2}\b/.test(b)) {
+      return false
+    }
+
+    // Blocks 5–20: repeated meaningful word check
     const meaningful = words
       .map(w => w.toLowerCase().replace(/[^a-z]/g, ''))
       .filter(w => w.length > 3 && !NAV_STOP_WORDS.has(w))
