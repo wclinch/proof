@@ -91,7 +91,7 @@ export default function SourcePanel({ width }: { width: number }) {
         style={{ margin: '0 10px 8px', display: 'flex', gap: '6px', flexShrink: 0 }}
       >
         <input
-          type="url"
+          type="text"
           placeholder="Paste a link..."
           value={urlInput}
           onChange={e => setUrlInput(e.target.value)}
@@ -102,6 +102,7 @@ export default function SourcePanel({ width }: { width: number }) {
             borderRadius: '4px', padding: '7px 10px', outline: 'none',
             fontSize: '12px', color: '#777', fontFamily: 'inherit',
             letterSpacing: '0.03em', opacity: isAnalyzing ? 0.4 : 1,
+            WebkitAppearance: 'none', appearance: 'none',
           }}
           onFocus={e => (e.currentTarget.style.borderColor = '#2a2a2a')}
           onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
