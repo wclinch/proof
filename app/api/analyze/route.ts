@@ -46,7 +46,19 @@ export async function POST(req: NextRequest) {
     if (!jinaRes.ok) {
       return NextResponse.json({ error: `Could not fetch page (${jinaRes.status})` }, { status: 422 })
     }
-    fullText = (await jinaRes.text())
+    const raw = await jinaRes.text()
+    fullText = raw
+      // Strip Jina metadata header lines
+      .replace(/^(Title|URL Source|Markdown Content):[^\n]*/gm, '')
+      // [link text](url) → link text
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      // ## headings → plain text
+      .replace(/^#{1,6}\s+/gm, '')
+      // **bold** and *italic*
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      // Bullet markers
+      .replace(/^[•·]\s*/gm, '- ')
       .replace(/\n{3,}/g, '\n\n')
       .trim()
   } catch {
