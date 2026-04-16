@@ -62,14 +62,14 @@ export default function AuthPage() {
 
   const backBtn: React.CSSProperties = {
     background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-    fontSize: '12px', color: '#444', letterSpacing: '0.06em',
+    fontSize: '12px', color: '#777', letterSpacing: '0.06em',
     textTransform: 'uppercase', fontFamily: 'inherit', textAlign: 'left',
   }
 
   const submitBtn = (disabled: boolean): React.CSSProperties => ({
     marginTop: '6px', background: '#0f0f0f', border: '1px solid #1a1a1a',
     borderRadius: '4px', padding: '10px 20px', cursor: disabled ? 'default' : 'pointer',
-    fontSize: '12px', color: disabled ? '#2a2a2a' : '#555', letterSpacing: '0.08em',
+    fontSize: '12px', color: disabled ? '#444' : '#777', letterSpacing: '0.08em',
     textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
     transition: 'border-color 0.15s, color 0.15s',
   })
@@ -82,10 +82,10 @@ export default function AuthPage() {
 
           {sentTo ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ fontSize: '11px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
+              <div style={{ fontSize: '11px', color: '#777', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
                 Check your email
               </div>
-              <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.75, margin: 0 }}>
+              <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
                 {sentType === 'confirm'
                   ? <>We sent a confirmation link to <span style={{ color: '#777' }}>{sentTo}</span>. Click it to activate your account.</>
                   : <>We sent a password reset link to <span style={{ color: '#777' }}>{sentTo}</span>. Click it to set a new password.</>
@@ -94,8 +94,8 @@ export default function AuthPage() {
               <button
                 onClick={() => switchMode('login')}
                 style={backBtn}
-                onMouseEnter={e => (e.currentTarget.style.color = '#777')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+                onMouseEnter={e => (e.currentTarget.style.color = '#aaa')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#777')}
               >
                 ← Back to sign in
               </button>
@@ -121,7 +121,7 @@ export default function AuthPage() {
                   type="submit" disabled={loading}
                   style={submitBtn(loading)}
                   onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' } }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = loading ? '#2a2a2a' : '#555' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = loading ? '#444' : '#777' }}
                 >
                   {loading ? 'Sending...' : 'Send reset link →'}
                 </button>
@@ -129,8 +129,8 @@ export default function AuthPage() {
               <button
                 onClick={() => switchMode('login')}
                 style={backBtn}
-                onMouseEnter={e => (e.currentTarget.style.color = '#777')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+                onMouseEnter={e => (e.currentTarget.style.color = '#aaa')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#777')}
               >
                 ← Back to sign in
               </button>
@@ -146,7 +146,7 @@ export default function AuthPage() {
                     style={{
                       background: 'none', border: 'none', padding: 0, cursor: 'pointer',
                       fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase',
-                      fontFamily: 'inherit', color: mode === m ? '#aaa' : '#444',
+                      fontFamily: 'inherit', color: mode === m ? '#bbb' : '#777',
                     }}
                   >
                     {m === 'login' ? 'Sign in' : 'Create account'}
@@ -174,7 +174,7 @@ export default function AuthPage() {
                   type="submit" disabled={loading}
                   style={submitBtn(loading)}
                   onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' } }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = loading ? '#2a2a2a' : '#555' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = loading ? '#444' : '#777' }}
                 >
                   {loading ? 'Please wait...' : mode === 'login' ? 'Sign in →' : 'Create account →'}
                 </button>
@@ -192,7 +192,7 @@ export default function AuthPage() {
               )}
 
               {mode === 'signup' && (
-                <p style={{ fontSize: '12px', color: '#444', lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontSize: '12px', color: '#777', lineHeight: 1.6, margin: 0 }}>
                   By creating an account you agree that your use of this service is subject to the{' '}
                   <a href="/privacy" className="nav-link" style={{ fontSize: '12px' }}>privacy policy</a>.
                 </p>

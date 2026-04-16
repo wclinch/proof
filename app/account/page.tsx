@@ -96,7 +96,7 @@ export default function AccountPage() {
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Nav />
         <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '12px', color: '#444', letterSpacing: '0.08em' }}>Loading...</span>
+          <span style={{ fontSize: '12px', color: '#777', letterSpacing: '0.08em' }}>Loading...</span>
         </main>
       </div>
     )
@@ -170,7 +170,7 @@ export default function AccountPage() {
                   transition: 'border-color 0.15s, color 0.15s',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#777' }}
               >
                 Manage subscription
               </button>
@@ -207,7 +207,7 @@ export default function AccountPage() {
                 textTransform: 'uppercase', fontFamily: 'inherit',
               }}
               onMouseEnter={e => { if (!pwLoading) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' } }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#777' }}
             >
               {pwLoading ? 'Updating...' : 'Update password'}
             </button>
@@ -264,7 +264,7 @@ export default function AccountPage() {
                   letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'inherit',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#777')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#555')}
               >
                 Cancel
               </button>
@@ -273,7 +273,7 @@ export default function AccountPage() {
         </div>
 
         <div style={{ paddingTop: '8px' }}>
-          <a href="/app" style={{ fontSize: '12px', color: '#444', letterSpacing: '0.06em', textDecoration: 'none', textTransform: 'uppercase' }}
+          <a href="/app" style={{ fontSize: '12px', color: '#777', letterSpacing: '0.06em', textDecoration: 'none', textTransform: 'uppercase' }}
             onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#777')}
             onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#333')}
           >
