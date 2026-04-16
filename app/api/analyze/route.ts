@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { callGroq, parseGroqResponse, formatGroqError } from '@/lib/groq'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { logTopics } from '@/lib/logTopics'
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
     const content  = fullText.replace(/\n+/g, ' ').slice(0, 28000)
     const raw      = await callGroq(process.env.GROQ_API_KEY, content, url)
     const analysis = parseGroqResponse(raw)
+    logTopics(analysis)
     return NextResponse.json({ analysis, content: fullText })
   } catch (e) {
     return NextResponse.json({ error: formatGroqError(e) }, { status: 500 })

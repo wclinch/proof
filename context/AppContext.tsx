@@ -374,13 +374,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   function jumpToSource(text: string) {
     setCenterView('source')
     setHighlightText(text)
-    // Index the verified fact — fire-and-forget
-    const sourceName = selectedSource?.label ?? selectedSource?.raw ?? ''
-    fetch('/api/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: getSessionId(), source_name: sourceName, fact_text: text }),
-    }).catch(() => {})
   }
 
   // ─── Context value ──────────────────────────────────────────────────────────

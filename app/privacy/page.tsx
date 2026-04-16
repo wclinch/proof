@@ -12,57 +12,46 @@ export default function Privacy() {
         </span>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Overview</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>The short version</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Proof collects only what is necessary to operate the verification index and improve the tool. This policy explains exactly what that is.
-          </p>
-        </div>
-
-        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we collect</h2>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            When you click to locate a fact in a source document, we record a verified fact entry: the source document name, the exact fact text, a hash of both, and a randomly generated session identifier. This forms a persistent verification index.
-          </p>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            We also log structured metadata extracted from PDFs you analyze — including title, authors, year, abstract, findings, statistics, conclusions, methodology, and keywords — where present.
-          </p>
-          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            We do not collect your name, email address, IP address, or any information that identifies you as an individual.
+            Your documents stay on your device. The content you upload or link to is never stored by Proof. We collect no personal information beyond what is required to operate an account. The only aggregate data we log is a set of broad, anonymized subject keywords — never document content, never source names, never anything that could identify you or what you are working on.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we do not collect</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Proof requires no account. We do not collect passwords, payment information, or contact details. We do not use cookies or cross-site tracking. Your projects and source lists are stored locally in your browser and never leave your device.
+            We do not store the content of any document you analyze. We do not store file names, source titles, URLs, or any text from the documents you work with. We do not collect IP addresses, browser fingerprints, or behavioral data. We do not use cookies for tracking. Your projects, source lists, and drafts are stored locally in your browser and never leave your device.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How we use it</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we do collect</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Verified fact records are used to build a searchable index of verified claims across public documents. Aggregate, anonymized data — which facts are being verified, across which source types — may be licensed to research institutions or publishers. Individual records are never shared or sold.
+            <span style={{ color: '#777' }}>Account holders:</span> email address and subscription status. Required to manage access. Nothing else is associated with your account.
+          </p>
+          <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
+            <span style={{ color: '#777' }}>Aggregate topic trends:</span> when a source is analyzed, we log a small set of broad, anonymized subject-area keywords — things like &ldquo;contract law&rdquo; or &ldquo;cardiovascular disease&rdquo;. These are discipline-level categories only. No proper nouns, no names, no case identifiers, no document content. This data is fully anonymous and cannot be traced back to you, your session, or your documents.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Third-party AI processing</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>AI processing</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            PDF content submitted for analysis is processed by Groq&apos;s inference infrastructure using open-weight language models. Text extracted from your PDFs passes through Groq&apos;s servers. Please review Groq&apos;s privacy policy for details on how submitted content is handled.
+            Document content is sent to Groq&apos;s inference infrastructure for AI extraction. This is transient — Proof does not retain the content after processing. Please review <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" style={{ color: '#555', textDecoration: 'none' }}>Groq&apos;s privacy policy</a> for details on how content submitted to their API is handled on their end.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Data retention</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How topic data is used</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Verified fact records and extracted metadata are retained indefinitely to support the verification index. No personally identifiable information is retained because none is collected.
+            The anonymized subject keyword data may be used internally to understand usage patterns or licensed in aggregate to research institutions. Individual records cannot be linked to any user, session, document, or organization. This data has no commercial value without aggregation and is never sold at the individual level.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Contact</h2>
           <p style={{ fontSize: '14px', color: '#444', lineHeight: 1.75, margin: 0 }}>
-            Questions?{' '}
             <a href="mailto:proof_official@protonmail.com" style={{ color: '#555', textDecoration: 'none' }}>proof_official@protonmail.com</a>
           </p>
         </div>

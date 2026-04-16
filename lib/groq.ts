@@ -18,8 +18,8 @@ Extract verbatim where possible. Never invent, guess, or paraphrase data not pre
   "conclusions": ["What the authors conclude or recommend — verbatim or near-verbatim — up to 5"],
   "quotes": ["Direct quotes worth citing — exact text with punctuation — up to 4, or []"],
   "limitations": ["Limitations the authors acknowledge — verbatim — up to 5, or []"],
-  "concepts": ["Named theories, frameworks, constructs, models — up to 8"],
-  "keywords": ["Key terms — 5 to 12"]
+  "concepts": ["Named theories, frameworks, constructs, or models only — no proper nouns, no names of people, organizations, or cases — up to 8"],
+  "keywords": ["Broad subject-area terms only. No proper nouns, no names of people, organizations, locations, or case identifiers. Think discipline-level categories: 'contract law', 'cardiovascular disease', 'machine learning', 'criminal procedure'. 5 to 12 terms."]
 }
 
 Rules: null for absent strings, [] for absent arrays. Never repeat the sample size in the stats array.`
