@@ -18,9 +18,9 @@ export default function Home() {
           </h1>
 
           <p style={{ fontSize: '15px', color: '#444', lineHeight: 1.8, margin: '0 0 40px', maxWidth: '480px' }}>
-            Drop a PDF or paste a link. Every statistic, finding, and quote is extracted and structured.
-            Click any fact to jump to where it lives in the source.
-            Built for researchers, lawyers, and analysts who need to verify fast.
+            Drop a PDF or paste a link. Every statistic, finding, and quote is extracted and
+            structured. Click any fact to jump to exactly where it appears in the source —
+            no manual searching, no guessing.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -45,10 +45,10 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
-              ['Drop a PDF or paste a link', 'Add source documents by dropping a PDF or pasting a URL. Each source is analyzed automatically.'],
-              ['Structured extraction', 'Statistics, findings, direct quotes, and conclusions are pulled out and ranked by verifiability.'],
-              ['Locate in source', 'Click any fact to jump to its exact location in the document text. No manual searching.'],
-              ['Verified fact index', 'Every fact you verify is hashed and indexed. Builds an audit trail across your session.'],
+              ['Add a source', 'Drop a PDF or paste a URL. Proof reads the full text and extracts every verifiable claim automatically.'],
+              ['Structured extraction', 'Statistics, findings, direct quotes, and conclusions are pulled out and organized — not summarized, not paraphrased.'],
+              ['Jump to the source', 'Click any fact to jump to its exact location in the original text. See it in context, not in isolation.'],
+              ['Build an audit trail', 'Every fact you verify is hashed and logged. Useful for citation tracking, case prep, or academic review.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ display: 'flex', gap: '24px' }}>
                 <div style={{ width: '4px', flexShrink: 0, background: '#111', borderRadius: '2px', alignSelf: 'stretch' }} />
@@ -68,9 +68,9 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {([
-              ['Not an AI summary', 'Proof does not paraphrase or interpret. It extracts verbatim and pins facts to source.'],
-              ['Not a writing assistant', 'No auto-generated text. Your synthesis, your words — Proof just gets you to the evidence faster.'],
-              ['Not a search engine', 'You bring the documents. Proof gives you precision access to what is already in them.'],
+              ['Not an AI summary', 'Proof does not paraphrase or interpret. It extracts verbatim and ties every fact to its source location.'],
+              ['Not a writing tool', 'Proof does not write for you. The synthesis panel is a scratchpad — your words, grounded in what you actually read.'],
+              ['Not a search engine', 'You bring the sources. Proof gives you structured, precise access to what is inside them.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ fontSize: '13px', color: '#444', lineHeight: 1.75 }}>
                 <span style={{ color: '#aaa' }}>{title}. </span>{body}
@@ -86,7 +86,7 @@ export default function Home() {
             <span style={{ fontSize: '13px', color: '#333' }}>/ month</span>
           </div>
           <p style={{ fontSize: '13px', color: '#444', lineHeight: 1.75, margin: '0 0 28px' }}>
-            First 5 sources free, no account needed. After that, $3/month — cheap enough to not think about it.
+            First 5 sources free — no account needed. After that, $3/month. No tiers, no limits.
           </p>
           <a href="/app" style={{ fontSize: '12px', color: '#444', letterSpacing: '0.08em', textDecoration: 'none', textTransform: 'uppercase' }}>
             Start verifying →
