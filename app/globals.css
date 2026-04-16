@@ -10,9 +10,9 @@ body {
 
 input, button, textarea, select { font-family: inherit; }
 
-/* Source panel inputs */
-.sp-input::placeholder { color: #444; opacity: 1; }
-.sp-input { -webkit-text-fill-color: #888; }
+/* Source panel — force placeholder to match span text, override Chrome dark-mode tinting */
+.sp-input::placeholder { color: #444 !important; opacity: 1 !important; }
+.sp-input { color: #444 !important; }
 
 button, nav, label { user-select: none; }
 
