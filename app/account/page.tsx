@@ -42,6 +42,8 @@ export default function AccountPage() {
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault()
     setPwMsg(null)
+    if (!newPassword) return
+    if (newPassword.length < 6) { setPwMsg({ text: 'Password must be at least 6 characters.', ok: false }); return }
     setPwLoading(true)
     const sb = getSupabaseBrowser()
     const { error } = await sb.auth.updateUser({ password: newPassword })
@@ -139,8 +141,6 @@ export default function AccountPage() {
               placeholder="New password (min 6 characters)"
               value={newPassword}
               onChange={e => setNewPassword(e.target.value)}
-              required
-              minLength={6}
               style={inputStyle}
               onFocus={e => (e.currentTarget.style.borderColor = '#333')}
               onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
