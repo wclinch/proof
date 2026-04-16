@@ -6,7 +6,7 @@ import {
   ACTIVE_KEY, SELECTED_KEY,
   uid, getSessionId, newProject,
   loadProjects, saveProjects,
-  getPdfCount, setPdfCount, initPdfCount, PDF_FREE_LIMIT,
+  PDF_FREE_LIMIT,
 } from '@/lib/storage'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
 
@@ -75,7 +75,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const [user, setUser]               = useState<User | null>(null)
   const [isSubscribed, setIsSubscribed] = useState(false)
-  const [pdfCount, setPdfCountState]  = useState(0)
   const [showPaywall, setShowPaywall] = useState(false)
   const isSubscribedRef               = useRef(false)
 
@@ -149,11 +148,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const sub = data?.subscribed ?? false
     setIsSubscribed(sub)
     isSubscribedRef.current = sub
-    // Reset PDF cap counter when user is subscribed — no longer relevant
-    if (sub) {
-      setPdfCount(0)
-      setPdfCountState(0)
-    }
   }
 
   // Hydrate from localStorage once on mount
@@ -173,9 +167,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setProjects([p])
       setActiveId(p.id)
     }
-    // Seed PDF count from existing sources for users who pre-date this feature
-    initPdfCount(loadProjects())
-    setPdfCountState(getPdfCount())
     setMounted(true)
   }, [])
 
@@ -191,6 +182,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const activeProject  = projects.find(p => p.id === activeId) ?? null
   const sources        = activeProject?.sources ?? []
   const selectedSource = sources.find(s => s.id === selectedId) ?? null
+
+  // Count non-error sources across ALL projects — used for free tier cap
+  const pdfCount = projects.reduce(
+    (acc, p) => acc + p.sources.filter(s => s.status !== 'error').length, 0
+  )
+
+  // Auto-dismiss paywall when sources are removed and count drops below limit
+  useEffect(() => {
+    if (!isSubscribedRef.current && pdfCount < PDF_FREE_LIMIT) setShowPaywall(false)
+  }, [pdfCount])
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -219,10 +220,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ).slice(0, MAX_BATCH)
     if (!list.length) return
 
-    // PDF cap for free (unauthenticated or unsubscribed) users
+    // Source cap for free users — based on current live count
     if (!isSubscribedRef.current) {
-      const used = getPdfCount()
-      const remaining = Math.max(0, PDF_FREE_LIMIT - used)
+      const remaining = Math.max(0, PDF_FREE_LIMIT - pdfCount)
       if (remaining === 0) { setShowPaywall(true); return }
       if (list.length > remaining) list = list.slice(0, remaining)
     }
@@ -259,13 +259,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           patchSource(projId, src.id, { status: 'error', error: data.error })
         } else {
           patchSource(projId, src.id, { status: 'done', result: data.analysis as QueuedSource['result'], rawText: data.content ?? null })
-          // Track lifetime PDF count for free tier cap
-          if (!isSubscribedRef.current) {
-            const newCount = getPdfCount() + 1
-            setPdfCount(newCount)
-            setPdfCountState(newCount)
-            if (newCount >= PDF_FREE_LIMIT) setShowPaywall(true)
-          }
         }
       } catch {
         patchSource(projId, src.id, { status: 'error', error: 'Upload failed — check your connection' })
@@ -326,11 +319,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   async function addUrl(url: string) {
     if (!activeId || analyzing.current) return
 
-    // URL sources count toward the PDF cap for free users
+    // Source cap for free users — based on current live count
     if (!isSubscribedRef.current) {
-      const used = getPdfCount()
-      const remaining = Math.max(0, PDF_FREE_LIMIT - used)
-      if (remaining === 0) { setShowPaywall(true); return }
+      if (pdfCount >= PDF_FREE_LIMIT) { setShowPaywall(true); return }
     }
 
     const src: QueuedSource = {
@@ -356,12 +347,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         patchSource(projId, src.id, { status: 'error', error: data.error })
       } else {
         patchSource(projId, src.id, { status: 'done', result: data.analysis as QueuedSource['result'], rawText: data.content ?? null })
-        if (!isSubscribedRef.current) {
-          const newCount = getPdfCount() + 1
-          setPdfCount(newCount)
-          setPdfCountState(newCount)
-          if (newCount >= PDF_FREE_LIMIT) setShowPaywall(true)
-        }
       }
     } catch {
       patchSource(projId, src.id, { status: 'error', error: 'Failed to fetch URL — check your connection' })

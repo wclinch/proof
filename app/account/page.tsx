@@ -4,9 +4,11 @@ import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
 import type { User } from '@supabase/supabase-js'
-import { getPdfCount, PDF_FREE_LIMIT } from '@/lib/storage'
+import { PDF_FREE_LIMIT } from '@/lib/storage'
+import { useApp } from '@/context/AppContext'
 
 export default function AccountPage() {
+  const { pdfCount } = useApp()
   const [user, setUser]                 = useState<User | null>(null)
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [loading, setLoading]           = useState(true)
@@ -112,8 +114,8 @@ export default function AccountPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div style={{ fontSize: '14px', color: '#555' }}>
               {isSubscribed
-                ? 'Pro — unlimited PDFs'
-                : `Free — ${getPdfCount()} of ${PDF_FREE_LIMIT} PDFs used`}
+                ? 'Pro — unlimited sources'
+                : `Free — ${pdfCount} of ${PDF_FREE_LIMIT} sources used`}
             </div>
             {!isSubscribed && (
               <div style={{ fontSize: '13px', color: '#333' }}>
