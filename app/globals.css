@@ -11,7 +11,7 @@ body {
 input, button, textarea, select { font-family: inherit; }
 
 /* Source panel — force placeholder to match span text, override Chrome dark-mode tinting */
-.sp-input::placeholder { color: #555 !important; opacity: 1 !important; }
+.sp-input::placeholder { color: #777 !important; opacity: 1 !important; }
 .sp-input { color: #777 !important; }
 
 /* Synthesis panel placeholders */
