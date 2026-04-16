@@ -70,9 +70,16 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
     setEditing(false)
   }
 
+  function handleDoubleClick(e: React.MouseEvent) {
+    e.stopPropagation()
+    setLabelInput(displayName ?? '')
+    setEditing(true)
+  }
+
   return (
     <div
       onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       onContextMenu={handleContextMenu}
       style={{
         padding: '10px 16px',

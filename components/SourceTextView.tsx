@@ -34,21 +34,45 @@ export default function SourceTextView({ text, highlight }: { text: string; high
 
   const blocks = parseBlocks(truncated ? cleaned.slice(0, TRUNCATION_THRESHOLD) : cleaned)
 
-  // Find which block + char range contains the highlight
+  // Find which block + char range contains the highlight.
+  // The model receives newline-collapsed text, so a finding may span block
+  // boundaries in the original. We search the joined text first, then map
+  // back to the block that contains the match start.
   let matchBlock  = -1
   let matchStart  = -1
   let matchEnd    = -1
 
   if (highlight) {
     const needle = highlight.replace(/\s+/g, ' ').slice(0, 400).trim().toLowerCase()
+
+    // Try exact match within each block first (fast path)
     for (let bi = 0; bi < blocks.length; bi++) {
       const norm = blocks[bi].replace(/\s+/g, ' ')
       const idx  = norm.toLowerCase().indexOf(needle)
       if (idx !== -1) {
-        matchBlock = bi
-        matchStart = idx
-        matchEnd   = idx + needle.length
+        matchBlock = bi; matchStart = idx; matchEnd = idx + needle.length
         break
+      }
+    }
+
+    // Fallback: search joined text and map back to block
+    if (matchBlock === -1) {
+      const joined    = blocks.map(b => b.replace(/\s+/g, ' ')).join(' ')
+      const joinedIdx = joined.toLowerCase().indexOf(needle)
+      if (joinedIdx !== -1) {
+        // Walk blocks to find which one owns position joinedIdx
+        let offset = 0
+        for (let bi = 0; bi < blocks.length; bi++) {
+          const norm = blocks[bi].replace(/\s+/g, ' ')
+          const end  = offset + norm.length
+          if (joinedIdx >= offset && joinedIdx < end + 1) {
+            matchBlock = bi
+            matchStart = Math.max(0, joinedIdx - offset)
+            matchEnd   = Math.min(norm.length, matchStart + needle.length)
+            break
+          }
+          offset += norm.length + 1 // +1 for the space separator
+        }
       }
     }
   }

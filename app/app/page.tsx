@@ -59,7 +59,7 @@ function Layout() {
     return Math.max(160, parseInt(localStorage.getItem('proof-ui-draft-width') || '340', 10))
   })
   const draftWidthRef = useRef(draftWidth)
-  const MIN_MIDDLE = 40
+  const MIN_MIDDLE = 300  // center panel never collapses below this
   const MIN_DRAFT  = 160
 
   function startDrag(e: React.MouseEvent) {
@@ -70,6 +70,7 @@ function Layout() {
     function onMove(ev: MouseEvent) {
       if (ev.buttons === 0) { onUp(); return }
       const delta = ev.clientX - startX
+      // Allow draft panel to grow until only MIN_MIDDLE remains for center
       const maxW = Math.max(MIN_DRAFT, window.innerWidth - SOURCE_WIDTH - MIN_MIDDLE)
       const w = Math.max(MIN_DRAFT, Math.min(maxW, startW - delta))
       draftWidthRef.current = w
