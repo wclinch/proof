@@ -30,6 +30,25 @@ function parseBlocks(text: string): string[] {
   return text.split(/\n\n+/).map(b => b.trim()).filter(Boolean)
 }
 
+const NAV_STOP_WORDS = new Set(['the','a','an','and','or','for','of','to','in','is','are','was','with','by','at','on','as','it','its','this','that','from','be','been','can','will','our','your','we','us'])
+
+// Strip nav/UI blocks from the first 20 blocks (real headings are short with no repeats)
+function filterNavBlocks(blocks: string[]): string[] {
+  return blocks.filter((b, i) => {
+    if (i >= 20) return true
+    if (/[.?!]/.test(b) && b.length > 40) return true  // sentence → keep
+    const words = b.split(/\s+/).filter(Boolean)
+    if (words.length > 50) return true
+    const meaningful = words
+      .map(w => w.toLowerCase().replace(/[^a-z]/g, ''))
+      .filter(w => w.length > 3 && !NAV_STOP_WORDS.has(w))
+    const counts = new Map<string, number>()
+    for (const w of meaningful) counts.set(w, (counts.get(w) ?? 0) + 1)
+    const repeated = [...counts.entries()].filter(([, c]) => c >= 2)
+    return !(repeated.length >= 2 || repeated.some(([, c]) => c >= 3))
+  })
+}
+
 export default function SourceTextView({ text, highlight }: { text: string; highlight: string | null }) {
   const cleaned   = cleanText(text)
   const truncated = cleaned.length >= TRUNCATION_THRESHOLD
@@ -41,7 +60,7 @@ export default function SourceTextView({ text, highlight }: { text: string; high
     }
   }, [highlight])
 
-  const rawBlocks  = parseBlocks(truncated ? cleaned.slice(0, TRUNCATION_THRESHOLD) : cleaned)
+  const rawBlocks  = filterNavBlocks(parseBlocks(truncated ? cleaned.slice(0, TRUNCATION_THRESHOLD) : cleaned))
   // Normalize whitespace once per block — matching AND rendering use this same string
   // so that matchStart/matchEnd indices are always valid slice positions.
   const blocks = rawBlocks.map(b => b.replace(/\s+/g, ' ').trim())

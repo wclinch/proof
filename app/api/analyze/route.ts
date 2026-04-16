@@ -3,6 +3,39 @@ import { callGroq, parseGroqResponse, formatGroqError } from '@/lib/groq'
 import { checkRateLimit } from '@/lib/rateLimit'
 import { logTopics } from '@/lib/logTopics'
 
+const NAV_STOP_WORDS = new Set(['the','a','an','and','or','for','of','to','in','is','are','was','with','by','at','on','as','it','its','this','that','from','be','been','can','will','our','your','we','us'])
+
+// Strip navigation/UI blocks that Jina captures from website chrome.
+// Real headings (short, no repeats) are preserved. Only checks first 20 blocks.
+function stripNavBlocks(text: string): string {
+  const blocks = text.split(/\n\n+/)
+  const out: string[] = []
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i].trim()
+    if (!b) continue
+    if (i >= 20) { out.push(b); continue }  // trust content deeper in
+
+    // Blocks with sentence structure are real content — keep
+    if (/[.?!]/.test(b) && b.length > 40) { out.push(b); continue }
+
+    const words = b.split(/\s+/).filter(Boolean)
+    if (words.length > 50) { out.push(b); continue }  // too long to be nav
+
+    // Count meaningful word repetitions
+    const meaningful = words
+      .map(w => w.toLowerCase().replace(/[^a-z]/g, ''))
+      .filter(w => w.length > 3 && !NAV_STOP_WORDS.has(w))
+    const counts = new Map<string, number>()
+    for (const w of meaningful) counts.set(w, (counts.get(w) ?? 0) + 1)
+    const repeated = [...counts.entries()].filter(([, c]) => c >= 2)
+
+    // Nav dump: 2+ different words repeat, or any word appears 3+ times
+    const isNav = repeated.length >= 2 || repeated.some(([, c]) => c >= 3)
+    if (!isNav) out.push(b)
+  }
+  return out.join('\n\n')
+}
+
 function extractVideoId(url: string): string | null {
   const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
   return m ? m[1] : null
@@ -116,6 +149,7 @@ export async function POST(req: NextRequest) {
         .replace(/^[•·]\s*/gm, '- ')
         .replace(/\n{3,}/g, '\n\n')
         .trim()
+      fullText = stripNavBlocks(fullText)
     } catch {
       return NextResponse.json({ error: 'Failed to fetch URL — check the link and try again' }, { status: 422 })
     }
