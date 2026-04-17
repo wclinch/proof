@@ -11,13 +11,8 @@ export function logTopics(analysis: unknown) {
   const keywords = Array.isArray(a.keywords)
     ? (a.keywords as unknown[]).filter((k): k is string => typeof k === 'string')
     : []
-  const concepts = Array.isArray(a.concepts)
-    ? (a.concepts as unknown[]).filter((c): c is string => typeof c === 'string')
-    : []
-  const doc_type = typeof a.type === 'string' ? a.type : null
-  const year     = typeof a.year === 'string' ? a.year : null
 
-  if (!keywords.length && !concepts.length) return
+  if (!keywords.length) return
 
   const sb = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -25,6 +20,6 @@ export function logTopics(analysis: unknown) {
   )
 
   sb.from('topics')
-    .insert({ keywords, concepts, doc_type, year })
+    .insert({ keywords })
     .then(({ error }) => { if (error) console.error('[topics]', error.message) })
 }

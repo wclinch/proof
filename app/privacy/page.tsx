@@ -31,7 +31,7 @@ export default function Privacy() {
             <span style={{ color: '#777' }}>Account holders:</span> email address and subscription status. Required to manage access. Nothing else is associated with your account.
           </p>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#777' }}>Aggregate topic trends:</span> when a source is analyzed, we log a small set of broad subject-area keywords — things like &ldquo;contract law&rdquo; or &ldquo;cardiovascular disease&rdquo;. Discipline-level only. No names, no document content, nothing traceable to you or your work.
+            <span style={{ color: '#777' }}>Aggregate topic keywords:</span> when a source is analyzed, we log the keyword tags extracted from the document — broad subject-area terms like &ldquo;contract law&rdquo; or &ldquo;machine learning&rdquo;. No names, no document content, no metadata traceable to you or your work.
           </p>
         </div>
 

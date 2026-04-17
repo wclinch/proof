@@ -5,55 +5,21 @@ import SourceTextView from './SourceTextView'
 import type { AnalysisResult } from '@/lib/types'
 
 function formatBreakdown(result: AnalysisResult, fmt: 'txt' | 'md'): string {
-  const h = (label: string) => fmt === 'md' ? `## ${label}\n` : `${label}\n${'─'.repeat(label.length)}\n`
-  const li = (v: string) => fmt === 'md' ? `- ${v}` : `• ${v}`
+  const h  = (label: string) => fmt === 'md' ? `## ${label}\n` : `${label}\n${'─'.repeat(label.length)}\n`
+  const li = (v: string)     => fmt === 'md' ? `- ${v}` : `• ${v}`
   const lines: string[] = []
 
   lines.push(fmt === 'md' ? `# ${result.title ?? 'Untitled'}` : result.title ?? 'Untitled')
   if (result.authors?.length) lines.push(result.authors.join(', '))
-  const meta = [result.year, result.journal, result.type].filter(Boolean).join(' · ')
+  const meta = [result.year, result.journal].filter(Boolean).join(' · ')
   if (meta) lines.push(meta)
   lines.push('')
 
-  if (result.abstract) {
-    lines.push(h('Abstract'), result.abstract, '')
-  }
-  if (result.sample_n || result.sample_desc) {
-    lines.push(h('Sample'))
-    if (result.sample_n)   lines.push(li(result.sample_n))
-    if (result.sample_desc) lines.push(li(result.sample_desc))
-    lines.push('')
-  }
-  if (result.methodology) {
-    lines.push(h('Methodology'), result.methodology, '')
-  }
-  if (result.stats?.length) {
-    lines.push(h('Statistics'), ...result.stats.map(li), '')
-  }
-  if (result.findings?.length) {
-    lines.push(h('Findings'), ...result.findings.map(li), '')
-  }
-  if (result.claims?.length) {
-    lines.push(h('Claims'), ...result.claims.map(li), '')
-  }
-  if (result.conclusions?.length) {
-    lines.push(h('Key Points'), ...result.conclusions.map(li), '')
-  }
-  if (result.recommendations?.length) {
-    lines.push(h('Recommendations'), ...result.recommendations.map(li), '')
-  }
-  if (result.quotes?.length) {
-    lines.push(h('Direct Quotes'), ...result.quotes.map(q => li(`"${q}"`)), '')
-  }
-  if (result.limitations?.length) {
-    lines.push(h('Limitations'), ...result.limitations.map(li), '')
-  }
-  if (result.concepts?.length) {
-    lines.push(h('Concepts & Frameworks'), result.concepts.join(', '), '')
-  }
-  if (result.keywords?.length) {
-    lines.push(h('Keywords'), result.keywords.join(', '), '')
-  }
+  if (result.facts?.length)      { lines.push(h('Facts'),      ...result.facts.map(li),      '') }
+  if (result.supporting?.length) { lines.push(h('Supporting'), ...result.supporting.map(li), '') }
+  if (result.quotes?.length)     { lines.push(h('Quotes'),     ...result.quotes.map(q => li(`"${q}"`)), '') }
+  if (result.keywords?.length)   { lines.push(h('Keywords'),   result.keywords.join(', '),   '') }
+
   return lines.join('\n').trimEnd()
 }
 
