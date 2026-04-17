@@ -37,6 +37,7 @@ export default function AuthPage() {
       if (data.user) {
         await (sb.from as any)('profiles').upsert({ id: data.user.id, subscribed: false }, { onConflict: 'id' })
       }
+      if (data.session) { router.push('/app'); return }
       setSentType('confirm'); setSentTo(email); setLoading(false); return
     }
 
