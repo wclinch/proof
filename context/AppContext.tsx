@@ -141,6 +141,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         checkSubscription(session.user.id)
         identify(session.user.id, { email: session.user.email })
+        capture('app_opened')
       } else {
         setIsSubscribed(false)
         isSubscribedRef.current = false
@@ -277,7 +278,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
             rawText: data.content ?? null,
             ...(aiTitle ? { label: aiTitle } : {}),
           })
-          capture('upload_complete', { doc_type: (analysis as any)?.title ?? null, keyword_count: (analysis as any)?.keywords?.length ?? 0 })
+          capture('upload_complete', {
+            doc_type:      (analysis as any)?.title ?? null,
+            keyword_count: (analysis as any)?.keywords?.length ?? 0,
+            source_count:  pdfCount + i + 1,
+          })
+          if (pdfCount === 0 && i === 0 && user?.created_at) {
+            const minutesSinceSignup = Math.round((Date.now() - new Date(user.created_at).getTime()) / 60000)
+            capture('first_upload', { minutes_since_signup: minutesSinceSignup })
+          }
         }
       } catch {
         patchSource(projId, src.id, { status: 'error', error: 'Upload failed — check your connection' })
