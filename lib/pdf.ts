@@ -1,271 +1,53 @@
-import * as PDFJS from 'pdfjs-dist/legacy/build/pdf.mjs'
-import { resolve } from 'path'
-import { pathToFileURL } from 'url'
+const BASE = 'https://api.cloud.llamaindex.ai/api/parsing'
 
-// Point to the bundled worker file — required in Node.js (pdfjs-dist v5)
-PDFJS.GlobalWorkerOptions.workerSrc = pathToFileURL(
-  resolve('./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs')
-).href
-
-interface TextItem {
-  str: string
-  x: number
-  y: number
-  width: number
-  height: number
-  fontName: string
-}
-
-interface Line {
-  y: number
-  height: number
-  items: TextItem[]
-  text: string
-  x0: number   // leftmost x of the line
-  x1: number   // rightmost x of the line
-}
-
-// Group raw text items into visual lines by y-proximity
-function groupIntoLines(items: TextItem[]): Line[] {
-  if (!items.length) return []
-
-  // Sort top-to-bottom, left-to-right
-  const sorted = [...items].sort((a, b) => {
-    const dy = b.y - a.y  // PDF y is bottom-up
-    if (Math.abs(dy) > 2) return dy
-    return a.x - b.x
-  })
-
-  const lines: Line[] = []
-  let current: TextItem[] = [sorted[0]]
-
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = current[current.length - 1]
-    const item = sorted[i]
-    // Same line if y difference is less than half the font height
-    const yTol = Math.max(prev.height, item.height) * 0.5
-    if (Math.abs(item.y - prev.y) <= yTol) {
-      current.push(item)
-    } else {
-      lines.push(buildLine(current))
-      current = [item]
-    }
-  }
-  if (current.length) lines.push(buildLine(current))
-
-  return lines
-}
-
-function buildLine(items: TextItem[]): Line {
-  const sorted = [...items].sort((a, b) => a.x - b.x)
-  const parts: string[] = []
-
-  for (let i = 0; i < sorted.length; i++) {
-    const item = sorted[i]
-    if (i > 0) {
-      const prev = sorted[i - 1]
-      const gap = item.x - (prev.x + prev.width)
-      // Insert space if gap is meaningful (> ~0.3 char widths)
-      const charWidth = prev.width / (prev.str.length || 1)
-      if (gap > charWidth * 0.3) parts.push(' ')
-    }
-    parts.push(item.str)
-  }
-
-  const text = parts.join('').replace(/\s+/g, ' ').trim()
-  const xs = sorted.map(it => it.x)
-  const x1s = sorted.map(it => it.x + it.width)
-  const ys = sorted.map(it => it.y)
-  const heights = sorted.map(it => it.height)
-
-  return {
-    y: Math.max(...ys),
-    height: Math.max(...heights),
-    items: sorted,
-    text,
-    x0: Math.min(...xs),
-    x1: Math.max(...x1s),
-  }
-}
-
-// Detect if the page has a two-column layout
-function detectColumnSplit(lines: Line[], pageWidth: number): number | null {
-  if (!lines.length || pageWidth === 0) return null
-
-  const mid = pageWidth / 2
-  const margin = pageWidth * 0.08
-
-  // Count lines that start in left column vs right column
-  let leftOnly = 0
-  let rightOnly = 0
-  let spanning = 0
-
-  for (const line of lines) {
-    if (!line.text) continue
-    const startsLeft  = line.x0 < mid - margin
-    const startsRight = line.x0 > mid - margin
-    const endsLeft    = line.x1 < mid + margin
-    const endsRight   = line.x1 > mid + margin
-
-    if (startsLeft && endsLeft)   leftOnly++
-    else if (startsRight)          rightOnly++
-    else if (startsLeft && endsRight) spanning++
-  }
-
-  const total = leftOnly + rightOnly + spanning
-  if (total === 0) return null
-
-  // Two-column if most lines are either left-only or right-only, few spanning
-  const columnLines = leftOnly + rightOnly
-  if (columnLines / total > 0.70 && leftOnly > 3 && rightOnly > 3) {
-    return mid
-  }
-
-  return null
-}
-
-// Convert lines to paragraph-structured text
-function linesToText(lines: Line[], columnSplit: number | null): string {
-  if (!lines.length) return ''
-
-  let orderedLines: Line[]
-
-  if (columnSplit !== null) {
-    // Assign every line to exactly one column by center-x — nothing can fall through.
-    // Wide spanning lines (abstracts, headers, footers) go left if center < split, right otherwise,
-    // but we bucket them separately and prepend them in y-order so they read naturally.
-    const spanningLines: Line[] = []
-    const leftLines: Line[]     = []
-    const rightLines: Line[]    = []
-
-    for (const line of lines) {
-      const cx    = (line.x0 + line.x1) / 2
-      const width = line.x1 - line.x0
-      // A line is "spanning" if it's more than 1.4× the half-page wide
-      if (width > columnSplit * 1.4) {
-        spanningLines.push(line)
-      } else if (cx < columnSplit) {
-        leftLines.push(line)
-      } else {
-        rightLines.push(line)
-      }
-    }
-
-    // Spanning lines that sit above the main content act as headers;
-    // those below act as footers. Sort all by y and interleave with columns.
-    const contentTop = Math.max(
-      leftLines.length  ? Math.max(...leftLines.map(l => l.y))  : 0,
-      rightLines.length ? Math.max(...rightLines.map(l => l.y)) : 0,
-    )
-    const contentBottom = Math.min(
-      leftLines.length  ? Math.min(...leftLines.map(l => l.y))  : Infinity,
-      rightLines.length ? Math.min(...rightLines.map(l => l.y)) : Infinity,
-    )
-
-    const headers = spanningLines.filter(l => l.y >= contentTop).sort((a, b) => b.y - a.y)
-    const footers = spanningLines.filter(l => l.y <  contentBottom).sort((a, b) => b.y - a.y)
-    const mids    = spanningLines.filter(l => l.y < contentTop && l.y >= contentBottom).sort((a, b) => b.y - a.y)
-
-    orderedLines = [
-      ...headers,
-      ...leftLines.sort((a, b) => b.y - a.y),
-      ...mids,
-      ...rightLines.sort((a, b) => b.y - a.y),
-      ...footers,
-    ]
-  } else {
-    orderedLines = [...lines].sort((a, b) => b.y - a.y)
-  }
-
-  // Filter empty lines
-  const nonEmpty = orderedLines.filter(l => l.text.length > 0)
-  if (!nonEmpty.length) return ''
-
-  // Compute median line height for paragraph gap detection
-  const heights = nonEmpty.map(l => l.height).sort((a, b) => a - b)
-  const medianHeight = heights[Math.floor(heights.length / 2)] || 12
-
-  // Compute y-gaps between consecutive lines
-  const paragraphs: string[] = []
-  let currentPara: string[] = [nonEmpty[0].text]
-
-  for (let i = 1; i < nonEmpty.length; i++) {
-    const prev = nonEmpty[i - 1]
-    const curr = nonEmpty[i]
-
-    // Gap in y (PDF y is bottom-up, so prev.y > curr.y for lines going down the page)
-    const gap = prev.y - curr.y - prev.height
-
-    // Paragraph break: gap larger than ~0.5× median line height
-    const isParagraphBreak = gap > medianHeight * 0.5
-
-    if (isParagraphBreak) {
-      paragraphs.push(joinLines(currentPara))
-      currentPara = [curr.text]
-    } else {
-      currentPara.push(curr.text)
-    }
-  }
-  paragraphs.push(joinLines(currentPara))
-
-  return paragraphs.filter(Boolean).join('\n\n')
-}
-
-// Join lines within a paragraph, handling hyphenation
-function joinLines(lines: string[]): string {
-  if (!lines.length) return ''
-  let result = lines[0]
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i]
-    if (!line) continue
-    if (result.endsWith('-')) {
-      // Hyphenated word — rejoin without space
-      result = result.slice(0, -1) + line
-    } else {
-      result = result + ' ' + line
-    }
-  }
-  return result.replace(/\s+/g, ' ').trim()
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 export async function extractPdfText(buffer: Buffer): Promise<string> {
-  const data = new Uint8Array(buffer)
-  const doc  = await PDFJS.getDocument({ data, useSystemFonts: true }).promise
+  const key = process.env.LLAMA_CLOUD_API_KEY
+  if (!key) throw new Error('LLAMA_CLOUD_API_KEY not configured')
 
-  const pageTexts: string[] = []
+  // 1. Upload the PDF
+  const form = new FormData()
+  form.append('file', new File([new Uint8Array(buffer)], 'document.pdf', { type: 'application/pdf' }))
 
-  for (let p = 1; p <= doc.numPages; p++) {
-    const page     = await doc.getPage(p)
-    const viewport = page.getViewport({ scale: 1 })
-    const content  = await page.getTextContent({ includeMarkedContent: false })
+  const uploadRes = await fetch(`${BASE}/upload`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}` },
+    body: form,
+  })
+  if (!uploadRes.ok) {
+    const msg = await uploadRes.text().catch(() => uploadRes.statusText)
+    throw new Error(`LlamaParse upload failed (${uploadRes.status}): ${msg}`)
+  }
+  const { id: jobId } = await uploadRes.json() as { id: string }
 
-    const items: TextItem[] = []
-    for (const item of content.items) {
-      if (!('str' in item)) continue
-      if (!item.str.trim()) continue
+  // 2. Poll until done (max 3 minutes)
+  const deadline = Date.now() + 180_000
+  let delay = 2000
+  while (Date.now() < deadline) {
+    await sleep(delay)
+    delay = Math.min(delay * 1.4, 8000) // back off up to 8s intervals
 
-      // Transform matrix: [scaleX, skewY, skewX, scaleY, tx, ty]
-      const tx = item.transform
-      items.push({
-        str:      item.str,
-        x:        tx[4],
-        y:        tx[5],
-        width:    item.width,
-        height:   item.height || Math.abs(tx[3]),
-        fontName: item.fontName ?? '',
-      })
-    }
+    const statusRes = await fetch(`${BASE}/job/${jobId}`, {
+      headers: { Authorization: `Bearer ${key}` },
+    })
+    if (!statusRes.ok) continue
+    const { status } = await statusRes.json() as { status: string }
 
-    if (!items.length) continue
-
-    const lines       = groupIntoLines(items)
-    const columnSplit = detectColumnSplit(lines, viewport.width)
-    const text        = linesToText(lines, columnSplit)
-    if (text) pageTexts.push(text)
+    if (status === 'SUCCESS') break
+    if (status === 'ERROR') throw new Error('LlamaParse could not process this document.')
   }
 
-  return pageTexts
-    .join('\n\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
+  if (Date.now() >= deadline) throw new Error('LlamaParse timed out — document may be too large.')
+
+  // 3. Fetch markdown result
+  const resultRes = await fetch(`${BASE}/job/${jobId}/result/markdown`, {
+    headers: { Authorization: `Bearer ${key}` },
+  })
+  if (!resultRes.ok) throw new Error(`LlamaParse result fetch failed (${resultRes.status})`)
+  const { markdown } = await resultRes.json() as { markdown: string }
+
+  return markdown ?? ''
 }
