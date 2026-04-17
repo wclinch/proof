@@ -262,7 +262,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (data.error) {
           patchSource(projId, src.id, { status: 'error', error: data.error })
         } else {
-          patchSource(projId, src.id, { status: 'done', result: data.analysis as QueuedSource['result'], rawText: data.content ?? null })
+          const analysis = data.analysis as QueuedSource['result']
+          const aiTitle  = (analysis as any)?.title
+          patchSource(projId, src.id, {
+            status: 'done',
+            result: analysis,
+            rawText: data.content ?? null,
+            ...(aiTitle ? { label: aiTitle } : {}),
+          })
         }
       } catch {
         patchSource(projId, src.id, { status: 'error', error: 'Upload failed — check your connection' })
