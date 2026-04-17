@@ -34,9 +34,20 @@ function parseBlocks(text: string): string[] {
 const NAV_STOP_WORDS = new Set(['the','a','an','and','or','for','of','to','in','is','are','was','with','by','at','on','as','it','its','this','that','from','be','been','can','will','our','your','we','us'])
 
 
+const JUNK_PATTERNS = [
+  /cookie/i,
+  /javascript.*disabled/i,
+  /enable.*javascript/i,
+  /sign in to continue/i,
+  /log in to continue/i,
+  /access denied/i,
+  /please enable/i,
+]
+
 // Strip nav/UI blocks from the first 20 blocks
 function filterNavBlocks(blocks: string[]): string[] {
   return blocks.filter((b, i) => {
+    if (JUNK_PATTERNS.some(p => p.test(b))) return false  // always strip junk
     if (i >= 20) return true
     if (/[.?!]/.test(b) && b.length > 40) return true  // real sentence → keep
 

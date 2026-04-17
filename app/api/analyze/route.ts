@@ -5,6 +5,16 @@ import { logTopics } from '@/lib/logTopics'
 
 const NAV_STOP_WORDS = new Set(['the','a','an','and','or','for','of','to','in','is','are','was','with','by','at','on','as','it','its','this','that','from','be','been','can','will','our','your','we','us'])
 
+const JUNK_PATTERNS = [
+  /cookie/i,
+  /javascript.*disabled/i,
+  /enable.*javascript/i,
+  /sign in to continue/i,
+  /log in to continue/i,
+  /access denied/i,
+  /please enable/i,
+]
+
 // Strip navigation/UI blocks that Jina captures from website chrome.
 // Real headings (short, no repeats) are preserved. Only checks first 20 blocks.
 function stripNavBlocks(text: string): string {
@@ -13,6 +23,7 @@ function stripNavBlocks(text: string): string {
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i].trim()
     if (!b) continue
+    if (JUNK_PATTERNS.some(p => p.test(b))) continue  // always strip junk
     if (i >= 20) { out.push(b); continue }
 
     if (/[.?!]/.test(b) && b.length > 40) { out.push(b); continue }  // real sentence
