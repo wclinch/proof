@@ -144,14 +144,17 @@ export default function AccountPage() {
         <div style={sectionStyle}>
           <span style={labelStyle}>Plan</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ fontSize: '14px', color: '#999', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: '14px', color: '#999' }}>
               {isSubscribed
-                ? periodEnd
-                  ? <>Pro — unlimited sources · <span style={{ color: '#666' }}>
-                      {isCancelling ? 'ends' : 'renews'}{' '}
-                      {periodEnd.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' })} UTC
-                    </span></>
-                  : 'Pro — unlimited sources'
+                ? <>
+                    Pro — unlimited sources
+                    {periodEnd && (
+                      <div style={{ fontSize: '12px', color: '#555', marginTop: '4px', letterSpacing: '0.03em' }}>
+                        {isCancelling ? 'Ends' : 'Renews'}{' '}
+                        {periodEnd.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' })} UTC
+                      </div>
+                    )}
+                  </>
                 : `Free — ${pdfCount} of ${PDF_FREE_LIMIT} sources used`}
             </div>
             {!isSubscribed ? (
