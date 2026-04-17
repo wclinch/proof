@@ -14,38 +14,34 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>The short version</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Your documents stay on your device. Uploaded content is never stored by Proof. We collect no personal information beyond what is required to run an account. The only data we log is a set of broad, anonymized subject keywords — never document content, never anything that could identify you or your work.
+            Your documents stay on your device. Uploaded content is never stored by Proof. We collect account info, anonymized usage events, and broad topic keywords from uploads. No document content, no file names, no IP addresses.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we do not collect</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            We do not store document content, file names, or source text. We do not collect IP addresses, browser fingerprints, or behavioral data. No tracking cookies. Your projects, sources, and drafts live in your browser and never leave your device.
+            We do not store document content, file names, or source text. We do not collect IP addresses. Your projects, sources, and drafts live in your browser and never leave your device.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we do collect</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#777' }}>Account holders:</span> email address and subscription status. Required to manage access. Nothing else is associated with your account.
+            <span style={{ color: '#999' }}>Account:</span> email address and subscription status. Required to manage access.
           </p>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#777' }}>Aggregate topic keywords:</span> when a source is analyzed, we log the keyword tags extracted from the document — broad subject-area terms like &ldquo;contract law&rdquo; or &ldquo;machine learning&rdquo;. No names, no document content, no metadata traceable to you or your work.
+            <span style={{ color: '#999' }}>Usage analytics:</span> anonymized events — page visits, uploads, feature use (e.g. verifying a fact, exporting). Collected via PostHog. No document content, no IP addresses. Used to understand how the product is being used.
+          </p>
+          <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
+            <span style={{ color: '#999' }}>Topic keywords:</span> broad subject-area tags extracted from each upload — things like &ldquo;contract law&rdquo; or &ldquo;machine learning&rdquo;. No names, no content, nothing traceable to you or your document.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>AI processing</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Document content is sent to Groq&apos;s inference infrastructure for AI extraction. This is transient — Proof does not retain the content after processing. Please review <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'none' }}>Groq&apos;s privacy policy</a> for details on how content submitted to their API is handled on their end.
-          </p>
-        </div>
-
-        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How topic data is used</h2>
-          <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Anonymized subject keywords may be used internally or shared in aggregate with research institutions. Individual records cannot be linked to any user, session, or document and are never sold.
+            Document content is sent to Groq&apos;s inference infrastructure for extraction. Proof does not retain the content after processing. See <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'none' }}>Groq&apos;s privacy policy</a> for how they handle submitted content.
           </p>
         </div>
 
