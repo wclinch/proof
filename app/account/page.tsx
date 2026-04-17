@@ -120,7 +120,7 @@ export default function AccountPage() {
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Nav />
         <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '12px', color: '#777', letterSpacing: '0.08em' }}>Loading...</span>
+          <span style={{ fontSize: '12px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Loading...</span>
         </main>
       </div>
     )
@@ -315,9 +315,9 @@ export default function AccountPage() {
         </div>
 
         <div style={{ paddingTop: '8px' }}>
-          <a href="/app" style={{ fontSize: '12px', color: '#777', letterSpacing: '0.06em', textDecoration: 'none', textTransform: 'uppercase' }}
-            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#777')}
-            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#333')}
+          <a href="/app" style={{ fontSize: '12px', color: '#555', letterSpacing: '0.06em', textDecoration: 'none', textTransform: 'uppercase' }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#aaa')}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#555')}
           >
             ← Back
           </a>

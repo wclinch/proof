@@ -26,6 +26,7 @@ export async function extractPdfText(buffer: Buffer): Promise<string> {
   // 2. Poll until done (max 3 minutes)
   const deadline = Date.now() + 180_000
   let delay = 2000
+  let done = false
   while (Date.now() < deadline) {
     await sleep(delay)
     delay = Math.min(delay * 1.4, 8000) // back off up to 8s intervals
@@ -36,11 +37,11 @@ export async function extractPdfText(buffer: Buffer): Promise<string> {
     if (!statusRes.ok) continue
     const { status } = await statusRes.json() as { status: string }
 
-    if (status === 'SUCCESS') break
+    if (status === 'SUCCESS') { done = true; break }
     if (status === 'ERROR') throw new Error('LlamaParse could not process this document.')
   }
 
-  if (Date.now() >= deadline) throw new Error('LlamaParse timed out — document may be too large.')
+  if (!done) throw new Error('LlamaParse timed out — document may be too large.')
 
   // 3. Fetch markdown result
   const resultRes = await fetch(`${BASE}/job/${jobId}/result/markdown`, {

@@ -15,6 +15,10 @@ function cleanText(raw: string): string {
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
     .replace(/^[•·]\s*/gm, '- ')
+    .replace(/^\|.*\|.*$/gm, m =>                  // convert table rows to plain text
+      m.replace(/\|/g, ' ').replace(/\s{2,}/g, ' ').trim()
+    )
+    .replace(/^[-| :]+$/gm, '')                    // strip table separator rows (---|---|---)
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }

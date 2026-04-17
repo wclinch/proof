@@ -12,6 +12,9 @@ export async function POST(req: NextRequest) {
   if (!process.env.GROQ_API_KEY) {
     return NextResponse.json({ error: 'GROQ_API_KEY not configured' }, { status: 500 })
   }
+  if (!process.env.LLAMA_CLOUD_API_KEY) {
+    return NextResponse.json({ error: 'LLAMA_CLOUD_API_KEY not configured' }, { status: 500 })
+  }
 
   const formData = await req.formData()
   const file     = formData.get('file') as File | null
@@ -38,7 +41,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const content  = fullText.replace(/\n+/g, ' ').slice(0, 20000)
+    const content  = fullText.slice(0, 60000)
     const raw      = await callGroq(process.env.GROQ_API_KEY, content, name)
     const analysis = parseGroqResponse(raw)
     return NextResponse.json({ analysis, content: fullText })
