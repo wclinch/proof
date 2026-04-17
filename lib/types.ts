@@ -5,8 +5,7 @@ export interface AnalysisResult {
   authors: string[]
   year: string | null
   journal: string | null
-  facts: string[]
-  supporting: string[]
+  items: string[]
   quotes: string[]
   keywords: string[]
 }

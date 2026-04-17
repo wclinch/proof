@@ -36,16 +36,10 @@ export default function AnalysisView({
         </div>
       )}
 
-      {result.facts?.length > 0 && (
-        <Field label="Facts">
-          {result.facts.map((f, i) => <Row key={i} value={f} onJump={onJump} />)}
-        </Field>
-      )}
-
-      {result.supporting?.length > 0 && (
-        <Field label="Supporting">
-          {result.supporting.map((s, i) => <Row key={i} value={s} onJump={onJump} />)}
-        </Field>
+      {result.items?.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '20px' }}>
+          {result.items.map((item, i) => <Row key={i} value={item} onJump={onJump} />)}
+        </div>
       )}
 
       {result.quotes?.length > 0 && (

@@ -40,7 +40,7 @@ export default function About() {
               <span style={{ color: '#999' }}>1. Add a source</span> — drop a PDF. Proof reads the full document and extracts everything verifiable.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>2. Read the breakdown</span> — select a source. The center panel shows facts (numbers, dates, data points), supporting points (context, reasoning, conclusions), direct quotes, and keywords. Toggle to Source to read the full original text.
+              <span style={{ color: '#999' }}>2. Read the breakdown</span> — select a source. The center panel shows everything worth knowing from the document in a flat, readable list — then direct quotes and keywords below. Toggle to Source to read the full original text.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
               <span style={{ color: '#999' }}>3. Verify a fact</span> — click <span style={{ color: '#999', fontFamily: 'inherit', fontSize: '12px', letterSpacing: '0.06em' }}>src</span> next to any item to jump to exactly where it appears in the source. Full sentence, full paragraph, no new tab.

@@ -7,8 +7,7 @@ Extract verbatim where possible. Never invent or paraphrase data not present in 
   "authors": ["Last, First — only if explicitly credited"],
   "year": "year as string, or null",
   "journal": "journal or publication name, or null",
-  "facts": ["Cold hard verifiable items — numbers, statistics, dates, durations, quantities, named roles, credentials, explicit data points. Format as concise phrases without prefixing the subject's name. Extract ALL that are present."],
-  "supporting": ["Points that provide context, explanation, reasoning, methodology, or conclusions that connect to or support the facts. Verbatim or near-verbatim. Up to 12."],
+  "items": ["Everything worth knowing from this document — dates, numbers, credentials, roles, findings, events, claims, context — in the order they appear. Concise phrases, verbatim where possible, no subject name prefix. Extract ALL that are present, up to 25."],
   "quotes": ["Direct quotes worth citing — exact text with punctuation — up to 6, or []"],
   "keywords": ["Broad subject-area terms only. No proper nouns. Think discipline-level categories: 'contract law', 'cardiovascular disease', 'machine learning'. 5 to 10 terms."]
 }

@@ -15,8 +15,7 @@ function formatBreakdown(result: AnalysisResult, fmt: 'txt' | 'md'): string {
   if (meta) lines.push(meta)
   lines.push('')
 
-  if (result.facts?.length)      { lines.push(h('Facts'),      ...result.facts.map(li),      '') }
-  if (result.supporting?.length) { lines.push(h('Supporting'), ...result.supporting.map(li), '') }
+  if (result.items?.length)      { lines.push(...result.items.map(li), '') }
   if (result.quotes?.length)     { lines.push(h('Quotes'),     ...result.quotes.map(q => li(`"${q}"`)), '') }
   if (result.keywords?.length)   { lines.push(h('Keywords'),   result.keywords.join(', '),   '') }
 
