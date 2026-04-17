@@ -29,7 +29,10 @@ export default function AuthPage() {
     const sb = getSupabaseBrowser()
 
     if (mode === 'signup') {
-      const { data, error: err } = await sb.auth.signUp({ email, password })
+      const { data, error: err } = await sb.auth.signUp({
+        email, password,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/app` },
+      })
       if (err) { setError(err.message); setLoading(false); return }
       if (data.user) {
         await (sb.from as any)('profiles').upsert({ id: data.user.id, subscribed: false }, { onConflict: 'id' })
