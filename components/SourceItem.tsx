@@ -134,8 +134,13 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
           </div>
         )}
         {src.status === 'loading' && (
-          <div style={{ fontSize: '11px', color: '#555', marginTop: '3px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            analyzing...
+          <div style={{ marginTop: '4px' }}>
+            <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '5px' }}>
+              analyzing...
+            </div>
+            <div style={{ width: '80px', height: '1px', background: '#1a1a1a', borderRadius: '1px', overflow: 'hidden' }}>
+              <div className="progress-bar" style={{ height: '100%', background: '#2a6', borderRadius: '1px' }} />
+            </div>
           </div>
         )}
         {src.status === 'error' && (
