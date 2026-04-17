@@ -1,7 +1,7 @@
 'use client'
 import { ReactNode } from 'react'
 
-export default function Tag({ children, dim }: { children: ReactNode; dim?: boolean }) {
+export default function Tag({ children }: { children: ReactNode }) {
   return (
     <span
       style={{
