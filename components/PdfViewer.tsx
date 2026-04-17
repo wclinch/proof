@@ -9,9 +9,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 const norm = (s: string) =>
   s.replace(/[,|·•–—\-]/g, ' ').replace(/\s+/g, ' ').toLowerCase()
 
-// Highlight the spans in the text layer that correspond to the needle match
 function highlightInLayer(layer: Element, needle: string) {
-  // Clear previous highlights
   layer.querySelectorAll('span[data-proof-hl]').forEach(el => {
     el.removeAttribute('data-proof-hl')
     const s = el.getAttribute('style') ?? ''
@@ -23,7 +21,6 @@ function highlightInLayer(layer: Element, needle: string) {
   const spans = Array.from(layer.querySelectorAll('span'))
   if (!spans.length) return
 
-  // Build normalized full text + a char→spanIndex map so positions always align
   const charToSpan: number[] = []
   let normFull = ''
   spans.forEach((span, si) => {
@@ -34,7 +31,6 @@ function highlightInLayer(layer: Element, needle: string) {
 
   const normNeedle = norm(needle)
 
-  // Try progressively shorter slices
   const slices = [80, 50, 25, 12]
     .map(n => normNeedle.slice(0, n))
     .filter((s, i, a) => s.length >= 8 && a.indexOf(s) === i)
@@ -45,7 +41,6 @@ function highlightInLayer(layer: Element, needle: string) {
     if (idx !== -1) { matchStart = idx; matchEnd = idx + slice.length; break }
   }
 
-  // Fallback: sliding 3–5 word window
   if (matchStart === -1) {
     const words = normNeedle.trim().split(/\s+/)
     outer:
@@ -61,8 +56,8 @@ function highlightInLayer(layer: Element, needle: string) {
 
   if (matchStart === -1) return
 
-  // Extend matchEnd forward to cover as much of the needle as possible
-  // (handles cases where Groq combines text from multiple PDF lines)
+  // Extend match forward: find the last needle word present in normFull
+  // after matchStart, so multi-line items get fully highlighted
   const needleWords = normNeedle.split(/\s+/).filter(w => w.length >= 3)
   for (let wi = needleWords.length - 1; wi >= 0; wi--) {
     const pos = normFull.indexOf(needleWords[wi], matchStart)
@@ -72,7 +67,6 @@ function highlightInLayer(layer: Element, needle: string) {
     }
   }
 
-  // Find which spans own characters in [matchStart, matchEnd)
   const hit = new Set<number>()
   for (let i = matchStart; i < matchEnd && i < charToSpan.length; i++) hit.add(charToSpan[i])
 
@@ -89,16 +83,18 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
   const [pageTexts, setPageTexts] = useState<string[]>([])
   const [missing,   setMissing]   = useState(false)
   const [width,     setWidth]     = useState(600)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const pageRefs     = useRef<(HTMLDivElement | null)[]>([])
+  const containerRef  = useRef<HTMLDivElement>(null)
+  const pageRefs      = useRef<(HTMLDivElement | null)[]>([])
+  // Which page index + needle to highlight — set when user clicks src,
+  // consumed by onRenderTextLayerSuccess if the layer isn't ready yet
+  const pendingHL     = useRef<{ pageIdx: number; needle: string } | null>(null)
 
-  // Load file from IndexedDB
   useEffect(() => {
     setFile(null); setMissing(false); setNumPages(0); setPageTexts([])
+    pendingHL.current = null
     getFile(srcId).then(f => { if (f) setFile(f); else setMissing(true) })
   }, [srcId])
 
-  // Measure container width
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -110,7 +106,6 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
     return () => ro.disconnect()
   }, [])
 
-  // Extract per-page text after document loads
   async function onDocumentLoad(pdf: pdfjs.PDFDocumentProxy) {
     setNumPages(pdf.numPages)
     const texts = await Promise.all(
@@ -123,14 +118,14 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
     setPageTexts(texts)
   }
 
-  // Jump to the right page and highlight matching spans in the text layer
+  // Find target page + scroll when highlight/pageTexts change
   useEffect(() => {
+    pendingHL.current = null
     if (!highlight || !pageTexts.length) return
 
-    const needle     = norm(highlight)
-    const pageLows   = pageTexts.map(t => norm(t))
+    const needle   = norm(highlight)
+    const pageLows = pageTexts.map(t => norm(t))
 
-    // Page search: progressively shorter needle slices
     const slices = [100, 60, 40, 20].map(n => needle.slice(0, n)).filter((s, i, a) => s.length >= 10 && a.indexOf(s) === i)
     let idx = -1
     for (const s of slices) {
@@ -138,7 +133,6 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
       if (idx !== -1) break
     }
 
-    // Fallback: sliding 4-word window
     if (idx === -1) {
       const words = needle.split(/\s+/)
       outer:
@@ -152,7 +146,6 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
       }
     }
 
-    // Fallback: page with most keyword hits
     if (idx === -1) {
       const kws = needle.split(/\s+/).filter(w => w.length > 4)
       if (kws.length >= 2) {
@@ -170,22 +163,32 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
     const pageEl = pageRefs.current[idx]
     pageEl?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
-    // Highlight in text layer — poll until the layer is ready (up to ~3s)
-    let attempts = 0
-    const tryHighlight = () => {
-      const layer = pageEl?.querySelector('.textLayer')
-      if (layer && layer.querySelectorAll('span').length > 0) {
-        highlightInLayer(layer, needle)
-      } else if (attempts++ < 15) {
-        setTimeout(tryHighlight, 200)
-      }
+    // Try immediately (text layer may already be rendered)
+    const layer = pageEl?.querySelector('.textLayer')
+    if (layer && layer.querySelectorAll('span').length > 0) {
+      highlightInLayer(layer, needle)
+    } else {
+      // Text layer not ready yet — onRenderTextLayerSuccess will pick this up
+      pendingHL.current = { pageIdx: idx, needle }
     }
-    setTimeout(tryHighlight, 100)
   }, [highlight, pageTexts])
+
+  // Called by react-pdf when a page's text layer finishes rendering
+  const onTextLayerSuccess = useCallback((pageIdx: number) => {
+    const pending = pendingHL.current
+    if (!pending || pending.pageIdx !== pageIdx) return
+    const pageEl = pageRefs.current[pageIdx]
+    const layer  = pageEl?.querySelector('.textLayer')
+    if (layer) {
+      pendingHL.current = null
+      highlightInLayer(layer, pending.needle)
+    }
+  }, [])
 
   // Clear highlights when returning to breakdown
   useEffect(() => {
     if (highlight) return
+    pendingHL.current = null
     containerRef.current?.querySelectorAll('span[data-proof-hl]').forEach(el => {
       el.removeAttribute('data-proof-hl')
       const s = el.getAttribute('style') ?? ''
@@ -232,6 +235,7 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
               width={width}
               renderTextLayer
               renderAnnotationLayer={false}
+              onRenderTextLayerSuccess={() => onTextLayerSuccess(i)}
             />
           </div>
         ))}
