@@ -19,9 +19,8 @@ export default function Home() {
 
           <p style={{ fontSize: '15px', color: '#777', lineHeight: 1.8, margin: '0 0 40px', maxWidth: '480px' }}>
             Drop a PDF. Every fact, stat, finding, and quote gets pulled out
-            and tied to the exact passage it came from. Verify anything in one
-            click. Write in the same window. No tab switching, no lost context,
-            no wondering if something was actually said.
+            and tied to the exact passage it came from. Click any item to verify
+            it in context. Write from it in the same window. Never leave.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -46,10 +45,10 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
-              ['Drop a PDF', 'Proof reads the full document and pulls out every fact, stat, finding, and quote. Nothing is paraphrased. Nothing is invented.'],
-              ['Verify anything', 'Click any extracted fact to jump to the exact passage it came from. See the full sentence, the surrounding context, the page it was on. Not a summary — the actual source.'],
-              ['Stay in one place', 'The writing panel is right there. Draft notes, a section, a full document — without opening a new tab, without losing your place, without wondering if you remembered something correctly.'],
-              ['Come back to it', 'Sources and drafts persist across sessions. Return to a project and pick up exactly where you left off.'],
+              ['Drop a PDF', 'Proof reads the full document and extracts every fact, stat, finding, and quote. Nothing paraphrased, nothing invented.'],
+              ['Verify anything', 'Click any item to jump to exactly where it appears in the source. Full sentence, full context — not a summary.'],
+              ['Stay in one place', 'Write in the panel on the right. No new tabs, no lost place, no switching back and forth.'],
+              ['Come back to it', 'Sources and drafts persist. Return to a project and pick up where you left off.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ display: 'flex', gap: '24px' }}>
                 <div style={{ width: '4px', flexShrink: 0, background: '#1a1a1a', borderRadius: '2px', alignSelf: 'stretch' }} />
@@ -69,9 +68,9 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {([
-              ['Not an AI summary', 'Proof does not interpret, condense, or guess. Every extracted item maps to a real passage in the source — click it and you will see exactly where it came from.'],
-              ['Not a chatbot', 'No prompts, no conversation, no hallucinated answers. You read. You verify. You write. Proof just keeps everything in the same window.'],
-              ['Not a tab manager', 'The problem is not having too many tabs open. The problem is losing your thread every time you leave. Proof keeps source and writing in one place so you never do.'],
+              ['Not an AI summary', 'Proof extracts verbatim and ties every item back to its source. Nothing is interpreted or invented.'],
+              ['Not a chatbot', 'No prompts, no conversation. You read, verify, and write. Proof just keeps it all in one window.'],
+              ['Not a search engine', 'You bring the documents. Proof gives you structured, verifiable access to what is inside them.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ fontSize: '13px', color: '#777', lineHeight: 1.75 }}>
                 <span style={{ color: '#aaa' }}>{title}. </span>{body}
