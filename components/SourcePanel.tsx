@@ -79,7 +79,7 @@ export default function SourcePanel({ width }: { width: number }) {
           cursor: isAnalyzing ? 'default' : 'pointer',
         }}
       >
-        <span style={{ fontSize: '12px', color: '#777', letterSpacing: '0.05em', flex: 1 }}>
+        <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase', flex: 1 }}>
           {dragOver ? 'drop to add' : 'drop PDFs or click ↑'}
         </span>
         <button
@@ -94,7 +94,7 @@ export default function SourcePanel({ width }: { width: number }) {
         onChange={e => { if (e.target.files?.length) { handleUpload(e.target.files); e.target.value = '' } }}
       />
       {dupMsg && (
-        <div style={{ margin: '6px 10px 0', fontSize: '11px', color: '#666', letterSpacing: '0.04em', padding: '0 2px' }}>
+        <div style={{ margin: '6px 10px 0', fontSize: '11px', color: '#666', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 2px' }}>
           pdf already added.
         </div>
       )}
@@ -116,21 +116,21 @@ export default function SourcePanel({ width }: { width: number }) {
                 flex: 1,
                 background: 'transparent', border: 'none', outline: 'none',
                 fontSize: '12px', fontFamily: 'inherit',
-                letterSpacing: '0.05em', color: '#777',
+                letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#555',
               }}
             />
           </div>
         )}
         <div style={{ flex: 1, overflowY: 'auto', marginTop: '4px' }}>
           {sources.length === 0
-            ? <div style={{ padding: '10px 14px', fontSize: '12px', color: '#777', letterSpacing: '0.05em' }}>no documents yet.</div>
+            ? <div style={{ padding: '10px 14px', fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>no documents yet.</div>
             : (() => {
                 const q = filter.trim().toLowerCase()
                 const visible = q
                   ? sources.filter(s => (s.label || s.result?.title || s.raw).toLowerCase().includes(q))
                   : sources
                 return visible.length === 0
-                  ? <div style={{ padding: '20px 14px', fontSize: '12px', color: '#777', letterSpacing: '0.05em' }}>no match.</div>
+                  ? <div style={{ padding: '20px 14px', fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>no match.</div>
                   : visible.map(src => <SourceItem key={src.id} src={src} />)
               })()
           }

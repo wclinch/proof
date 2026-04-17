@@ -134,7 +134,7 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
           </div>
         )}
         {src.status === 'loading' && (
-          <div style={{ fontSize: '11px', color: '#666', marginTop: '3px', letterSpacing: '0.04em' }}>
+          <div style={{ fontSize: '11px', color: '#555', marginTop: '3px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             analyzing...
           </div>
         )}

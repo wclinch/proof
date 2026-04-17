@@ -231,13 +231,13 @@ export default function SourceTextView({ text, highlight }: { text: string; high
       })}
 
       {highlight && matchBlock === -1 && (
-        <div style={{ fontSize: '11px', color: '#666', letterSpacing: '0.04em', paddingTop: '4px' }}>
+        <div style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em', textTransform: 'uppercase' as const, paddingTop: '4px' }}>
           excerpt not found in source text.
         </div>
       )}
 
       {truncated && (
-        <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: '1px solid #1a1a1a', fontSize: '11px', color: '#666', letterSpacing: '0.04em' }}>
+        <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: '1px solid #1a1a1a', fontSize: '11px', color: '#666', letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
           source text truncated at ~20k characters.
         </div>
       )}

@@ -145,8 +145,8 @@ export default function DraftPanel({ width }: { width: number }) {
           >
             New
           </button>
-          <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.04em' }}>
-            nothing here yet · {typeof navigator !== 'undefined' && /mac/i.test(navigator.platform) ? '⌘↵' : 'Ctrl+↵'}
+          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            NOTHING HERE YET · {typeof navigator !== 'undefined' && /mac/i.test(navigator.platform) ? '⌘↵' : 'CTRL+↵'}
           </span>
         </div>
       ) : (
