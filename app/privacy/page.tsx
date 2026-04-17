@@ -21,7 +21,7 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we do not collect</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            We do not store document content, file names, or source text. We do not collect IP addresses. Your projects, sources, and drafts live in your browser and never leave your device.
+            We do not store document content, file names, or source text. We do not collect IP addresses. We do not sell data. Your projects, sources, and drafts live in your browser and never leave your device.
           </p>
         </div>
 
