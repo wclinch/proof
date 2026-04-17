@@ -7,7 +7,7 @@ import { getFile } from '@/lib/idb'
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
 const norm = (s: string) =>
-  s.replace(/[,|·•–—]/g, ' ').replace(/\s+/g, ' ').toLowerCase()
+  s.replace(/[,|·•–—\-]/g, ' ').replace(/\s+/g, ' ').toLowerCase()
 
 // Highlight the spans in the text layer that correspond to the needle match
 function highlightInLayer(layer: Element, needle: string) {
@@ -60,6 +60,17 @@ function highlightInLayer(layer: Element, needle: string) {
   }
 
   if (matchStart === -1) return
+
+  // Extend matchEnd forward to cover as much of the needle as possible
+  // (handles cases where Groq combines text from multiple PDF lines)
+  const needleWords = normNeedle.split(/\s+/).filter(w => w.length >= 3)
+  for (let wi = needleWords.length - 1; wi >= 0; wi--) {
+    const pos = normFull.indexOf(needleWords[wi], matchStart)
+    if (pos !== -1 && pos < matchStart + 500) {
+      matchEnd = Math.max(matchEnd, pos + needleWords[wi].length)
+      break
+    }
+  }
 
   // Find which spans own characters in [matchStart, matchEnd)
   const hit = new Set<number>()
