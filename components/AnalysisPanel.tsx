@@ -116,17 +116,17 @@ export default function AnalysisPanel() {
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
         {!selectedSource && (
           <div style={{ fontSize: '13px', color: '#777', letterSpacing: '0.04em' }}>
-            Select a source.
+            select a source.
           </div>
         )}
         {selectedSource?.status === 'queued' && (
           <div style={{ fontSize: '13px', color: '#777', letterSpacing: '0.04em' }}>
-            Queued.
+            queued.
           </div>
         )}
         {selectedSource?.status === 'loading' && (
           <div style={{ fontSize: '13px', color: '#777', letterSpacing: '0.04em' }}>
-            Analyzing...
+            analyzing...
           </div>
         )}
         {selectedSource?.status === 'error' && (

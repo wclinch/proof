@@ -80,7 +80,7 @@ export default function SourcePanel({ width }: { width: number }) {
         }}
       >
         <span style={{ fontSize: '12px', color: '#777', letterSpacing: '0.05em', flex: 1 }}>
-          {dragOver ? 'Drop to add' : 'Drop PDFs or click ↑'}
+          {dragOver ? 'drop to add' : 'drop PDFs or click ↑'}
         </span>
         <button
           onClick={e => { e.stopPropagation(); if (!isAnalyzing) fileRef.current?.click() }}
@@ -95,7 +95,7 @@ export default function SourcePanel({ width }: { width: number }) {
       />
       {dupMsg && (
         <div style={{ margin: '6px 10px 0', fontSize: '11px', color: '#666', letterSpacing: '0.04em', padding: '0 2px' }}>
-          PDF already added.
+          pdf already added.
         </div>
       )}
 
@@ -111,7 +111,7 @@ export default function SourcePanel({ width }: { width: number }) {
               className="sp-input"
               value={filterInput}
               onChange={e => setFilterInput(e.target.value)}
-              placeholder="Filter..."
+              placeholder="filter..."
               style={{
                 flex: 1,
                 background: 'transparent', border: 'none', outline: 'none',
@@ -123,14 +123,14 @@ export default function SourcePanel({ width }: { width: number }) {
         )}
         <div style={{ flex: 1, overflowY: 'auto', marginTop: '4px' }}>
           {sources.length === 0
-            ? <div style={{ padding: '10px 14px', fontSize: '12px', color: '#777', letterSpacing: '0.05em' }}>No documents yet.</div>
+            ? <div style={{ padding: '10px 14px', fontSize: '12px', color: '#777', letterSpacing: '0.05em' }}>no documents yet.</div>
             : (() => {
                 const q = filter.trim().toLowerCase()
                 const visible = q
                   ? sources.filter(s => (s.label || s.result?.title || s.raw).toLowerCase().includes(q))
                   : sources
                 return visible.length === 0
-                  ? <div style={{ padding: '20px 14px', fontSize: '12px', color: '#777', letterSpacing: '0.05em' }}>No match.</div>
+                  ? <div style={{ padding: '20px 14px', fontSize: '12px', color: '#777', letterSpacing: '0.05em' }}>no match.</div>
                   : visible.map(src => <SourceItem key={src.id} src={src} />)
               })()
           }

@@ -232,13 +232,13 @@ export default function SourceTextView({ text, highlight }: { text: string; high
 
       {highlight && matchBlock === -1 && (
         <div style={{ fontSize: '11px', color: '#666', letterSpacing: '0.04em', paddingTop: '4px' }}>
-          Excerpt not found in source text.
+          excerpt not found in source text.
         </div>
       )}
 
       {truncated && (
         <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: '1px solid #1a1a1a', fontSize: '11px', color: '#666', letterSpacing: '0.04em' }}>
-          Source text truncated at ~20k characters.
+          source text truncated at ~20k characters.
         </div>
       )}
     </div>

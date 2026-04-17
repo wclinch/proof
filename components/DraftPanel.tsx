@@ -173,7 +173,7 @@ export default function DraftPanel({ width }: { width: number }) {
             value={localDraft}
             onChange={e => setLocalDraft(e.target.value)}
             onKeyDown={handleTab}
-            placeholder="Start writing..."
+            placeholder="start writing..."
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
               color: '#999',
