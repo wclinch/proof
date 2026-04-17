@@ -15,22 +15,26 @@ export default function AnalysisView({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
 
-      {/* Header */}
-      <div style={{ paddingBottom: '18px', borderBottom: '1px solid #1a1a1a', marginBottom: '20px' }}>
-        <div style={{ fontSize: '15px', fontWeight: 500, color: '#bbb', lineHeight: 1.4, marginBottom: '6px' }}>
-          {result.title}
+      {/* Header — only render if there's something to show */}
+      {(result.title || result.authors?.length > 0 || result.year || result.journal) && (
+        <div style={{ paddingBottom: '18px', borderBottom: '1px solid #1a1a1a', marginBottom: '20px' }}>
+          {result.title && (
+            <div style={{ fontSize: '15px', fontWeight: 500, color: '#bbb', lineHeight: 1.4, marginBottom: '6px' }}>
+              {result.title}
+            </div>
+          )}
+          {result.authors?.length > 0 && (
+            <div style={{ fontSize: '12px', color: '#999', lineHeight: 1.7 }}>
+              {result.authors.join(', ')}
+            </div>
+          )}
+          {(result.year || result.journal) && (
+            <div style={{ fontSize: '12px', color: '#777', marginTop: '3px' }}>
+              {[result.year, result.journal].filter(Boolean).join(' · ')}
+            </div>
+          )}
         </div>
-        {result.authors?.length > 0 && (
-          <div style={{ fontSize: '12px', color: '#999', lineHeight: 1.7 }}>
-            {result.authors.join(', ')}
-          </div>
-        )}
-        {(result.year || result.journal) && (
-          <div style={{ fontSize: '12px', color: '#777', marginTop: '3px' }}>
-            {[result.year, result.journal].filter(Boolean).join(' · ')}
-          </div>
-        )}
-      </div>
+      )}
 
       {result.stats?.length > 0 && (
         <Field label="Statistics">

@@ -95,7 +95,7 @@ export default function SourcePanel({ width }: { width: number }) {
       />
       {dupMsg && (
         <div style={{ margin: '6px 10px 0', fontSize: '11px', color: '#666', letterSpacing: '0.04em', padding: '0 2px' }}>
-          Already added.
+          PDF already added.
         </div>
       )}
 
