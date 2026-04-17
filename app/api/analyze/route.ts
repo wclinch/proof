@@ -49,60 +49,6 @@ function stripNavBlocks(text: string): string {
   return out.join('\n\n')
 }
 
-function extractVideoId(url: string): string | null {
-  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
-  return m ? m[1] : null
-}
-
-async function getYouTubeTranscript(videoId: string): Promise<string | null> {
-  try {
-    const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=en`, {
-      headers: {
-        'Accept-Language': 'en-US,en;q=0.9',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      },
-    })
-    if (!pageRes.ok) return null
-    const html = await pageRes.text()
-
-    // Extract ytInitialPlayerResponse JSON by bracket counting
-    // YouTube uses both "ytInitialPlayerResponse = {" and "ytInitialPlayerResponse={"
-    const marker = html.includes('ytInitialPlayerResponse = {')
-      ? 'ytInitialPlayerResponse = {'
-      : 'ytInitialPlayerResponse={"'
-    const startIdx = html.indexOf(marker)
-    if (startIdx === -1) return null
-    const jsonStart = html.indexOf('{', startIdx)
-    let depth = 0, jsonEnd = jsonStart
-    for (let i = jsonStart; i < html.length; i++) {
-      if (html[i] === '{') depth++
-      else if (html[i] === '}') { depth--; if (depth === 0) { jsonEnd = i; break } }
-    }
-    const playerResponse = JSON.parse(html.slice(jsonStart, jsonEnd + 1))
-    const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks
-    if (!tracks?.length) return null
-
-    // Prefer English track
-    const track = tracks.find((t: { languageCode: string }) => t.languageCode === 'en') ?? tracks[0]
-    const captionUrl = `${track.baseUrl}&fmt=json3`
-
-    const capRes = await fetch(captionUrl)
-    if (!capRes.ok) return null
-    const capData = await capRes.json()
-
-    const text = (capData.events ?? [])
-      .filter((e: { segs?: unknown[] }) => e.segs)
-      .map((e: { segs: Array<{ utf8: string }> }) => e.segs.map(s => s.utf8).join(''))
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-
-    return text || null
-  } catch {
-    return null
-  }
-}
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
@@ -133,16 +79,8 @@ export async function POST(req: NextRequest) {
 
   let fullText: string
 
-  // ── YouTube: extract transcript directly ─────────────────────────────────
-  const videoId = extractVideoId(url)
-  if (videoId) {
-    const transcript = await getYouTubeTranscript(videoId)
-    if (!transcript) {
-      return NextResponse.json({ error: 'No transcript available for this video — captions may be disabled.' }, { status: 422 })
-    }
-    fullText = transcript
-  } else {
-    // ── Regular URL: fetch via Jina Reader ─────────────────────────────────
+  // ── Fetch via Jina Reader ──────────────────────────────────────────────
+  {
     try {
       async function jinaFetch() {
         return fetch(`https://r.jina.ai/${parsed.href}`, {
