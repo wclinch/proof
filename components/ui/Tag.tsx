@@ -11,7 +11,8 @@ export default function Tag({ children }: { children: ReactNode }) {
         borderRadius: '3px',
         fontSize: '11px',
         color: '#999',
-        letterSpacing: '0.03em',
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
       }}
     >
       {children}
