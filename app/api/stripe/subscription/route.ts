@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
   if (!subscriptions.data.length) return NextResponse.json({ subscription: null })
 
-  const sub = subscriptions.data[0]
+  const sub = subscriptions.data[0] as any
   return NextResponse.json({
     subscription: {
       cancelAtPeriodEnd: sub.cancel_at_period_end,
