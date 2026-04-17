@@ -28,10 +28,13 @@ export async function GET(req: NextRequest) {
     if (!sub && subs.data[0]) sub = subs.data[0]
   }
   if (!sub) return NextResponse.json({ subscription: null })
+
+  console.log('[subscription] cancel_at_period_end:', sub.cancel_at_period_end, 'current_period_end:', sub.current_period_end, 'cancel_at:', sub.cancel_at, 'status:', sub.status)
+
   return NextResponse.json({
     subscription: {
       cancelAtPeriodEnd: sub.cancel_at_period_end,
-      currentPeriodEnd: sub.current_period_end, // Unix timestamp (seconds)
+      currentPeriodEnd: sub.current_period_end ?? sub.cancel_at,
     },
   })
 }
