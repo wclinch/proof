@@ -10,9 +10,9 @@ export default function AccountPage() {
   const [pdfCount, setPdfCount]         = useState(0)
   const [user, setUser]                 = useState<User | null>(null)
   const [accessToken, setAccessToken]   = useState<string | null>(null)
-  const [isSubscribed, setIsSubscribed]       = useState(false)
-  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false)
-  const [periodEnd, setPeriodEnd]             = useState<Date | null>(null)
+  const [isSubscribed, setIsSubscribed]   = useState(false)
+  const [isCancelling, setIsCancelling]   = useState(false)
+  const [periodEnd, setPeriodEnd]         = useState<Date | null>(null)
   const [loading, setLoading]                 = useState(true)
 
   // Change password
@@ -48,9 +48,9 @@ export default function AccountPage() {
         if (subRes.ok) {
           const { subscription } = await subRes.json()
           if (subscription) {
-            setCancelAtPeriodEnd(subscription.cancelAtPeriodEnd ?? false)
-            if (subscription.currentPeriodEnd) {
-              setPeriodEnd(new Date(subscription.currentPeriodEnd * 1000))
+            setIsCancelling(subscription.isCancelling ?? false)
+            if (subscription.periodEnd) {
+              setPeriodEnd(new Date(subscription.periodEnd * 1000))
             }
           }
         }
@@ -146,8 +146,11 @@ export default function AccountPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{ fontSize: '14px', color: '#999' }}>
               {isSubscribed
-                ? cancelAtPeriodEnd && periodEnd
-                  ? <>Pro — unlimited sources · <span style={{ color: '#666' }}>ends {periodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}</span></>
+                ? periodEnd
+                  ? <>Pro — unlimited sources · <span style={{ color: '#666' }}>
+                      {isCancelling ? 'ends' : 'renews'}{' '}
+                      {periodEnd.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' })} UTC
+                    </span></>
                   : 'Pro — unlimited sources'
                 : `Free — ${pdfCount} of ${PDF_FREE_LIMIT} sources used`}
             </div>

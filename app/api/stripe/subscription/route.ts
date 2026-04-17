@@ -29,13 +29,14 @@ export async function GET(req: NextRequest) {
   }
   if (!sub) return NextResponse.json({ subscription: null })
 
-  // Stripe uses either cancel_at_period_end (boolean) or cancel_at (timestamp) depending on portal config
-  const endsAt: number | null = sub.cancel_at ?? (sub.cancel_at_period_end ? sub.current_period_end : null) ?? null
+  const isCancelling = !!(sub.cancel_at || sub.cancel_at_period_end)
+  // current_period_end may be undefined in some SDK versions; fall back to cancel_at
+  const periodEnd: number | null = sub.current_period_end ?? sub.cancel_at ?? null
 
   return NextResponse.json({
     subscription: {
-      cancelAtPeriodEnd: !!(sub.cancel_at || sub.cancel_at_period_end),
-      currentPeriodEnd: endsAt,
+      isCancelling,
+      periodEnd,
     },
   })
 }
