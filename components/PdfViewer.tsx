@@ -6,6 +6,9 @@ import { getFile } from '@/lib/idb'
 
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
+const norm = (s: string) =>
+  s.replace(/[,|·•–—]/g, ' ').replace(/\s+/g, ' ').toLowerCase()
+
 // Highlight the spans in the text layer that correspond to the needle match
 function highlightInLayer(layer: Element, needle: string) {
   // Clear previous highlights
@@ -20,42 +23,37 @@ function highlightInLayer(layer: Element, needle: string) {
   const spans = Array.from(layer.querySelectorAll('span'))
   if (!spans.length) return
 
-  // Build a single string from all spans, tracking each span's char range
-  let full = ''
-  const ranges: { span: Element; start: number; end: number }[] = []
-  for (const span of spans) {
-    const t = span.textContent ?? ''
-    ranges.push({ span, start: full.length, end: full.length + t.length })
-    full += t + ' '
-  }
+  // Build normalized full text + a char→spanIndex map so positions always align
+  const charToSpan: number[] = []
+  let normFull = ''
+  spans.forEach((span, si) => {
+    const t = norm(span.textContent ?? '') + ' '
+    for (let i = 0; i < t.length; i++) charToSpan.push(si)
+    normFull += t
+  })
 
-  const normalize = (s: string) => s.replace(/\s+/g, ' ').replace(/[,|·•–—]/g, ' ').trim().toLowerCase()
-  const fullLow = normalize(full)
+  const normNeedle = norm(needle)
 
-  // Try progressively shorter needle slices until we find a match
-  const norm    = normalize(needle)
-  const attempts = [
-    norm.slice(0, 80),
-    norm.slice(0, 50),
-    norm.slice(0, 25),
-    norm.slice(0, 12),
-  ].filter((s, i, a) => s.length >= 8 && a.indexOf(s) === i)
+  // Try progressively shorter slices
+  const slices = [80, 50, 25, 12]
+    .map(n => normNeedle.slice(0, n))
+    .filter((s, i, a) => s.length >= 8 && a.indexOf(s) === i)
 
   let matchStart = -1, matchEnd = -1
-  for (const attempt of attempts) {
-    const idx = fullLow.indexOf(attempt)
-    if (idx !== -1) { matchStart = idx; matchEnd = idx + attempt.length; break }
+  for (const slice of slices) {
+    const idx = normFull.indexOf(slice)
+    if (idx !== -1) { matchStart = idx; matchEnd = idx + slice.length; break }
   }
 
-  // Fallback: sliding 3-word window
+  // Fallback: sliding 3–5 word window
   if (matchStart === -1) {
-    const words = norm.split(/\s+/)
+    const words = normNeedle.trim().split(/\s+/)
     outer:
     for (let w = Math.min(5, words.length); w >= 3; w--) {
       for (let i = 0; i <= words.length - w; i++) {
         const phrase = words.slice(i, i + w).join(' ')
         if (phrase.length < 10) continue
-        const idx = fullLow.indexOf(phrase)
+        const idx = normFull.indexOf(phrase)
         if (idx !== -1) { matchStart = idx; matchEnd = idx + phrase.length; break outer }
       }
     }
@@ -63,14 +61,15 @@ function highlightInLayer(layer: Element, needle: string) {
 
   if (matchStart === -1) return
 
-  // Highlight only spans that overlap the matched range
-  for (const { span, start, end } of ranges) {
-    if (end > matchStart && start < matchEnd) {
-      span.setAttribute('style', (span.getAttribute('style') ?? '') +
-        ';background:rgba(30,90,40,0.55);border-radius:2px;')
-      span.setAttribute('data-proof-hl', '1')
-    }
-  }
+  // Find which spans own characters in [matchStart, matchEnd)
+  const hit = new Set<number>()
+  for (let i = matchStart; i < matchEnd && i < charToSpan.length; i++) hit.add(charToSpan[i])
+
+  hit.forEach(si => {
+    spans[si].setAttribute('style', (spans[si].getAttribute('style') ?? '') +
+      ';background:rgba(30,90,40,0.55);border-radius:2px;')
+    spans[si].setAttribute('data-proof-hl', '1')
+  })
 }
 
 export default function PdfViewer({ srcId, highlight }: { srcId: string; highlight: string | null }) {
@@ -117,7 +116,6 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
   useEffect(() => {
     if (!highlight || !pageTexts.length) return
 
-    const norm = (s: string) => s.replace(/\s+/g, ' ').replace(/[,|·•–—]/g, ' ').trim().toLowerCase()
     const needle     = norm(highlight)
     const pageLows   = pageTexts.map(t => norm(t))
 
