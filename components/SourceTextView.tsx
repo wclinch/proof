@@ -26,9 +26,9 @@ function extendToSentence(block: string, start: number, end: number): number {
   return sentenceEnd + 1
 }
 
-// Split into blocks: blank-line-separated paragraphs
+// Split into blocks: any newline boundary
 function parseBlocks(text: string): string[] {
-  return text.split(/\n\n+/).map(b => b.trim()).filter(Boolean)
+  return text.split(/\n+/).map(b => b.trim()).filter(Boolean)
 }
 
 const JUNK_PATTERNS = [
