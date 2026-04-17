@@ -147,7 +147,7 @@ export default function AccountPage() {
             <div style={{ fontSize: '14px', color: '#999' }}>
               {isSubscribed
                 ? cancelAtPeriodEnd && periodEnd
-                  ? <>Pro — unlimited sources · <span style={{ color: '#666' }}>ends {periodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></>
+                  ? <>Pro — unlimited sources · <span style={{ color: '#666' }}>ends {periodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}</span></>
                   : 'Pro — unlimited sources'
                 : `Free — ${pdfCount} of ${PDF_FREE_LIMIT} sources used`}
             </div>
