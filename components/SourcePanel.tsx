@@ -4,25 +4,14 @@ import { useApp } from '@/context/AppContext'
 import SourceItem from './SourceItem'
 
 export default function SourcePanel({ width }: { width: number }) {
-  const { sources, uploadFiles, uploadUrl, isAnalyzing } = useApp()
+  const { sources, uploadFiles, isAnalyzing } = useApp()
   const [dragOver, setDragOver]       = useState(false)
   const [filterInput, setFilterInput] = useState('')
   const [filter, setFilter]           = useState('')
   const [dupMsg, setDupMsg]           = useState(false)
-  const [urlInput, setUrlInput]       = useState('')
   const fileRef   = useRef<HTMLInputElement>(null)
   const filterRef = useRef<HTMLInputElement>(null)
-  const urlRef    = useRef<HTMLInputElement>(null)
   const dupTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  function handleUrlSubmit() {
-    const val = urlInput.trim()
-    if (!val) return
-    let url = val
-    if (!/^https?:\/\//i.test(url)) url = 'https://' + url
-    uploadUrl(url)
-    setUrlInput('')
-  }
 
   function handleUpload(files: FileList | File[]) {
     const list = Array.from(files).filter(f =>
@@ -54,25 +43,10 @@ export default function SourcePanel({ width }: { width: number }) {
     transition: 'border-color 0.15s',
   }
 
-  const actionBtn: React.CSSProperties = {
-    flexShrink: 0,
-    marginLeft: 'auto',
-    background: 'none',
-    border: '1px solid #1a1a1a',
-    borderRadius: '3px',
-    padding: '3px 9px',
-    color: '#777',
-    fontSize: '12px',
-    fontFamily: 'inherit',
-    outline: 'none',
-    cursor: 'pointer',
-    transition: 'border-color 0.15s, color 0.15s',
-  }
-
   return (
     <div style={{ width, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* ── Row 1: PDF drop zone ── */}
+      {/* ── Drop zone ── */}
       <div
         onDragOver={e => { e.preventDefault(); setDragOver(true) }}
         onDragLeave={() => setDragOver(false)}
@@ -102,36 +76,6 @@ export default function SourcePanel({ width }: { width: number }) {
           pdf already added.
         </div>
       )}
-
-      {/* ── Or divider ── */}
-      <div style={{ margin: '8px 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div style={{ flex: 1, height: '1px', background: '#1a1a1a' }} />
-        <span style={{ fontSize: '10px', color: '#333', letterSpacing: '0.1em', textTransform: 'uppercase' }}>or</span>
-        <div style={{ flex: 1, height: '1px', background: '#1a1a1a' }} />
-      </div>
-
-      {/* ── Row 2: URL input ── */}
-      <div
-        style={{ ...shell, cursor: 'text', padding: '9px 14px', marginTop: 0 }}
-        onClick={() => urlRef.current?.focus()}
-      >
-        <input
-          ref={urlRef}
-          value={urlInput}
-          onChange={e => setUrlInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') handleUrlSubmit() }}
-          placeholder="paste a url..."
-          disabled={isAnalyzing}
-          style={{
-            flex: 1, background: 'transparent', border: 'none', outline: 'none',
-            fontSize: '11px', fontFamily: 'inherit',
-            letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#555',
-          }}
-        />
-        {urlInput && (
-          <span style={{ fontSize: '11px', color: '#333', letterSpacing: '0.06em', flexShrink: 0, marginLeft: '6px' }}>↵</span>
-        )}
-      </div>
 
       {/* ── Source list ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '8px', borderTop: '1px solid #1a1a1a' }}>

@@ -2,7 +2,6 @@
 import dynamic from 'next/dynamic'
 import { useApp } from '@/context/AppContext'
 import AnalysisView from './AnalysisView'
-import UrlViewer    from './UrlViewer'
 import type { AnalysisResult } from '@/lib/types'
 import { capture } from '@/lib/posthog'
 
@@ -118,8 +117,8 @@ export default function AnalysisPanel() {
       {/* Body */}
       <div style={{
         flex: 1, minHeight: 0,
-        overflowY: centerView === 'source' && selectedSource?.raw.startsWith('http') ? 'hidden' : 'auto',
-        padding: centerView === 'source' && selectedSource?.raw.startsWith('http') ? '12px 16px' : '20px 24px',
+        overflowY: centerView === 'source' ? 'auto' : 'auto',
+        padding: '20px 24px',
         display: 'flex', flexDirection: 'column',
       }}>
         {!selectedSource && (
@@ -144,13 +143,7 @@ export default function AnalysisPanel() {
         )}
         {selectedSource?.status === 'done' && selectedSource.result && (
           centerView === 'source' ? (
-            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-              {selectedSource.raw.startsWith('http') ? (
-                <UrlViewer url={selectedSource.raw} />
-              ) : (
-                <PdfViewer srcId={selectedSource.id} highlight={highlightText} />
-              )}
-            </div>
+            <PdfViewer srcId={selectedSource.id} highlight={highlightText} />
           ) : (
             <AnalysisView
               result={selectedSource.result}
