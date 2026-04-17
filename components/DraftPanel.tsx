@@ -157,7 +157,7 @@ export default function DraftPanel({ width }: { width: number }) {
               ref={draftTitleRef}
               value={localTitle}
               onChange={e => setLocalTitle(e.target.value)}
-              placeholder="Untitled"
+              placeholder="UNTITLED"
               className="draft-title"
               style={{
                 width: '100%', background: 'transparent', border: 'none', outline: 'none',
@@ -173,7 +173,7 @@ export default function DraftPanel({ width }: { width: number }) {
             value={localDraft}
             onChange={e => setLocalDraft(e.target.value)}
             onKeyDown={handleTab}
-            placeholder="start writing..."
+            placeholder="START WRITING..."
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
               color: '#999',

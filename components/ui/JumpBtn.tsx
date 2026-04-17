@@ -19,6 +19,7 @@ export default function JumpBtn({ onClick }: { onClick: () => void }) {
         flexShrink: 0,
         fontFamily: 'inherit',
         letterSpacing: '0.08em',
+        textTransform: 'uppercase',
         borderRadius: '3px',
         display: 'inline-flex',
         alignItems: 'center',
