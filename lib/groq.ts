@@ -32,7 +32,12 @@ export async function callGroq(key: string, content: string, source: string): Pr
     }),
   })
 
-  if (res.status === 429) throw new Error('QUOTA_EXCEEDED')
+  if (res.status === 429) {
+    const body = await res.json().catch(() => ({}))
+    const msg  = (body as { error?: { message?: string } })?.error?.message ?? ''
+    const wait = msg.match(/try again in ([^.]+)/i)?.[1]?.trim() ?? ''
+    throw new Error(`QUOTA_EXCEEDED${wait ? `:${wait}` : ''}`)
+  }
   if (res.status === 401) throw new Error('GROQ_UNAUTHORIZED')
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
@@ -57,7 +62,10 @@ export function parseGroqResponse(raw: string): unknown {
 
 export function formatGroqError(e: unknown): string {
   const msg = e instanceof Error ? e.message : ''
-  if (msg.includes('QUOTA_EXCEEDED'))  return 'Rate limit hit — try again in a moment.'
+  if (msg.includes('QUOTA_EXCEEDED')) {
+    const wait = msg.split('QUOTA_EXCEEDED:')[1]?.trim()
+    return wait ? `Rate limit hit — try again in ${wait}.` : 'Rate limit hit — try again in a moment.'
+  }
   if (msg.includes('GROQ_UNAUTHORIZED')) return 'Invalid Groq API key — check .env.local.'
   if (msg.startsWith('Groq error'))    return msg.replace('Groq error ', 'Groq ')
   return 'Analysis failed. Try again.'
