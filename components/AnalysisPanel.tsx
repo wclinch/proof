@@ -35,7 +35,7 @@ function downloadText(content: string, filename: string) {
 }
 
 export default function AnalysisPanel() {
-  const { selectedSource, centerView, setCenterView, highlightText, jumpToSource } = useApp()
+  const { selectedSource, centerView, setCenterView, highlightText, jumpToSource, retrySource } = useApp()
 
   function handleExport(fmt: 'txt' | 'md') {
     if (!selectedSource?.result) return
@@ -137,8 +137,24 @@ export default function AnalysisPanel() {
           </div>
         )}
         {selectedSource?.status === 'error' && (
-          <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
-            {selectedSource.error}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
+              {selectedSource.error}
+            </div>
+            <button
+              onClick={() => retrySource(selectedSource.id)}
+              style={{
+                alignSelf: 'flex-start',
+                background: 'none', border: '1px solid #222', borderRadius: '3px',
+                padding: '5px 10px', cursor: 'pointer', outline: 'none',
+                fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase',
+                fontFamily: 'inherit', color: '#666',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#aaa'; e.currentTarget.style.borderColor = '#333' }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#666'; e.currentTarget.style.borderColor = '#222' }}
+            >
+              ↺ retry
+            </button>
           </div>
         )}
         {selectedSource?.status === 'done' && selectedSource.result && (

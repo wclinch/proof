@@ -8,7 +8,7 @@ import {
   loadProjects, saveProjects,
   PDF_FREE_LIMIT,
 } from '@/lib/storage'
-import { storeFile, deleteFile } from '@/lib/idb'
+import { storeFile, deleteFile, getFile } from '@/lib/idb'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
 import { capture, identify, reset } from '@/lib/posthog'
 
@@ -51,6 +51,7 @@ interface AppState {
   updateProject: (id: string, patch: Partial<Project>) => void
   patchSource: (projId: string, srcId: string, patch: Partial<QueuedSource>) => void
   uploadFiles: (files: FileList | File[]) => Promise<void>
+  retrySource: (srcId: string) => Promise<void>
   removeSource: (srcId: string) => void
   removeSelected: () => void
   createProject: () => void
@@ -294,6 +295,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsAnalyzing(false)
   }
 
+  async function retrySource(srcId: string) {
+    if (!activeId || analyzing.current) return
+    const file = await getFile(srcId)
+    if (!file) {
+      patchSource(activeId, srcId, { status: 'error', error: 'File not found — re-upload to retry.' })
+      return
+    }
+    analyzing.current = true
+    setIsAnalyzing(true)
+    patchSource(activeId, srcId, { status: 'loading', error: null })
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('session_id', getSessionId())
+      const res  = await fetch('/api/upload', { method: 'POST', body: form })
+      const data = await res.json() as { error?: string; analysis?: unknown }
+      if (data.error) {
+        patchSource(activeId, srcId, { status: 'error', error: data.error })
+      } else {
+        const analysis = data.analysis as QueuedSource['result']
+        const aiTitle  = (analysis as any)?.title
+        patchSource(activeId, srcId, {
+          status: 'done',
+          result: analysis,
+          ...(aiTitle ? { label: aiTitle } : {}),
+        })
+        capture('upload_complete', { doc_type: (analysis as any)?.title ?? null, keyword_count: (analysis as any)?.keywords?.length ?? 0 })
+      }
+    } catch {
+      patchSource(activeId, srcId, { status: 'error', error: 'Upload failed — check your connection' })
+    }
+    analyzing.current = false
+    setIsAnalyzing(false)
+  }
+
   function removeSource(srcId: string) {
     if (!activeId) return
     const updated = sources.filter(s => s.id !== srcId)
@@ -359,7 +395,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setShowProjects, setSelectedId, setSelectedIds, setAnchorId,
     setCenterView, setContextMenu, setProjContextMenu,
     setProjects, updateProject, patchSource,
-    uploadFiles,
+    uploadFiles, retrySource,
     removeSource, removeSelected,
     createProject, switchProject, deleteProject,
     jumpToSource,
