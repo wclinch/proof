@@ -80,9 +80,9 @@ export default function SourcePanel({ width }: { width: number }) {
         <button
           onClick={e => { e.stopPropagation(); if (!isAnalyzing) fileRef.current?.click() }}
           disabled={isAnalyzing}
-          style={{ ...actionBtn, color: isUploadingFile ? '#444' : '#777', cursor: isUploadingFile ? 'default' : 'pointer' }}
+          style={{ ...actionBtn, color: isUploadingFile ? '#333' : '#555', cursor: isUploadingFile ? 'default' : 'pointer' }}
           onMouseEnter={e => { if (!isUploadingFile) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' } }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = isUploadingFile ? '#2a2a2a' : '#444' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = isUploadingFile ? '#333' : '#555' }}
         >↑</button>
       </div>
       <input ref={fileRef} type="file" accept=".pdf" multiple style={{ display: 'none' }}
@@ -133,11 +133,11 @@ export default function SourcePanel({ width }: { width: number }) {
           disabled={isAnalyzing || !urlInput.trim()}
           style={{
             ...actionBtn,
-            opacity: urlInput.trim() && !isAnalyzing ? 1 : 0.3,
+            color: urlInput.trim() && !isAnalyzing ? '#555' : '#333',
             cursor: urlInput.trim() && !isAnalyzing ? 'pointer' : 'default',
           }}
           onMouseEnter={e => { if (urlInput.trim() && !isAnalyzing) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' } }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = urlInput.trim() && !isAnalyzing ? '#555' : '#333' }}
         >→</button>
       </form>
 
