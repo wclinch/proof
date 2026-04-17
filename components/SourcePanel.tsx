@@ -103,6 +103,13 @@ export default function SourcePanel({ width }: { width: number }) {
         </div>
       )}
 
+      {/* ── Or divider ── */}
+      <div style={{ margin: '6px 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ flex: 1, height: '1px', background: '#1a1a1a' }} />
+        <span style={{ fontSize: '10px', color: '#333', letterSpacing: '0.1em', textTransform: 'uppercase' }}>or</span>
+        <div style={{ flex: 1, height: '1px', background: '#1a1a1a' }} />
+      </div>
+
       {/* ── Row 2: URL input ── */}
       <div
         style={{ ...shell, cursor: 'text', padding: '9px 14px' }}
@@ -124,7 +131,7 @@ export default function SourcePanel({ width }: { width: number }) {
       </div>
 
       {/* ── Source list ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '4px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '4px', borderTop: '1px solid #1a1a1a' }}>
         {sources.length > 0 && (
           <div
             style={{ ...shell, cursor: 'text', padding: '9px 14px' }}
