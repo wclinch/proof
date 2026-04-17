@@ -19,11 +19,9 @@ function cleanText(raw: string): string {
     .trim()
 }
 
-// Extend a match range to the end of the sentence (next '. ', '.' EOL, or block end)
-function extendToSentence(block: string, start: number, end: number): number {
-  const sentenceEnd = block.indexOf('.', end)
-  if (sentenceEnd === -1 || sentenceEnd - start > 600) return Math.min(block.length, end + 20)
-  return sentenceEnd + 1
+// Clamp match end to the exact needle boundary — no spillover into adjacent text
+function extendToSentence(_block: string, _start: number, end: number): number {
+  return end
 }
 
 // Split into blocks: newlines first, then sentence-split any block over 200 chars
