@@ -18,9 +18,9 @@ export default function Home() {
           </h1>
 
           <p style={{ fontSize: '15px', color: '#777', lineHeight: 1.8, margin: '0 0 40px', maxWidth: '480px' }}>
-            Drop any PDF. Everything worth knowing gets pulled out and tied to
-            the exact passage it came from. Click any item to verify it in
-            context. Write from it in the same window. Never leave.
+            Drop a PDF or paste a URL. Everything worth knowing gets pulled out
+            and tied to the exact passage it came from. Click any item to verify
+            it in context. Write from it in the same window. Never leave.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -45,7 +45,7 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
-              ['Drop a PDF', 'Proof reads the full document and pulls out everything worth knowing — for any document type. Nothing paraphrased, nothing invented.'],
+              ['Drop a PDF or paste a URL', 'Proof reads the full document or page and pulls out everything worth knowing. Nothing paraphrased, nothing invented.'],
               ['Verify anything', 'Click any item to jump to exactly where it appears in the source. Full sentence, full context — not a summary.'],
               ['Stay in one place', 'Write in the panel on the right. No new tabs, no lost place, no switching back and forth.'],
               ['Come back to it', 'Sources and drafts persist. Return to a project and pick up where you left off.'],

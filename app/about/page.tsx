@@ -29,7 +29,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Drop a PDF. Every fact, stat, finding, and quote gets extracted and tied to the exact passage it came from. Click any item to see where it actually appears in the source. Write from it in the same window. No tab switching, no lost context.
+            Drop a PDF or paste a URL. Every fact, stat, finding, and quote gets extracted and tied to the exact passage it came from. Click any item to see where it actually appears in the source. Write from it in the same window. No tab switching, no lost context.
           </p>
         </div>
 
@@ -37,7 +37,7 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How to use it</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>1. Add a source</span> — drop a PDF. Proof reads the full document and extracts everything verifiable.
+              <span style={{ color: '#999' }}>1. Add a source</span> — drop a PDF or paste a URL. Proof reads the full document and extracts everything verifiable.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
               <span style={{ color: '#999' }}>2. Read the breakdown</span> — select a source. The center panel shows everything worth knowing from the document in a flat, readable list — then direct quotes and keywords below. Toggle to Source to read the full original text.
