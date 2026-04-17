@@ -90,6 +90,7 @@ export default function AccountPage() {
     })
     if (res.ok) {
       await sb.auth.signOut()
+      localStorage.clear()
       router.push('/')
     } else {
       const body = await res.json().catch(() => ({}))
