@@ -15,17 +15,18 @@ export async function GET(req: NextRequest) {
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
-  const customers = await stripe.customers.list({ email: user.email!, limit: 1 })
+  const customers = await stripe.customers.list({ email: user.email!, limit: 10 })
   if (!customers.data.length) return NextResponse.json({ subscription: null })
 
-  // Fetch all subscriptions (active + cancelled-at-period-end) sorted by recency
-  const subscriptions = await stripe.subscriptions.list({
-    customer: customers.data[0].id,
-    limit: 5,
-  })
-
-  // Prefer active, fall back to most recent cancelled
-  const sub = (subscriptions.data.find(s => s.status === 'active') ?? subscriptions.data[0]) as any
+  // Search across all customers for this email — multiple customers can exist
+  // if the user went through checkout more than once
+  let sub: any = null
+  for (const customer of customers.data) {
+    const subs = await stripe.subscriptions.list({ customer: customer.id, limit: 5 })
+    const active = subs.data.find(s => s.status === 'active')
+    if (active) { sub = active; break }
+    if (!sub && subs.data[0]) sub = subs.data[0]
+  }
   if (!sub) return NextResponse.json({ subscription: null })
   return NextResponse.json({
     subscription: {

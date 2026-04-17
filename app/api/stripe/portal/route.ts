@@ -18,13 +18,20 @@ export async function POST(req: NextRequest) {
 
   const origin = req.headers.get('origin') ?? 'https://proof-kxfz.onrender.com'
 
-  const customers = await stripe.customers.list({ email: user.email!, limit: 1 })
+  const customers = await stripe.customers.list({ email: user.email!, limit: 10 })
   if (!customers.data.length) {
     return NextResponse.json({ error: 'No billing account found' }, { status: 404 })
   }
 
+  // Find the customer that has an active subscription
+  let customerId = customers.data[0].id
+  for (const customer of customers.data) {
+    const subs = await stripe.subscriptions.list({ customer: customer.id, limit: 1, status: 'active' })
+    if (subs.data.length) { customerId = customer.id; break }
+  }
+
   const portalSession = await stripe.billingPortal.sessions.create({
-    customer: customers.data[0].id,
+    customer: customerId,
     return_url: `${origin}/account`,
   })
 
