@@ -28,7 +28,8 @@ export default function PaywallModal() {
           Free limit reached
         </div>
         <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.75, margin: 0 }}>
-          You&apos;ve used all {PDF_FREE_LIMIT} free sources. Create an account and subscribe to keep going — $3/month, no limits.
+          You&apos;ve used all {PDF_FREE_LIMIT} free sources.{' '}
+          {user ? 'Subscribe to keep going — $3/month, no limits.' : 'Create an account and subscribe to keep going — $3/month, no limits.'}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
