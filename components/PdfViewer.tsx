@@ -70,6 +70,28 @@ function highlightInLayer(layer: Element, needle: string) {
   const hit = new Set<number>()
   for (let i = matchStart; i < matchEnd && i < charToSpan.length; i++) hit.add(charToSpan[i])
 
+  // Extend hit to include wrapped continuation lines:
+  // if the last matched span ends without terminal punctuation and
+  // the next span starts lowercase OR the last word is a preposition/conjunction,
+  // it's the same bullet wrapping — include it.
+  const CONTINUATIONS = new Set(['for','and','the','a','an','of','in','to','with','by','at','from','or','nor','but','as','that','which'])
+  const sortedHits = Array.from(hit).sort((a, b) => a - b)
+  let lastHit = sortedHits[sortedHits.length - 1] ?? -1
+  while (lastHit >= 0 && lastHit + 1 < spans.length) {
+    const cur  = spans[lastHit].textContent?.trim() ?? ''
+    const next = spans[lastHit + 1].textContent?.trim() ?? ''
+    if (!next) { lastHit++; continue }
+    const lastWord      = cur.split(/\s+/).pop()?.toLowerCase().replace(/[.!?;,]$/, '') ?? ''
+    const endsOpen      = CONTINUATIONS.has(lastWord) || !/[.!?]$/.test(cur)
+    const nextLower     = /^[a-z]/.test(next)
+    if (endsOpen && (nextLower || CONTINUATIONS.has(lastWord))) {
+      hit.add(lastHit + 1)
+      lastHit++
+    } else {
+      break
+    }
+  }
+
   hit.forEach(si => {
     spans[si].setAttribute('style', (spans[si].getAttribute('style') ?? '') +
       ';background:rgba(30,90,40,0.55);border-radius:2px;')
