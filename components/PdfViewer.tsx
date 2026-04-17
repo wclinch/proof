@@ -29,20 +29,36 @@ function highlightInLayer(layer: Element, needle: string) {
     full += t + ' '
   }
 
-  const fullLow = full.toLowerCase()
+  const normalize = (s: string) => s.replace(/\s+/g, ' ').replace(/[,|·•–—]/g, ' ').trim().toLowerCase()
+  const fullLow = normalize(full)
 
   // Try progressively shorter needle slices until we find a match
-  const norm = needle.replace(/\s+/g, ' ').trim().toLowerCase()
+  const norm    = normalize(needle)
   const attempts = [
     norm.slice(0, 80),
     norm.slice(0, 50),
     norm.slice(0, 25),
+    norm.slice(0, 12),
   ].filter((s, i, a) => s.length >= 8 && a.indexOf(s) === i)
 
   let matchStart = -1, matchEnd = -1
   for (const attempt of attempts) {
     const idx = fullLow.indexOf(attempt)
     if (idx !== -1) { matchStart = idx; matchEnd = idx + attempt.length; break }
+  }
+
+  // Fallback: sliding 3-word window
+  if (matchStart === -1) {
+    const words = norm.split(/\s+/)
+    outer:
+    for (let w = Math.min(5, words.length); w >= 3; w--) {
+      for (let i = 0; i <= words.length - w; i++) {
+        const phrase = words.slice(i, i + w).join(' ')
+        if (phrase.length < 10) continue
+        const idx = fullLow.indexOf(phrase)
+        if (idx !== -1) { matchStart = idx; matchEnd = idx + phrase.length; break outer }
+      }
+    }
   }
 
   if (matchStart === -1) return
@@ -101,29 +117,39 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
   useEffect(() => {
     if (!highlight || !pageTexts.length) return
 
-    const needle  = highlight.replace(/\s+/g, ' ').trim().toLowerCase()
-    const needleShort = needle.slice(0, 80)
+    const norm = (s: string) => s.replace(/\s+/g, ' ').replace(/[,|·•–—]/g, ' ').trim().toLowerCase()
+    const needle     = norm(highlight)
+    const pageLows   = pageTexts.map(t => norm(t))
 
-    // Try progressively shorter slices
-    const candidates = [
-      needle.slice(0, 120),
-      needle.slice(0, 60),
-      needle.slice(0, 30),
-    ].filter((s, i, a) => s.length >= 10 && a.indexOf(s) === i)
-
+    // Page search: progressively shorter needle slices
+    const slices = [100, 60, 40, 20].map(n => needle.slice(0, n)).filter((s, i, a) => s.length >= 10 && a.indexOf(s) === i)
     let idx = -1
-    for (const c of candidates) {
-      idx = pageTexts.findIndex(t => t.toLowerCase().includes(c))
+    for (const s of slices) {
+      idx = pageLows.findIndex(t => t.includes(s))
       if (idx !== -1) break
     }
 
-    // Fallback: page with most keyword overlaps
+    // Fallback: sliding 4-word window
     if (idx === -1) {
-      const words = needleShort.split(/\s+/).filter(w => w.length > 4)
-      if (words.length) {
+      const words = needle.split(/\s+/)
+      outer:
+      for (let w = Math.min(6, words.length); w >= 3; w--) {
+        for (let i = 0; i <= words.length - w; i++) {
+          const phrase = words.slice(i, i + w).join(' ')
+          if (phrase.length < 10) continue
+          const found = pageLows.findIndex(t => t.includes(phrase))
+          if (found !== -1) { idx = found; break outer }
+        }
+      }
+    }
+
+    // Fallback: page with most keyword hits
+    if (idx === -1) {
+      const kws = needle.split(/\s+/).filter(w => w.length > 4)
+      if (kws.length >= 2) {
         let best = 0
-        pageTexts.forEach((t, i) => {
-          const hits = words.filter(w => t.toLowerCase().includes(w)).length
+        pageLows.forEach((t, i) => {
+          const hits = kws.filter(w => t.includes(w)).length
           if (hits > best) { best = hits; idx = i }
         })
         if (best < 2) idx = -1
@@ -135,7 +161,7 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
     const pageEl = pageRefs.current[idx]
     pageEl?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
-    // Highlight in text layer — wait for scroll + layer paint
+    // Highlight in text layer after scroll + paint
     setTimeout(() => {
       const layer = pageEl?.querySelector('.react-pdf__Page__textContent')
       if (layer) highlightInLayer(layer, needle)
