@@ -8,8 +8,23 @@ export default function SourcePanel({ width }: { width: number }) {
   const [dragOver, setDragOver]       = useState(false)
   const [filterInput, setFilterInput] = useState('')
   const [filter, setFilter]           = useState('')
+  const [dupMsg, setDupMsg]           = useState(false)
   const fileRef   = useRef<HTMLInputElement>(null)
   const filterRef = useRef<HTMLInputElement>(null)
+  const dupTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function handleUpload(files: FileList | File[]) {
+    const list = Array.from(files).filter(f =>
+      f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+    )
+    const hasDup = list.some(f => sources.some(s => s.label === f.name))
+    if (hasDup) {
+      setDupMsg(true)
+      if (dupTimer.current) clearTimeout(dupTimer.current)
+      dupTimer.current = setTimeout(() => setDupMsg(false), 3000)
+    }
+    uploadFiles(files)
+  }
 
   useEffect(() => {
     const t = setTimeout(() => setFilter(filterInput), 150)
@@ -54,7 +69,7 @@ export default function SourcePanel({ width }: { width: number }) {
           e.preventDefault(); setDragOver(false)
           const pdfs = Array.from(e.dataTransfer.files).filter(f =>
             f.type === 'application/pdf' || f.name.endsWith('.pdf'))
-          if (pdfs.length) uploadFiles(pdfs as unknown as FileList)
+          if (pdfs.length) handleUpload(pdfs)
         }}
         onClick={() => !isAnalyzing && fileRef.current?.click()}
         style={{
@@ -76,8 +91,13 @@ export default function SourcePanel({ width }: { width: number }) {
         >↑</button>
       </div>
       <input ref={fileRef} type="file" accept=".pdf" multiple style={{ display: 'none' }}
-        onChange={e => { if (e.target.files?.length) { uploadFiles(e.target.files); e.target.value = '' } }}
+        onChange={e => { if (e.target.files?.length) { handleUpload(e.target.files); e.target.value = '' } }}
       />
+      {dupMsg && (
+        <div style={{ margin: '6px 10px 0', fontSize: '11px', color: '#666', letterSpacing: '0.04em', padding: '0 2px' }}>
+          Already added.
+        </div>
+      )}
 
       {/* ── Source list ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '4px' }}>
