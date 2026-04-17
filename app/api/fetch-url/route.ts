@@ -15,16 +15,24 @@ export async function POST(req: NextRequest) {
   const { url } = await req.json() as { url?: string }
   if (!url) return NextResponse.json({ error: 'No URL provided' }, { status: 400 })
 
+  if (!process.env.FIRECRAWL_API_KEY) {
+    return NextResponse.json({ error: 'FIRECRAWL_API_KEY not configured' }, { status: 500 })
+  }
+
   let fullText: string
   try {
-    const res = await fetch(`https://r.jina.ai/${url}`, {
+    const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
       headers: {
-        'Accept': 'text/plain',
-        'X-Return-Format': 'markdown',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
       },
+      body: JSON.stringify({ url, formats: ['markdown'] }),
     })
-    if (!res.ok) throw new Error(`Jina returned ${res.status}`)
-    fullText = (await res.text()).trim()
+    if (!res.ok) throw new Error(`Firecrawl returned ${res.status}`)
+    const data = await res.json() as { success: boolean; data?: { markdown?: string } }
+    if (!data.success || !data.data?.markdown) throw new Error('No content returned')
+    fullText = data.data.markdown.trim()
   } catch (e) {
     const msg = e instanceof Error ? e.message : ''
     return NextResponse.json({ error: `Could not fetch URL — ${msg || 'check the address and try again.'}` }, { status: 422 })
