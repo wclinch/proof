@@ -8,6 +8,7 @@ import {
   loadProjects, saveProjects,
   PDF_FREE_LIMIT,
 } from '@/lib/storage'
+import { storeFile, deleteFile } from '@/lib/idb'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
 import { capture, identify, reset } from '@/lib/posthog'
 
@@ -263,6 +264,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       patchSource(projId, src.id, { status: 'loading' })
       try {
+        await storeFile(src.id, file).catch(() => {})
         const form = new FormData()
         form.append('file', file)
         form.append('session_id', getSessionId())
@@ -363,6 +365,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (selectedId === srcId) setSelectedId(updated[0]?.id ?? null)
     setSelectedIds(new Set())
     setAnchorId(null)
+    deleteFile(srcId).catch(() => {})
   }
 
   function removeSelected() {
@@ -373,6 +376,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ? selectedId
       : (updated[0]?.id ?? null)
     setSelectedId(nextSelected)
+    selectedIds.forEach(id => deleteFile(id).catch(() => {}))
     setSelectedIds(new Set())
     setAnchorId(null)
   }

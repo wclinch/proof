@@ -1,9 +1,12 @@
 'use client'
+import dynamic from 'next/dynamic'
 import { useApp } from '@/context/AppContext'
-import AnalysisView  from './AnalysisView'
-import SourceTextView from './SourceTextView'
+import AnalysisView from './AnalysisView'
+import UrlViewer    from './UrlViewer'
 import type { AnalysisResult } from '@/lib/types'
 import { capture } from '@/lib/posthog'
+
+const PdfViewer = dynamic(() => import('./PdfViewer'), { ssr: false })
 
 function formatBreakdown(result: AnalysisResult, fmt: 'txt' | 'md'): string {
   const h  = (label: string) => fmt === 'md' ? `## ${label}\n` : `${label}\n${'─'.repeat(label.length)}\n`
@@ -113,7 +116,12 @@ export default function AnalysisPanel() {
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
+      <div style={{
+        flex: 1, minHeight: 0,
+        overflowY: centerView === 'source' && selectedSource?.raw.startsWith('http') ? 'hidden' : 'auto',
+        padding: centerView === 'source' && selectedSource?.raw.startsWith('http') ? '12px 16px' : '20px 24px',
+        display: 'flex', flexDirection: 'column',
+      }}>
         {!selectedSource && (
           <div style={{ fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
             select a source.
@@ -136,10 +144,13 @@ export default function AnalysisPanel() {
         )}
         {selectedSource?.status === 'done' && selectedSource.result && (
           centerView === 'source' ? (
-            <SourceTextView
-              text={selectedSource.rawText ?? 'No source text available.'}
-              highlight={highlightText}
-            />
+            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+              {selectedSource.raw.startsWith('http') ? (
+                <UrlViewer url={selectedSource.raw} />
+              ) : (
+                <PdfViewer srcId={selectedSource.id} highlight={highlightText} />
+              )}
+            </div>
           ) : (
             <AnalysisView
               result={selectedSource.result}
