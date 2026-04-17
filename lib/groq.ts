@@ -3,7 +3,7 @@ export const PROMPT = `You are a precise data extraction engine. Return ONLY a v
 Extract verbatim where possible. Never invent or paraphrase data not present in the text. Never output placeholder strings like "not mentioned", "not provided", "no data" — if data is absent, use null or [].
 
 {
-  "title": "exact title of the document, or null",
+  "title": "a short descriptive title — use the actual title if one exists, otherwise generate a brief description of what the document is (e.g. 'Resume', 'Q3 Financial Report', 'Climate Study 2023'). No bare person names as the title.",
   "authors": ["Last, First — only if explicitly credited"],
   "year": "year as string, or null",
   "journal": "journal or publication name, or null",
