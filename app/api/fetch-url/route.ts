@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const content  = fullText.slice(0, 60000)
+    const content  = fullText.slice(0, 30000)
     const raw      = await callGroq(process.env.GROQ_API_KEY, content, url)
     const analysis = parseGroqResponse(raw)
     return NextResponse.json({ analysis, content: fullText })

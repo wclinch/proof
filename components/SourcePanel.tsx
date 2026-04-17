@@ -120,7 +120,7 @@ export default function SourcePanel({ width }: { width: number }) {
           value={urlInput}
           onChange={e => setUrlInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') handleUrlSubmit() }}
-          placeholder="paste a url..."
+          placeholder="paste a url — press enter to add"
           disabled={isAnalyzing}
           style={{
             flex: 1, background: 'transparent', border: 'none', outline: 'none',
