@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useApp } from '@/context/AppContext'
 import type { QueuedSource } from '@/lib/types'
 
@@ -25,6 +25,18 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
   const isSelected  = selectedIds.has(src.id)
   const isPrimary   = selectedId === src.id
   const displayName = src.label || src.result?.title || src.raw
+
+  // Flash bar to 100% when analysis completes
+  const [completing, setCompleting] = useState(false)
+  const prevStatus = useRef(src.status)
+  useEffect(() => {
+    if (prevStatus.current === 'loading' && src.status === 'done') {
+      setCompleting(true)
+      const t = setTimeout(() => setCompleting(false), 600)
+      return () => clearTimeout(t)
+    }
+    prevStatus.current = src.status
+  }, [src.status])
 
   // Listen for rename trigger dispatched by SourceContextMenu
   useEffect(() => {
@@ -133,13 +145,22 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
             {displayName}
           </div>
         )}
-        {src.status === 'loading' && (
+        {(src.status === 'loading' || completing) && (
           <div style={{ marginTop: '4px' }}>
-            <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '5px' }}>
-              analyzing...
-            </div>
+            {src.status === 'loading' && (
+              <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '5px' }}>
+                analyzing...
+              </div>
+            )}
             <div style={{ width: '100%', height: '2px', background: '#1a1a1a', borderRadius: '1px', overflow: 'hidden' }}>
-              <div className="progress-bar" style={{ height: '100%', background: '#333', borderRadius: '1px' }} />
+              <div
+                className={completing ? undefined : 'progress-bar'}
+                style={{
+                  height: '100%', background: '#333', borderRadius: '1px',
+                  width: completing ? '100%' : undefined,
+                  transition: completing ? 'width 0.4s ease-out' : undefined,
+                }}
+              />
             </div>
           </div>
         )}

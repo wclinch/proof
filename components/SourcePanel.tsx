@@ -80,15 +80,8 @@ export default function SourcePanel({ width }: { width: number }) {
         }}
       >
         <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase', flex: 1 }}>
-          {dragOver ? 'drop to add' : 'drop PDFs or click ↑'}
+          {dragOver ? 'drop to add' : 'drop or click to upload'}
         </span>
-        <button
-          onClick={e => { e.stopPropagation(); if (!isAnalyzing) fileRef.current?.click() }}
-          disabled={isAnalyzing}
-          style={{ ...actionBtn, color: isUploadingFile ? '#333' : '#555', cursor: isUploadingFile ? 'default' : 'pointer' }}
-          onMouseEnter={e => { if (!isUploadingFile) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' } }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = isUploadingFile ? '#333' : '#555' }}
-        >↑</button>
       </div>
       <input ref={fileRef} type="file" accept=".pdf" multiple style={{ display: 'none' }}
         onChange={e => { if (e.target.files?.length) { handleUpload(e.target.files); e.target.value = '' } }}
