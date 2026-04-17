@@ -37,10 +37,10 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How to use it</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>1. Add a source</span> — drop a PDF. Proof reads the full document and extracts every fact, stat, finding, and quote verbatim.
+              <span style={{ color: '#999' }}>1. Add a source</span> — drop a PDF. Proof reads the full document and extracts everything verifiable.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>2. Read the breakdown</span> — select a source. The center panel shows extracted items in order: statistics, findings, quotes, conclusions. Toggle to Source to read the full original text.
+              <span style={{ color: '#999' }}>2. Read the breakdown</span> — select a source. The center panel shows facts (numbers, dates, data points), supporting points (context, reasoning, conclusions), direct quotes, and keywords. Toggle to Source to read the full original text.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
               <span style={{ color: '#999' }}>3. Verify a fact</span> — click <span style={{ color: '#999', fontFamily: 'inherit', fontSize: '12px', letterSpacing: '0.06em' }}>src</span> next to any item to jump to exactly where it appears in the source. Full sentence, full paragraph, no new tab.
