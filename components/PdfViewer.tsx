@@ -6,31 +6,55 @@ import { getFile } from '@/lib/idb'
 
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
-// Highlight matching text spans inside a rendered text layer
+// Highlight the spans in the text layer that correspond to the needle match
 function highlightInLayer(layer: Element, needle: string) {
   // Clear previous highlights
   layer.querySelectorAll('span[data-proof-hl]').forEach(el => {
-    const parent = el.parentNode
-    if (parent) {
-      el.childNodes.forEach(n => parent.insertBefore(n, el))
-      parent.removeChild(el)
-    }
+    el.removeAttribute('data-proof-hl')
+    const s = el.getAttribute('style') ?? ''
+    el.setAttribute('style', s.replace(/;?background:[^;]+;?border-radius:[^;]+/g, ''))
   })
 
   if (!needle) return
 
-  const tokens = needle.toLowerCase().split(/\s+/).filter(t => t.length > 3)
-  if (!tokens.length) return
+  const spans = Array.from(layer.querySelectorAll('span'))
+  if (!spans.length) return
 
-  layer.querySelectorAll('span').forEach(span => {
-    if (span.hasAttribute('data-proof-hl')) return
-    const text = span.textContent?.toLowerCase() ?? ''
-    if (tokens.some(tok => text.includes(tok))) {
+  // Build a single string from all spans, tracking each span's char range
+  let full = ''
+  const ranges: { span: Element; start: number; end: number }[] = []
+  for (const span of spans) {
+    const t = span.textContent ?? ''
+    ranges.push({ span, start: full.length, end: full.length + t.length })
+    full += t + ' '
+  }
+
+  const fullLow = full.toLowerCase()
+
+  // Try progressively shorter needle slices until we find a match
+  const norm = needle.replace(/\s+/g, ' ').trim().toLowerCase()
+  const attempts = [
+    norm.slice(0, 80),
+    norm.slice(0, 50),
+    norm.slice(0, 25),
+  ].filter((s, i, a) => s.length >= 8 && a.indexOf(s) === i)
+
+  let matchStart = -1, matchEnd = -1
+  for (const attempt of attempts) {
+    const idx = fullLow.indexOf(attempt)
+    if (idx !== -1) { matchStart = idx; matchEnd = idx + attempt.length; break }
+  }
+
+  if (matchStart === -1) return
+
+  // Highlight only spans that overlap the matched range
+  for (const { span, start, end } of ranges) {
+    if (end > matchStart && start < matchEnd) {
       span.setAttribute('style', (span.getAttribute('style') ?? '') +
         ';background:rgba(30,90,40,0.55);border-radius:2px;')
       span.setAttribute('data-proof-hl', '1')
     }
-  })
+  }
 }
 
 export default function PdfViewer({ srcId, highlight }: { srcId: string; highlight: string | null }) {
@@ -118,12 +142,13 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
     }, 500)
   }, [highlight, pageTexts])
 
-  // Clear highlights when highlight is null
+  // Clear highlights when returning to breakdown
   useEffect(() => {
     if (highlight) return
     containerRef.current?.querySelectorAll('span[data-proof-hl]').forEach(el => {
-      el.removeAttribute('style')
       el.removeAttribute('data-proof-hl')
+      const s = el.getAttribute('style') ?? ''
+      el.setAttribute('style', s.replace(/;?background:[^;]+;?border-radius:[^;]+/g, ''))
     })
   }, [highlight])
 
