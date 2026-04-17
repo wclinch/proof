@@ -18,8 +18,8 @@ export default function Home() {
           </h1>
 
           <p style={{ fontSize: '15px', color: '#777', lineHeight: 1.8, margin: '0 0 40px', maxWidth: '480px' }}>
-            Drop a PDF or paste a URL. Proof extracts every statistic,
-            finding, claim, and quote — then lets you jump to the exact passage it came from
+            Drop a PDF. Proof extracts every statistic, finding, claim,
+            and quote — then lets you jump to the exact passage it came from
             and write from the same workspace.
           </p>
 
@@ -45,7 +45,7 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
-              ['Add a source', 'Drop a PDF or paste a URL. Proof reads the full content and extracts every verifiable fact automatically.'],
+              ['Add a source', 'Drop a PDF. Proof reads the full content and extracts every verifiable fact automatically.'],
               ['Structured extraction', 'Statistics, findings, claims, direct quotes, and key points are pulled out and organized — not summarized, not paraphrased.'],
               ['Jump to the passage', 'Click any fact to jump to exactly where it appears in the source. See it in context, not in isolation.'],
               ['Write from it', 'The synthesis panel sits right next to your sources. Draft notes, a report, or a full document — without switching tabs or losing your place.'],

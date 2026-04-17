@@ -29,7 +29,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Proof closes the loop between source and output. Feed it a PDF or a URL — and it extracts every claim, statistic, finding, and quote, organized and verifiable. Jump to the exact passage any fact came from. Then write from it, in the same workspace. No switching tabs, no losing context, no guessing if something was actually said.
+            Proof closes the loop between source and output. Drop in a PDF and it extracts every claim, statistic, finding, and quote — organized and verifiable. Jump to the exact passage any fact came from. Then write from it, in the same workspace. No switching tabs, no losing context, no guessing if something was actually said.
           </p>
         </div>
 
@@ -37,7 +37,7 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How to use it</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>1. Add sources</span> — drop a PDF or paste a URL. Proof handles PDFs and web pages. Each source is analyzed automatically.
+              <span style={{ color: '#999' }}>1. Add sources</span> — drop a PDF. Proof reads the full document and extracts every verifiable fact automatically.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
               <span style={{ color: '#999' }}>2. Read the breakdown</span> — select a source from the list. The center panel shows extracted facts in order: statistics, findings, quotes, conclusions, then supporting context below.

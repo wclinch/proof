@@ -4,27 +4,17 @@ import { useApp } from '@/context/AppContext'
 import SourceItem from './SourceItem'
 
 export default function SourcePanel({ width }: { width: number }) {
-  const { sources, uploadFiles, isAnalyzing, isUploadingFile, addUrl } = useApp()
-  const [urlInput, setUrlInput]       = useState('')
+  const { sources, uploadFiles, isAnalyzing, isUploadingFile } = useApp()
   const [dragOver, setDragOver]       = useState(false)
   const [filterInput, setFilterInput] = useState('')
   const [filter, setFilter]           = useState('')
   const fileRef   = useRef<HTMLInputElement>(null)
-  const urlRef    = useRef<HTMLInputElement>(null)
   const filterRef = useRef<HTMLInputElement>(null)
-  const formRef   = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
     const t = setTimeout(() => setFilter(filterInput), 150)
     return () => clearTimeout(t)
   }, [filterInput])
-
-  // Reset form border when analysis finishes
-  useEffect(() => {
-    if (!isAnalyzing && formRef.current) {
-      formRef.current.style.borderColor = '#1a1a1a'
-    }
-  }, [isAnalyzing])
 
   const shell: React.CSSProperties = {
     margin: '10px 10px 0',
@@ -88,58 +78,6 @@ export default function SourcePanel({ width }: { width: number }) {
       <input ref={fileRef} type="file" accept=".pdf" multiple style={{ display: 'none' }}
         onChange={e => { if (e.target.files?.length) { uploadFiles(e.target.files); e.target.value = '' } }}
       />
-
-      {/* ── Row 2: URL input ── */}
-      <form
-        ref={formRef}
-        onSubmit={e => {
-          e.preventDefault()
-          const v = urlInput.trim()
-          if (!v || isAnalyzing) return
-          addUrl(v)
-          setUrlInput('')
-          if (formRef.current) formRef.current.style.borderColor = '#1a1a1a'
-          urlRef.current?.blur()
-        }}
-        style={{ ...shell, cursor: 'text' }}
-        onClick={() => urlRef.current?.focus()}
-        onFocus={() => { if (formRef.current) formRef.current.style.borderColor = '#333' }}
-        onBlur={e => {
-          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-            if (formRef.current) formRef.current.style.borderColor = '#1a1a1a'
-          }
-        }}
-      >
-        <input
-          ref={urlRef}
-          type="text"
-          className="sp-input"
-          placeholder="Paste a link..."
-          value={urlInput}
-          onChange={e => setUrlInput(e.target.value)}
-          disabled={isAnalyzing}
-          style={{
-            flex: 1, minWidth: 0,
-            background: 'transparent',
-            border: 'none', outline: 'none',
-            fontSize: '12px', fontFamily: 'inherit',
-            letterSpacing: '0.05em',
-            color: '#777',
-            opacity: isAnalyzing ? 0.5 : 1,
-          }}
-        />
-        <button
-          type="submit"
-          disabled={isAnalyzing || !urlInput.trim()}
-          style={{
-            ...actionBtn,
-            color: urlInput.trim() && !isAnalyzing ? '#555' : '#333',
-            cursor: urlInput.trim() && !isAnalyzing ? 'pointer' : 'default',
-          }}
-          onMouseEnter={e => { if (urlInput.trim() && !isAnalyzing) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' } }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = urlInput.trim() && !isAnalyzing ? '#555' : '#333' }}
-        >→</button>
-      </form>
 
       {/* ── Source list ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '4px' }}>
