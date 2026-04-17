@@ -56,14 +56,21 @@ function extractVideoId(url: string): string | null {
 
 async function getYouTubeTranscript(videoId: string): Promise<string | null> {
   try {
-    const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-      headers: { 'Accept-Language': 'en-US,en;q=0.9', 'User-Agent': 'Mozilla/5.0' },
+    const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=en`, {
+      headers: {
+        'Accept-Language': 'en-US,en;q=0.9',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
     })
     if (!pageRes.ok) return null
     const html = await pageRes.text()
 
     // Extract ytInitialPlayerResponse JSON by bracket counting
-    const marker = 'ytInitialPlayerResponse = {'
+    // YouTube uses both "ytInitialPlayerResponse = {" and "ytInitialPlayerResponse={"
+    const marker = html.includes('ytInitialPlayerResponse = {')
+      ? 'ytInitialPlayerResponse = {'
+      : 'ytInitialPlayerResponse={"'
     const startIdx = html.indexOf(marker)
     if (startIdx === -1) return null
     const jsonStart = html.indexOf('{', startIdx)
