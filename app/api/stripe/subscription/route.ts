@@ -18,15 +18,15 @@ export async function GET(req: NextRequest) {
   const customers = await stripe.customers.list({ email: user.email!, limit: 1 })
   if (!customers.data.length) return NextResponse.json({ subscription: null })
 
+  // Fetch all subscriptions (active + cancelled-at-period-end) sorted by recency
   const subscriptions = await stripe.subscriptions.list({
     customer: customers.data[0].id,
-    limit: 1,
-    status: 'active',
+    limit: 5,
   })
 
-  if (!subscriptions.data.length) return NextResponse.json({ subscription: null })
-
-  const sub = subscriptions.data[0] as any
+  // Prefer active, fall back to most recent cancelled
+  const sub = (subscriptions.data.find(s => s.status === 'active') ?? subscriptions.data[0]) as any
+  if (!sub) return NextResponse.json({ subscription: null })
   return NextResponse.json({
     subscription: {
       cancelAtPeriodEnd: sub.cancel_at_period_end,
