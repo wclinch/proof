@@ -26,17 +26,29 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
   const isPrimary   = selectedId === src.id
   const displayName = src.label || src.result?.title || src.raw
 
-  // Flash bar to 100% when analysis completes
-  const [completing, setCompleting] = useState(false)
-  const prevStatus = useRef(src.status)
+  // Progress bar: React-controlled width so we can snap to 100% on completion
+  const [barWidth, setBarWidth] = useState(0)
+  const [showBar, setShowBar]   = useState(false)
   useEffect(() => {
-    if (prevStatus.current === 'loading' && src.status === 'done') {
-      setCompleting(true)
-      const t = setTimeout(() => setCompleting(false), 600)
-      return () => clearTimeout(t)
+    if (src.status !== 'loading') {
+      if (showBar) {
+        // Snap to 100%, then hide after transition
+        setBarWidth(100)
+        const t = setTimeout(() => setShowBar(false), 500)
+        return () => clearTimeout(t)
+      }
+      return
     }
-    prevStatus.current = src.status
-  }, [src.status])
+    setBarWidth(0)
+    setShowBar(true)
+    // Simulate progress: fast at start, slows near end
+    const steps = [
+      [400,  12], [1200, 30], [2500, 50],
+      [4500, 65], [7000, 76], [11000, 83], [17000, 88],
+    ] as [number, number][]
+    const timers = steps.map(([delay, w]) => setTimeout(() => setBarWidth(w), delay))
+    return () => timers.forEach(clearTimeout)
+  }, [src.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Listen for rename trigger dispatched by SourceContextMenu
   useEffect(() => {
@@ -145,7 +157,7 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
             {displayName}
           </div>
         )}
-        {(src.status === 'loading' || completing) && (
+        {showBar && (
           <div style={{ marginTop: '4px' }}>
             {src.status === 'loading' && (
               <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '5px' }}>
@@ -153,14 +165,11 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
               </div>
             )}
             <div style={{ width: '100%', height: '2px', background: '#1a1a1a', borderRadius: '1px', overflow: 'hidden' }}>
-              <div
-                className={completing ? undefined : 'progress-bar'}
-                style={{
-                  height: '100%', background: '#333', borderRadius: '1px',
-                  width: completing ? '100%' : undefined,
-                  transition: completing ? 'width 0.4s ease-out' : undefined,
-                }}
-              />
+              <div style={{
+                height: '100%', background: '#333', borderRadius: '1px',
+                width: `${barWidth}%`,
+                transition: 'width 0.6s ease-out',
+              }} />
             </div>
           </div>
         )}
