@@ -9,6 +9,7 @@ import {
   PDF_FREE_LIMIT,
 } from '@/lib/storage'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
+import { capture, identify, reset } from '@/lib/posthog'
 
 interface ContextMenu    { srcId: string;  x: number; y: number }
 interface ProjContextMenu { projId: string; x: number; y: number }
@@ -137,8 +138,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })
     const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
-      if (session?.user) checkSubscription(session.user.id)
-      else { setIsSubscribed(false); isSubscribedRef.current = false }
+      if (session?.user) {
+        checkSubscription(session.user.id)
+        identify(session.user.id, { email: session.user.email })
+      } else {
+        setIsSubscribed(false)
+        isSubscribedRef.current = false
+        reset()
+      }
     })
     return () => subscription.unsubscribe()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -226,7 +233,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Source cap for free users — based on current live count
     if (!isSubscribedRef.current) {
       const remaining = Math.max(0, PDF_FREE_LIMIT - pdfCount)
-      if (remaining === 0) { setShowPaywall(true); return }
+      if (remaining === 0) { setShowPaywall(true); capture('paywall_shown', { pdf_count: pdfCount }); return }
       if (list.length > remaining) list = list.slice(0, remaining)
     }
 
@@ -270,6 +277,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             rawText: data.content ?? null,
             ...(aiTitle ? { label: aiTitle } : {}),
           })
+          capture('upload_complete', { doc_type: (analysis as any)?.title ?? null, keyword_count: (analysis as any)?.keywords?.length ?? 0 })
         }
       } catch {
         patchSource(projId, src.id, { status: 'error', error: 'Upload failed — check your connection' })

@@ -1,9 +1,10 @@
 'use client'
+import { capture } from '@/lib/posthog'
 
 export default function JumpBtn({ onClick }: { onClick: () => void }) {
   return (
     <button
-      onClick={onClick}
+      onClick={() => { capture('src_clicked'); onClick() }}
       title="Locate in source"
       style={{
         background: 'none',

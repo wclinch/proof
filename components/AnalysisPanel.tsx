@@ -3,6 +3,7 @@ import { useApp } from '@/context/AppContext'
 import AnalysisView  from './AnalysisView'
 import SourceTextView from './SourceTextView'
 import type { AnalysisResult } from '@/lib/types'
+import { capture } from '@/lib/posthog'
 
 function formatBreakdown(result: AnalysisResult, fmt: 'txt' | 'md'): string {
   const h  = (label: string) => fmt === 'md' ? `## ${label}\n` : `${label}\n${'─'.repeat(label.length)}\n`
@@ -39,6 +40,7 @@ export default function AnalysisPanel() {
     const slug    = (selectedSource.result.title ?? 'breakdown').replace(/\s+/g, '-').toLowerCase().slice(0, 60)
     const content = formatBreakdown(selectedSource.result, fmt)
     downloadText(content, `${slug}.${fmt}`)
+    capture('breakdown_exported', { format: fmt })
   }
 
   return (

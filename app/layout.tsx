@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { DM_Mono } from 'next/font/google'
+import { PostHogProvider } from '@/lib/posthog'
 import './globals.css'
 
 const dmMono = DM_Mono({
@@ -39,7 +40,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={dmMono.className}>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning><PostHogProvider>{children}</PostHogProvider></body>
     </html>
   )
 }
