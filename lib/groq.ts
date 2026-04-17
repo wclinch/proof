@@ -13,6 +13,7 @@ Extract verbatim where possible. Never invent or paraphrase data not present in 
   "sample_n": "sample size as stated e.g. 'n = 1,151', or null",
   "sample_desc": "who was studied — population, demographics, setting — verbatim, or null",
   "methodology": "research design, instruments, measures, analytic approach — verbatim, or null",
+  "facts": ["Key facts, roles, dates, achievements, qualifications, or data points explicitly stated that don't fit other categories — verbatim — up to 12, or []"],
   "stats": ["Every numerical result with full context — always include the label, subject, and unit alongside the number. Format as a complete phrase e.g. '42 firefighters died from cardiovascular events', '72% of participants reported...', 'p = 0.03 for the correlation between X and Y'. Never a bare number. Do NOT include sample size here. Extract ALL that are present."],
   "findings": ["Key results, outcomes, or factual assertions — verbatim or near-verbatim. Extract up to 15. Prioritize the most specific and substantive."],
   "claims": ["Specific factual or causal claims explicitly made — e.g. 'X causes Y', 'Z has been shown to...', 'Evidence suggests...'. Up to 8. Must be directly stated, not inferred."],

@@ -36,6 +36,12 @@ export default function AnalysisView({
         </div>
       )}
 
+      {result.facts?.length > 0 && (
+        <Field label="Facts">
+          {result.facts.map((f, i) => <Row key={i} value={f} onJump={onJump} />)}
+        </Field>
+      )}
+
       {result.stats?.length > 0 && (
         <Field label="Statistics">
           {result.stats.map((s, i) => <Row key={i} value={s} onJump={onJump} />)}

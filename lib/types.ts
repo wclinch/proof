@@ -11,6 +11,7 @@ export interface AnalysisResult {
   sample_n: string | null
   sample_desc: string | null
   methodology: string | null
+  facts: string[]
   stats: string[]
   findings: string[]
   claims: string[]
