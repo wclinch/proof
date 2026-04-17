@@ -80,7 +80,7 @@ export default function SourcePanel({ width }: { width: number }) {
         }}
       >
         <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase', flex: 1 }}>
-          {dragOver ? 'drop to add' : 'drop or click to upload'}
+          {dragOver ? 'drop to add' : 'drop PDF or click to upload'}
         </span>
       </div>
       <input ref={fileRef} type="file" accept=".pdf" multiple style={{ display: 'none' }}
