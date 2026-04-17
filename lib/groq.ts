@@ -35,7 +35,8 @@ export async function callGroq(key: string, content: string, source: string): Pr
   if (res.status === 429) {
     const body = await res.json().catch(() => ({}))
     const msg  = (body as { error?: { message?: string } })?.error?.message ?? ''
-    const wait = msg.match(/try again in ([^.]+)/i)?.[1]?.trim() ?? ''
+    const raw  = msg.match(/try again in (\S+)/i)?.[1]?.replace(/[.,]+$/, '') ?? ''
+    const wait = raw.replace(/(\d+)\.?\d*(s)/, '$1$2')
     throw new Error(`QUOTA_EXCEEDED${wait ? `:${wait}` : ''}`)
   }
   if (res.status === 401) throw new Error('GROQ_UNAUTHORIZED')
