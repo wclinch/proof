@@ -29,7 +29,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Proof closes the loop between source and output. Drop in a PDF and it extracts every claim, statistic, finding, and quote — organized and verifiable. Jump to the exact passage any fact came from. Then write from it, in the same workspace. No switching tabs, no losing context, no guessing if something was actually said.
+            Proof keeps you in one place. Drop in a PDF and every fact, stat, finding, and quote gets extracted and tied to the exact passage it came from. Click any item to see where it actually appears in the source — not a summary, the real text. Then write from it in the same window. No tab switching, no lost context, no wondering if something was actually said.
           </p>
         </div>
 
@@ -37,19 +37,19 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How to use it</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>1. Add sources</span> — drop a PDF. Proof reads the full document and extracts every verifiable fact automatically.
+              <span style={{ color: '#999' }}>1. Add a source</span> — drop a PDF. Proof reads the full document and pulls out every fact, stat, finding, and quote. Nothing is paraphrased or summarized — only what is actually in the text.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>2. Read the breakdown</span> — select a source from the list. The center panel shows extracted facts in order: statistics, findings, quotes, conclusions, then supporting context below.
+              <span style={{ color: '#999' }}>2. Read the breakdown</span> — select a source. The center panel shows extracted items in order: statistics, findings, quotes, conclusions. Toggle to Source view to read the full original text.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>3. Locate a fact</span> — click <span style={{ color: '#999', fontFamily: 'inherit', fontSize: '12px', letterSpacing: '0.06em' }}>src</span> next to any fact to jump to that exact passage in the source text. This also logs a verified fact record to the index.
+              <span style={{ color: '#999' }}>3. Verify a fact</span> — click <span style={{ color: '#999', fontFamily: 'inherit', fontSize: '12px', letterSpacing: '0.06em' }}>src</span> next to any item to jump to exactly where it appears in the source text. See the surrounding sentence, the full paragraph, the actual context — without opening another tab.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>4. Write</span> — use the Synthesis panel on the right to draft notes or a document. Click <span style={{ color: '#999' }}>···</span> in the panel header to export as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span>, or to discard the draft. Discard requires a confirmation click.
+              <span style={{ color: '#999' }}>4. Write</span> — the Synthesis panel is on the right. Draft notes, a report, or a full document without leaving the window. Click <span style={{ color: '#999' }}>···</span> in the panel header to export as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span>, or to discard and start over.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>5. Projects</span> — click Projects in the top bar to manage multiple workspaces. Each project has its own source list and draft.
+              <span style={{ color: '#999' }}>5. Projects</span> — click Projects in the top bar to manage multiple workspaces. Each project keeps its own source list and draft, and everything persists across sessions.
             </p>
           </div>
         </div>
