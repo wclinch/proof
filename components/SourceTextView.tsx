@@ -26,9 +26,20 @@ function extendToSentence(block: string, start: number, end: number): number {
   return sentenceEnd + 1
 }
 
-// Split into blocks: any newline boundary
+// Split into blocks: newlines first, then sentence-split any block over 200 chars
 function parseBlocks(text: string): string[] {
-  return text.split(/\n+/).map(b => b.trim()).filter(Boolean)
+  const lines = text.split(/\n+/).map(b => b.trim()).filter(Boolean)
+  const result: string[] = []
+  for (const line of lines) {
+    if (line.length <= 200) { result.push(line); continue }
+    // Split long lines at sentence boundaries
+    const sentences = line.split(/(?<=\.\s)/)
+    for (const s of sentences) {
+      const t = s.trim()
+      if (t) result.push(t)
+    }
+  }
+  return result
 }
 
 const JUNK_PATTERNS = [
@@ -162,6 +173,8 @@ export default function SourceTextView({ text, highlight }: { text: string; high
           if (score > bestScore) { bestScore = score; matchBlock = bi }
         }
         if (bestScore < 0.35) matchBlock = -1  // less than 35% overlap, skip
+        // Don't highlight the whole block if it's too long to be meaningful
+        if (matchBlock !== -1 && blocks[matchBlock].length > 300) matchBlock = -1
         if (matchBlock !== -1) { matchStart = 0; matchEnd = 0 }
       }
     }
