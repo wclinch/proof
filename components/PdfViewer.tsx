@@ -162,7 +162,7 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
     // Highlight in text layer — poll until the layer is ready (up to ~3s)
     let attempts = 0
     const tryHighlight = () => {
-      const layer = pageEl?.querySelector('.react-pdf__Page__textContent')
+      const layer = pageEl?.querySelector('.textLayer')
       if (layer && layer.querySelectorAll('span').length > 0) {
         highlightInLayer(layer, needle)
       } else if (attempts++ < 15) {
