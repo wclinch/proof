@@ -117,7 +117,7 @@ function detectColumnSplit(lines: Line[], pageWidth: number): number | null {
 
   // Two-column if most lines are either left-only or right-only, few spanning
   const columnLines = leftOnly + rightOnly
-  if (columnLines / total > 0.55 && leftOnly > 2 && rightOnly > 2) {
+  if (columnLines / total > 0.70 && leftOnly > 3 && rightOnly > 3) {
     return mid
   }
 
@@ -131,29 +131,47 @@ function linesToText(lines: Line[], columnSplit: number | null): string {
   let orderedLines: Line[]
 
   if (columnSplit !== null) {
-    // Two-column: separate left and right, process left first then right
-    const leftLines  = lines.filter(l => l.x0 < columnSplit && l.x1 <= columnSplit + 20)
-    const rightLines = lines.filter(l => l.x0 >= columnSplit - 20)
-    const spanning   = lines.filter(l => l.x0 < columnSplit - 20 && l.x1 > columnSplit + 20)
+    // Assign every line to exactly one column by center-x — nothing can fall through.
+    // Wide spanning lines (abstracts, headers, footers) go left if center < split, right otherwise,
+    // but we bucket them separately and prepend them in y-order so they read naturally.
+    const spanningLines: Line[] = []
+    const leftLines: Line[]     = []
+    const rightLines: Line[]    = []
 
-    // Spanning lines (headers, titles) appear in y-order across both columns
-    const allWithType = [
-      ...spanning.map(l  => ({ ...l, col: 0 as 0 | 1 | 2 })),
-      ...leftLines.map(l  => ({ ...l, col: 1 as 0 | 1 | 2 })),
-      ...rightLines.map(l => ({ ...l, col: 2 as 0 | 1 | 2 })),
-    ]
+    for (const line of lines) {
+      const cx    = (line.x0 + line.x1) / 2
+      const width = line.x1 - line.x0
+      // A line is "spanning" if it's more than 1.4× the half-page wide
+      if (width > columnSplit * 1.4) {
+        spanningLines.push(line)
+      } else if (cx < columnSplit) {
+        leftLines.push(line)
+      } else {
+        rightLines.push(line)
+      }
+    }
 
-    // Group into sections by spanning lines, then left col, then right col
+    // Spanning lines that sit above the main content act as headers;
+    // those below act as footers. Sort all by y and interleave with columns.
+    const contentTop = Math.max(
+      leftLines.length  ? Math.max(...leftLines.map(l => l.y))  : 0,
+      rightLines.length ? Math.max(...rightLines.map(l => l.y)) : 0,
+    )
+    const contentBottom = Math.min(
+      leftLines.length  ? Math.min(...leftLines.map(l => l.y))  : Infinity,
+      rightLines.length ? Math.min(...rightLines.map(l => l.y)) : Infinity,
+    )
+
+    const headers = spanningLines.filter(l => l.y >= contentTop).sort((a, b) => b.y - a.y)
+    const footers = spanningLines.filter(l => l.y <  contentBottom).sort((a, b) => b.y - a.y)
+    const mids    = spanningLines.filter(l => l.y < contentTop && l.y >= contentBottom).sort((a, b) => b.y - a.y)
+
     orderedLines = [
-      ...spanning,
-      ...leftLines,
-      ...rightLines,
-    ]
-    // Re-sort: spanning by y desc, then left col by y desc, then right col by y desc
-    orderedLines = [
-      ...spanning.sort((a, b) => b.y - a.y),
+      ...headers,
       ...leftLines.sort((a, b) => b.y - a.y),
+      ...mids,
       ...rightLines.sort((a, b) => b.y - a.y),
+      ...footers,
     ]
   } else {
     orderedLines = [...lines].sort((a, b) => b.y - a.y)
