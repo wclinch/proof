@@ -25,9 +25,11 @@ export default function AnalysisView({
             {result.authors.join(', ')}
           </div>
         )}
-        <div style={{ fontSize: '12px', color: '#777', marginTop: '3px' }}>
-          {[result.year, result.journal, result.type].filter(Boolean).join(' · ')}
-        </div>
+        {(result.year || result.journal) && (
+          <div style={{ fontSize: '12px', color: '#777', marginTop: '3px' }}>
+            {[result.year, result.journal].filter(Boolean).join(' · ')}
+          </div>
+        )}
       </div>
 
       {result.stats?.length > 0 && (

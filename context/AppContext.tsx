@@ -219,6 +219,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let list = Array.from(files).filter(f =>
       f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
     ).slice(0, MAX_BATCH)
+    // Deduplicate: skip files already in the current project
+    list = list.filter(f => !sources.some(s => s.label === f.name))
     if (!list.length) return
 
     // Source cap for free users — based on current live count
