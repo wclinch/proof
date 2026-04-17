@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const content  = fullText.replace(/\n+/g, ' ').slice(0, 28000)
+    const content  = fullText.replace(/\n+/g, ' ').slice(0, 20000)
     const raw      = await callGroq(process.env.GROQ_API_KEY, content, name)
     const analysis = parseGroqResponse(raw)
     logTopics(analysis)

@@ -1,7 +1,7 @@
 'use client'
 import { useRef, useEffect } from 'react'
 
-const TRUNCATION_THRESHOLD = 30000
+const TRUNCATION_THRESHOLD = 20000
 
 // Strip residual markdown that may exist in sources fetched before server-side stripping
 function cleanText(raw: string): string {
@@ -33,18 +33,6 @@ function parseBlocks(text: string): string[] {
 
 const NAV_STOP_WORDS = new Set(['the','a','an','and','or','for','of','to','in','is','are','was','with','by','at','on','as','it','its','this','that','from','be','been','can','will','our','your','we','us'])
 
-// Strip trailing appendix labels, end notes, and footnote blocks from the end
-function trimTrailingBoilerplate(blocks: string[]): string[] {
-  const labelPattern = /^(attachment\s+\w+?|appendix\s+\w+?|end\s*notes?|foot\s*notes?|references?|bibliography|notes?)$/i
-  const footnotePattern = /^\d+[\.\)]\s+/
-  let cutoff = blocks.length
-  for (let i = blocks.length - 1; i >= Math.max(0, blocks.length - 15); i--) {
-    const b = blocks[i].trim()
-    if (labelPattern.test(b) || footnotePattern.test(b)) cutoff = i
-    else break
-  }
-  return blocks.slice(0, cutoff)
-}
 
 // Strip nav/UI blocks from the first 20 blocks
 function filterNavBlocks(blocks: string[]): string[] {
@@ -83,7 +71,7 @@ export default function SourceTextView({ text, highlight }: { text: string; high
     }
   }, [highlight])
 
-  const rawBlocks  = trimTrailingBoilerplate(filterNavBlocks(parseBlocks(truncated ? cleaned.slice(0, TRUNCATION_THRESHOLD) : cleaned)))
+  const rawBlocks  = filterNavBlocks(parseBlocks(truncated ? cleaned.slice(0, TRUNCATION_THRESHOLD) : cleaned))
   // Normalize whitespace once per block — matching AND rendering use this same string
   // so that matchStart/matchEnd indices are always valid slice positions.
   const blocks = rawBlocks.map(b => b.replace(/\s+/g, ' ').trim())
@@ -231,7 +219,7 @@ export default function SourceTextView({ text, highlight }: { text: string; high
 
       {truncated && (
         <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: '1px solid #1a1a1a', fontSize: '11px', color: '#666', letterSpacing: '0.04em' }}>
-          Source text truncated at ~30k characters. Full text was sent for analysis.
+          Source text truncated at ~20k characters.
         </div>
       )}
     </div>
