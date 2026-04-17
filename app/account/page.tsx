@@ -10,8 +10,10 @@ export default function AccountPage() {
   const [pdfCount, setPdfCount]         = useState(0)
   const [user, setUser]                 = useState<User | null>(null)
   const [accessToken, setAccessToken]   = useState<string | null>(null)
-  const [isSubscribed, setIsSubscribed] = useState(false)
-  const [loading, setLoading]           = useState(true)
+  const [isSubscribed, setIsSubscribed]       = useState(false)
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false)
+  const [periodEnd, setPeriodEnd]             = useState<Date | null>(null)
+  const [loading, setLoading]                 = useState(true)
 
   // Change password
   const [newPassword, setNewPassword]   = useState('')
@@ -36,7 +38,22 @@ export default function AccountPage() {
       setUser(session.user)
       setAccessToken(session.access_token)
       const { data } = await (sb.from as any)('profiles').select('subscribed').eq('id', session.user.id).single() as { data: { subscribed: boolean } | null }
-      setIsSubscribed(data?.subscribed ?? false)
+      const subscribed = data?.subscribed ?? false
+      setIsSubscribed(subscribed)
+      if (subscribed) {
+        const subRes = await fetch('/api/stripe/subscription', {
+          headers: { authorization: `Bearer ${session.access_token}` },
+        })
+        if (subRes.ok) {
+          const { subscription } = await subRes.json()
+          if (subscription) {
+            setCancelAtPeriodEnd(subscription.cancelAtPeriodEnd ?? false)
+            if (subscription.currentPeriodEnd) {
+              setPeriodEnd(new Date(subscription.currentPeriodEnd * 1000))
+            }
+          }
+        }
+      }
       setLoading(false)
     })
   }, [router])
@@ -123,7 +140,9 @@ export default function AccountPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{ fontSize: '14px', color: '#999' }}>
               {isSubscribed
-                ? 'Pro — unlimited sources'
+                ? cancelAtPeriodEnd && periodEnd
+                  ? <>Pro — unlimited sources · <span style={{ color: '#666' }}>ends {periodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></>
+                  : 'Pro — unlimited sources'
                 : `Free — ${pdfCount} of ${PDF_FREE_LIMIT} sources used`}
             </div>
             {!isSubscribed ? (

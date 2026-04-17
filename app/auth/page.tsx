@@ -99,6 +99,14 @@ export default function AuthPage() {
               >
                 ← Back to sign in
               </button>
+              <a
+                href="/"
+                style={{ ...backBtn, display: 'inline-block', textDecoration: 'none', color: '#444' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+              >
+                ← Home
+              </a>
             </div>
 
           ) : mode === 'forgot' ? (
@@ -134,6 +142,14 @@ export default function AuthPage() {
               >
                 ← Back to sign in
               </button>
+              <a
+                href="/"
+                style={{ ...backBtn, display: 'inline-block', textDecoration: 'none', color: '#444' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+              >
+                ← Home
+              </a>
             </div>
 
           ) : (
@@ -197,6 +213,15 @@ export default function AuthPage() {
                   <a href="/privacy" className="nav-link" style={{ fontSize: '12px' }}>privacy policy</a>.
                 </p>
               )}
+
+              <a
+                href="/"
+                style={{ ...backBtn, display: 'inline-block', textDecoration: 'none', color: '#444' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+              >
+                ← Home
+              </a>
             </>
           )}
         </div>
