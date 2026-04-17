@@ -104,7 +104,7 @@ export default function SourcePanel({ width }: { width: number }) {
       )}
 
       {/* ── Or divider ── */}
-      <div style={{ margin: '6px 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ margin: '8px 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <div style={{ flex: 1, height: '1px', background: '#1a1a1a' }} />
         <span style={{ fontSize: '10px', color: '#333', letterSpacing: '0.1em', textTransform: 'uppercase' }}>or</span>
         <div style={{ flex: 1, height: '1px', background: '#1a1a1a' }} />
@@ -112,7 +112,7 @@ export default function SourcePanel({ width }: { width: number }) {
 
       {/* ── Row 2: URL input ── */}
       <div
-        style={{ ...shell, cursor: 'text', padding: '9px 14px' }}
+        style={{ ...shell, cursor: 'text', padding: '9px 14px', marginTop: 0 }}
         onClick={() => urlRef.current?.focus()}
       >
         <input
@@ -120,7 +120,7 @@ export default function SourcePanel({ width }: { width: number }) {
           value={urlInput}
           onChange={e => setUrlInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') handleUrlSubmit() }}
-          placeholder="paste a url — press enter to add"
+          placeholder="paste a url..."
           disabled={isAnalyzing}
           style={{
             flex: 1, background: 'transparent', border: 'none', outline: 'none',
@@ -128,10 +128,13 @@ export default function SourcePanel({ width }: { width: number }) {
             letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#555',
           }}
         />
+        {urlInput && (
+          <span style={{ fontSize: '11px', color: '#333', letterSpacing: '0.06em', flexShrink: 0, marginLeft: '6px' }}>↵</span>
+        )}
       </div>
 
       {/* ── Source list ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '4px', borderTop: '1px solid #1a1a1a' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '8px', borderTop: '1px solid #1a1a1a' }}>
         {sources.length > 0 && (
           <div
             style={{ ...shell, cursor: 'text', padding: '9px 14px' }}
