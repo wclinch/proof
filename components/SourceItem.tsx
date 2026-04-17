@@ -138,8 +138,8 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
             <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '5px' }}>
               analyzing...
             </div>
-            <div style={{ width: '80px', height: '1px', background: '#1a1a1a', borderRadius: '1px', overflow: 'hidden' }}>
-              <div className="progress-bar" style={{ height: '100%', background: '#2a6', borderRadius: '1px' }} />
+            <div style={{ width: '100%', height: '2px', background: '#1a1a1a', borderRadius: '1px', overflow: 'hidden' }}>
+              <div className="progress-bar" style={{ height: '100%', background: '#333', borderRadius: '1px' }} />
             </div>
           </div>
         )}
