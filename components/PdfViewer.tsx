@@ -159,11 +159,17 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
     const pageEl = pageRefs.current[idx]
     pageEl?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
-    // Highlight in text layer after scroll + paint
-    setTimeout(() => {
+    // Highlight in text layer — poll until the layer is ready (up to ~3s)
+    let attempts = 0
+    const tryHighlight = () => {
       const layer = pageEl?.querySelector('.react-pdf__Page__textContent')
-      if (layer) highlightInLayer(layer, needle)
-    }, 500)
+      if (layer && layer.querySelectorAll('span').length > 0) {
+        highlightInLayer(layer, needle)
+      } else if (attempts++ < 15) {
+        setTimeout(tryHighlight, 200)
+      }
+    }
+    setTimeout(tryHighlight, 100)
   }, [highlight, pageTexts])
 
   // Clear highlights when returning to breakdown
