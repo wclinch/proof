@@ -93,7 +93,8 @@ export default function SourceTextView({ text, highlight }: { text: string; high
       fullNeedle.slice(0, 200),
       fullNeedle.slice(0, 120),
       fullNeedle.slice(0, 60),
-    ].filter((s, i, a) => s.length > 20 && a.indexOf(s) === i)
+      fullNeedle.slice(0, 30),
+    ].filter((s, i, a) => s.length >= 15 && a.indexOf(s) === i)
 
     outer:
     for (const needle of candidates) {
@@ -121,6 +122,28 @@ export default function SourceTextView({ text, highlight }: { text: string; high
             break outer
           }
           offset += blocks[bi].length + 1 // +1 for the space separator
+        }
+      }
+    }
+
+    // Phrase anchor — try sliding windows of 4–8 words from the needle verbatim
+    if (matchBlock === -1) {
+      const needleTokens = fullNeedle.split(/\s+/)
+      if (needleTokens.length >= 4) {
+        outer2:
+        for (let wSize = Math.min(8, needleTokens.length); wSize >= 4; wSize--) {
+          for (let si = 0; si <= needleTokens.length - wSize; si++) {
+            const phrase = needleTokens.slice(si, si + wSize).join(' ')
+            if (phrase.length < 20) continue
+            for (let bi = 0; bi < blocks.length; bi++) {
+              const idx = blocks[bi].toLowerCase().indexOf(phrase)
+              if (idx !== -1) {
+                matchBlock = bi; matchStart = idx
+                matchEnd = extendToSentence(blocks[bi], idx, idx + phrase.length)
+                break outer2
+              }
+            }
+          }
         }
       }
     }
@@ -153,7 +176,7 @@ export default function SourceTextView({ text, highlight }: { text: string; high
           const score = hits / needleWords.length
           if (score > bestScore) { bestScore = score; matchBlock = bi }
         }
-        if (bestScore < 0.45) matchBlock = -1  // less than 45% overlap, skip
+        if (bestScore < 0.35) matchBlock = -1  // less than 35% overlap, skip
         if (matchBlock !== -1) { matchStart = 0; matchEnd = 0 }
       }
     }
