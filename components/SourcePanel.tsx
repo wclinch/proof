@@ -4,14 +4,25 @@ import { useApp } from '@/context/AppContext'
 import SourceItem from './SourceItem'
 
 export default function SourcePanel({ width }: { width: number }) {
-  const { sources, uploadFiles, isAnalyzing, isUploadingFile } = useApp()
+  const { sources, uploadFiles, uploadUrl, isAnalyzing } = useApp()
   const [dragOver, setDragOver]       = useState(false)
   const [filterInput, setFilterInput] = useState('')
   const [filter, setFilter]           = useState('')
   const [dupMsg, setDupMsg]           = useState(false)
+  const [urlInput, setUrlInput]       = useState('')
   const fileRef   = useRef<HTMLInputElement>(null)
   const filterRef = useRef<HTMLInputElement>(null)
+  const urlRef    = useRef<HTMLInputElement>(null)
   const dupTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function handleUrlSubmit() {
+    const val = urlInput.trim()
+    if (!val) return
+    let url = val
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url
+    uploadUrl(url)
+    setUrlInput('')
+  }
 
   function handleUpload(files: FileList | File[]) {
     const list = Array.from(files).filter(f =>
@@ -91,6 +102,26 @@ export default function SourcePanel({ width }: { width: number }) {
           pdf already added.
         </div>
       )}
+
+      {/* ── Row 2: URL input ── */}
+      <div
+        style={{ ...shell, cursor: 'text', padding: '9px 14px' }}
+        onClick={() => urlRef.current?.focus()}
+      >
+        <input
+          ref={urlRef}
+          value={urlInput}
+          onChange={e => setUrlInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') handleUrlSubmit() }}
+          placeholder="paste a url..."
+          disabled={isAnalyzing}
+          style={{
+            flex: 1, background: 'transparent', border: 'none', outline: 'none',
+            fontSize: '11px', fontFamily: 'inherit',
+            letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#555',
+          }}
+        />
+      </div>
 
       {/* ── Source list ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '4px' }}>

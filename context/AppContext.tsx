@@ -51,6 +51,7 @@ interface AppState {
   updateProject: (id: string, patch: Partial<Project>) => void
   patchSource: (projId: string, srcId: string, patch: Partial<QueuedSource>) => void
   uploadFiles: (files: FileList | File[]) => Promise<void>
+  uploadUrl: (url: string) => Promise<void>
   removeSource: (srcId: string) => void
   removeSelected: () => void
   createProject: () => void
@@ -297,6 +298,64 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsUploadingFile(false)
   }
 
+  async function uploadUrl(url: string) {
+    if (!activeId || analyzing.current) return
+    const trimmed = url.trim()
+    if (!trimmed) return
+
+    // Deduplicate
+    if (sources.some(s => s.raw === trimmed)) return
+
+    // Source cap for free users
+    if (!isSubscribedRef.current) {
+      const remaining = Math.max(0, PDF_FREE_LIMIT - pdfCount)
+      if (remaining === 0) { setShowPaywall(true); capture('paywall_shown', { pdf_count: pdfCount }); return }
+    }
+
+    const src: QueuedSource = {
+      id: uid(), raw: trimmed, status: 'loading',
+      result: null, rawText: null, error: null, label: trimmed,
+    }
+
+    updateProject(activeId, { sources: [...sources, src] })
+    setSelectedId(src.id)
+    analyzing.current = true
+    setIsAnalyzing(true)
+
+    const projId = activeId
+    try {
+      const res  = await fetch('/api/fetch-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: trimmed }),
+      })
+      const data = await res.json() as { error?: string; analysis?: unknown; content?: string }
+      if (data.error) {
+        patchSource(projId, src.id, { status: 'error', error: data.error })
+      } else {
+        const analysis = data.analysis as QueuedSource['result']
+        const aiTitle  = (analysis as any)?.title
+        patchSource(projId, src.id, {
+          status: 'done',
+          result: analysis,
+          rawText: data.content ?? null,
+          ...(aiTitle ? { label: aiTitle } : {}),
+        })
+        capture('upload_complete', {
+          doc_type: aiTitle ?? null,
+          keyword_count: (analysis as any)?.keywords?.length ?? 0,
+          source_count: pdfCount + 1,
+          source_type: 'url',
+        })
+      }
+    } catch {
+      patchSource(projId, src.id, { status: 'error', error: 'Failed to fetch URL — check your connection.' })
+    }
+
+    analyzing.current = false
+    setIsAnalyzing(false)
+  }
+
   function removeSource(srcId: string) {
     if (!activeId) return
     const updated = sources.filter(s => s.id !== srcId)
@@ -360,7 +419,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setShowProjects, setSelectedId, setSelectedIds, setAnchorId,
     setCenterView, setContextMenu, setProjContextMenu,
     setProjects, updateProject, patchSource,
-    uploadFiles,
+    uploadFiles, uploadUrl,
     removeSource, removeSelected,
     createProject, switchProject, deleteProject,
     jumpToSource,

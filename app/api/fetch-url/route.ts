@@ -1,0 +1,45 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { callGroq, parseGroqResponse, formatGroqError } from '@/lib/groq'
+import { checkRateLimit } from '@/lib/rateLimit'
+
+export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+  if (!checkRateLimit(ip, 10, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests — slow down a bit.' }, { status: 429 })
+  }
+
+  if (!process.env.GROQ_API_KEY) {
+    return NextResponse.json({ error: 'GROQ_API_KEY not configured' }, { status: 500 })
+  }
+
+  const { url } = await req.json() as { url?: string }
+  if (!url) return NextResponse.json({ error: 'No URL provided' }, { status: 400 })
+
+  let fullText: string
+  try {
+    const res = await fetch(`https://r.jina.ai/${url}`, {
+      headers: {
+        'Accept': 'text/plain',
+        'X-Return-Format': 'markdown',
+      },
+    })
+    if (!res.ok) throw new Error(`Jina returned ${res.status}`)
+    fullText = (await res.text()).trim()
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : ''
+    return NextResponse.json({ error: `Could not fetch URL — ${msg || 'check the address and try again.'}` }, { status: 422 })
+  }
+
+  if (!fullText.length) {
+    return NextResponse.json({ error: 'Page appears to be empty or inaccessible.' }, { status: 422 })
+  }
+
+  try {
+    const content  = fullText.slice(0, 60000)
+    const raw      = await callGroq(process.env.GROQ_API_KEY, content, url)
+    const analysis = parseGroqResponse(raw)
+    return NextResponse.json({ analysis, content: fullText })
+  } catch (e) {
+    return NextResponse.json({ error: formatGroqError(e) }, { status: 500 })
+  }
+}
