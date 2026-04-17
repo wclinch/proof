@@ -5,21 +5,9 @@ export interface AnalysisResult {
   authors: string[]
   year: string | null
   journal: string | null
-  doi: string | null
-  type: string
-  abstract: string | null
-  sample_n: string | null
-  sample_desc: string | null
-  methodology: string | null
   facts: string[]
-  stats: string[]
-  findings: string[]
-  claims: string[]
-  conclusions: string[]
-  recommendations: string[]
+  supporting: string[]
   quotes: string[]
-  limitations: string[]
-  concepts: string[]
   keywords: string[]
 }
 

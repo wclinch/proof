@@ -3,29 +3,17 @@ export const PROMPT = `You are a precise data extraction engine. Return ONLY a v
 Extract verbatim where possible. Never invent or paraphrase data not present in the text. Never output placeholder strings like "not mentioned", "not provided", "no data" — if data is absent, use null or [].
 
 {
-  "title": "exact title",
-  "authors": ["Last, First"],
-  "year": "publication year as string, or null",
+  "title": "exact title of the document, or null",
+  "authors": ["Last, First — only if explicitly credited"],
+  "year": "year as string, or null",
   "journal": "journal or publication name, or null",
-  "doi": "DOI string if present, or null",
-  "type": "journal-article | book | book-chapter | report | preprint | website | video | other",
-  "abstract": "full abstract verbatim, or null",
-  "sample_n": "sample size as stated e.g. 'n = 1,151', or null",
-  "sample_desc": "who was studied — population, demographics, setting — verbatim, or null",
-  "methodology": "research design, instruments, measures, analytic approach — verbatim, or null",
-  "facts": ["Key facts, roles, dates, achievements, qualifications, or data points explicitly stated that don't fit other categories. Extract as concise phrases — do NOT prefix with the subject's name, do NOT repeat items already in stats. Up to 12, or []"],
-  "stats": ["Every numerical result with full context — always include the label, subject, and unit alongside the number. Format as a complete phrase e.g. '42 firefighters died from cardiovascular events', '72% of participants reported...', 'p = 0.03 for the correlation between X and Y'. Never a bare number. Do NOT include sample size here. Extract ALL that are present."],
-  "findings": ["Key results, outcomes, or factual assertions — verbatim or near-verbatim. Extract up to 15. Prioritize the most specific and substantive."],
-  "claims": ["Specific factual or causal claims explicitly made — e.g. 'X causes Y', 'Z has been shown to...', 'Evidence suggests...'. Up to 8. Must be directly stated, not inferred."],
-  "conclusions": ["Notable statements, positions, or takeaways explicitly stated in the document — verbatim or near-verbatim — up to 8. Do not interpret or infer."],
-  "recommendations": ["Explicit recommendations, action items, or calls to action stated in the document — verbatim or near-verbatim — up to 6, or []"],
+  "facts": ["Cold hard verifiable items — numbers, statistics, dates, durations, quantities, named roles, credentials, explicit data points. Format as concise phrases without prefixing the subject's name. Extract ALL that are present."],
+  "supporting": ["Points that provide context, explanation, reasoning, methodology, or conclusions that connect to or support the facts. Verbatim or near-verbatim. Up to 12."],
   "quotes": ["Direct quotes worth citing — exact text with punctuation — up to 6, or []"],
-  "limitations": ["Limitations the authors acknowledge — verbatim — up to 6, or []"],
-  "concepts": ["Named theories, frameworks, constructs, or models only — no proper nouns, no names of people, organizations, or cases — up to 8"],
-  "keywords": ["Broad subject-area terms only. No proper nouns. Think discipline-level categories: 'contract law', 'cardiovascular disease', 'machine learning'. 5 to 12 terms."]
+  "keywords": ["Broad subject-area terms only. No proper nouns. Think discipline-level categories: 'contract law', 'cardiovascular disease', 'machine learning'. 5 to 10 terms."]
 }
 
-Rules: null for absent strings, [] for absent arrays. Never repeat the sample size in the stats array.`
+Rules: null for absent strings, [] for absent arrays.`
 
 export async function callGroq(key: string, content: string, source: string): Promise<string> {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
