@@ -58,11 +58,10 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Shortcuts</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {[
-              { keys: ['⌘↵', 'Ctrl+↵'], desc: 'Start a new draft (when synthesis panel is empty and nothing is focused)' },
-              { keys: ['Tab'], desc: 'Indent 4 spaces inside the draft textarea' },
-              { keys: ['Esc'], desc: 'Close the projects panel' },
-              { keys: ['Enter'], desc: 'Confirm a project or source name edit' },
-              { keys: ['Esc'], desc: 'Cancel a name edit without saving' },
+              { keys: ['⌘↵', 'Ctrl+↵'], desc: 'Open a new draft (when no draft is active and no input is focused)' },
+              { keys: ['Tab'], desc: 'Indent 4 spaces inside the draft' },
+              { keys: ['Enter'], desc: 'Save a project or source name edit' },
+              { keys: ['Esc'], desc: 'Cancel a name edit, or close the projects panel' },
             ].map((row, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
                 <div style={{ display: 'flex', gap: '4px', flexShrink: 0, minWidth: '110px' }}>
@@ -84,7 +83,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Pricing</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            The first 5 sources are free — no account required. After that, $3/month with no limits. Cheap enough for a student, useful enough for a firm.
+            First 5 sources free, no account required. After that, $3/month — one flat price, no limits on sources or projects.
           </p>
         </div>
 
