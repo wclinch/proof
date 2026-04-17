@@ -144,7 +144,7 @@ export default function AccountPage() {
         <div style={sectionStyle}>
           <span style={labelStyle}>Plan</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ fontSize: '14px', color: '#999' }}>
+            <div style={{ fontSize: '14px', color: '#999', whiteSpace: 'nowrap' }}>
               {isSubscribed
                 ? periodEnd
                   ? <>Pro — unlimited sources · <span style={{ color: '#666' }}>
