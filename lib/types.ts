@@ -15,7 +15,6 @@ export interface QueuedSource {
   raw: string
   status: SourceStatus
   result: AnalysisResult | null
-  rawText: string | null
   error: string | null
   label?: string
 }

@@ -41,10 +41,7 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>AI processing</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#999' }}>PDFs:</span> document content is sent to <a href="https://www.llamaindex.ai/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'none' }}>LlamaParse</a> for text extraction, then to <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'none' }}>Groq</a> for analysis. Proof does not retain the content after processing.
-          </p>
-          <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#999' }}>URLs:</span> page content is fetched via <a href="https://www.firecrawl.dev/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'none' }}>Firecrawl</a>, then sent to <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'none' }}>Groq</a> for analysis. Proof does not retain the content after processing.
+            Document content is sent to <a href="https://www.llamaindex.ai/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'none' }}>LlamaParse</a> for text extraction, then to <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'none' }}>Groq</a> for analysis. Proof does not retain the content after processing.
           </p>
         </div>
 

@@ -117,7 +117,7 @@ export default function AnalysisPanel() {
       {/* Body */}
       <div style={{
         flex: 1, minHeight: 0,
-        overflowY: centerView === 'source' ? 'auto' : 'auto',
+        overflowY: 'auto',
         padding: '20px 24px',
         display: 'flex', flexDirection: 'column',
       }}>

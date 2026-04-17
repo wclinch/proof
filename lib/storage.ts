@@ -39,34 +39,11 @@ export function loadProjects(): Project[] {
 }
 
 export function saveProjects(ps: Project[]) {
-  // Truncate rawText to 20k chars at a word boundary — keeps highlight working
-  // while staying well within the 5MB localStorage quota
-  const slim = ps.map(p => ({
-    ...p,
-    sources: p.sources.map(s => ({
-      ...s,
-      rawText: s.rawText
-        ? s.rawText.slice(0, 20000).replace(/\S+$/, '').trimEnd()
-        : null,
-    })),
-  }))
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(slim))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(ps))
   } catch {
-    // Quota exceeded — retry with rawText stripped entirely
-    try {
-      const bare = ps.map(p => ({
-        ...p,
-        sources: p.sources.map(s => ({ ...s, rawText: null })),
-      }))
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(bare))
-      window.dispatchEvent(new CustomEvent('proof-storage-warning', {
-        detail: 'Storage nearly full — source text cleared to save space.',
-      }))
-    } catch {
-      window.dispatchEvent(new CustomEvent('proof-storage-warning', {
-        detail: 'Storage full — changes may not be saved.',
-      }))
-    }
+    window.dispatchEvent(new CustomEvent('proof-storage-warning', {
+      detail: 'Storage full — changes may not be saved.',
+    }))
   }
 }
