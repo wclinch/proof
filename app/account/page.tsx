@@ -22,6 +22,7 @@ export default function AccountPage() {
 
   // Delete account confirm
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleteError, setDeleteError]     = useState<string | null>(null)
 
   const router = useRouter()
 
@@ -79,6 +80,7 @@ export default function AccountPage() {
 
   async function handleDeleteAccount() {
     if (!confirmDelete) { setConfirmDelete(true); return }
+    setDeleteError(null)
     const sb = getSupabaseBrowser()
     const { data: { session } } = await sb.auth.getSession()
     if (!session) return
@@ -89,6 +91,10 @@ export default function AccountPage() {
     if (res.ok) {
       await sb.auth.signOut()
       router.push('/')
+    } else {
+      const body = await res.json().catch(() => ({}))
+      setDeleteError(body.error ?? 'Failed to delete account — try again.')
+      setConfirmDelete(false)
     }
   }
 
@@ -274,9 +280,14 @@ export default function AccountPage() {
             >
               {confirmDelete ? 'Confirm — this cannot be undone' : 'Delete account'}
             </button>
-            {!confirmDelete && (
+            {!confirmDelete && !deleteError && (
               <div style={{ marginTop: '8px', fontSize: '11px', color: '#555', letterSpacing: '0.03em' }}>
                 A confirmation step is required.
+              </div>
+            )}
+            {deleteError && (
+              <div style={{ marginTop: '8px', fontSize: '11px', color: '#a44', letterSpacing: '0.03em' }}>
+                {deleteError}
               </div>
             )}
             {confirmDelete && (
