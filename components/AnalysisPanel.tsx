@@ -14,21 +14,20 @@ function SectionRow({ number, title, onClick }: { number: string; title: string;
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        display: 'flex', alignItems: 'baseline', gap: '12px',
-        padding: '8px 8px',
+        display: 'flex', alignItems: 'center', gap: '10px',
+        padding: '7px 10px',
         cursor: 'pointer',
-        borderBottom: '1px solid #0f0f0f',
-        background: hov ? '#0d0d0d' : 'transparent',
+        borderRadius: '3px',
+        background: hov ? '#111' : 'transparent',
         transition: 'background 0.1s',
       }}
     >
-      <span style={{ fontSize: '11px', color: '#333', width: '24px', flexShrink: 0, textAlign: 'right' as const }}>
+      <span style={{ fontSize: '10px', color: '#444', width: '22px', flexShrink: 0, textAlign: 'right' as const, fontVariantNumeric: 'tabular-nums' }}>
         {number}
       </span>
-      <span style={{ fontSize: '13px', color: hov ? '#ccc' : '#888', transition: 'color 0.1s', flex: 1 }}>
+      <span style={{ fontSize: '12px', color: hov ? '#ccc' : '#777', transition: 'color 0.1s', flex: 1, lineHeight: 1.4 }}>
         {title}
       </span>
-      <span style={{ fontSize: '11px', color: hov ? '#555' : '#1e1e1e', transition: 'color 0.1s' }}>↗</span>
     </div>
   )
 }
@@ -179,17 +178,20 @@ export default function AnalysisPanel() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
             {/* Document header */}
-            <div style={{ paddingBottom: '20px', borderBottom: '1px solid #1a1a1a' }}>
-              <div style={{ fontSize: '14px', fontWeight: 500, color: '#ccc', lineHeight: 1.35, marginBottom: '8px' }}>
+            <div style={{ paddingBottom: '16px', borderBottom: '1px solid #1a1a1a' }}>
+              <div style={{
+                fontSize: '13px', fontWeight: 500, color: '#bbb', lineHeight: 1.4, marginBottom: '6px',
+                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+              }}>
                 {selectedSource.result?.title ?? 'Untitled'}
               </div>
               {(selectedSource.result?.parties?.length ?? 0) > 0 && (
-                <div style={{ fontSize: '12px', color: '#666', lineHeight: 1.7, marginBottom: '2px' }}>
+                <div style={{ fontSize: '11px', color: '#555', lineHeight: 1.6, marginBottom: '2px' }}>
                   {selectedSource.result?.parties?.join(' · ')}
                 </div>
               )}
               {selectedSource.result?.date && (
-                <div style={{ fontSize: '12px', color: '#555' }}>
+                <div style={{ fontSize: '11px', color: '#444' }}>
                   {selectedSource.result.date}
                 </div>
               )}
@@ -233,7 +235,7 @@ export default function AnalysisPanel() {
             {/* Section navigation */}
             {(selectedSource.result?.sections?.length ?? 0) > 0 && (
               <div>
-                <div style={{ fontSize: '10px', color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: '8px' }}>
+                <div style={{ fontSize: '10px', color: '#444', letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: '4px', paddingLeft: '10px' }}>
                   Sections
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>

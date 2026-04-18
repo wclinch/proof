@@ -167,23 +167,20 @@ export default function PdfViewer({ srcId, searchTerm }: { srcId: string; search
       {matchCount > 0 && (
         <div style={{
           flexShrink: 0,
-          display: 'flex', alignItems: 'center', gap: '12px',
-          padding: '7px 16px',
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '6px 16px',
           borderBottom: '1px solid #1a1a1a',
           background: '#080808',
         }}>
-          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.06em' }}>
-            {currentMatch + 1} of {matchCount}
-          </span>
           <button
             onClick={() => navMatch(-1)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: '13px', padding: '0 2px', outline: 'none', fontFamily: 'inherit' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: '13px', padding: '2px 4px', outline: 'none', fontFamily: 'inherit' }}
             onMouseEnter={e => e.currentTarget.style.color = '#aaa'}
             onMouseLeave={e => e.currentTarget.style.color = '#555'}
           >↑</button>
           <button
             onClick={() => navMatch(1)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: '13px', padding: '0 2px', outline: 'none', fontFamily: 'inherit' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: '13px', padding: '2px 4px', outline: 'none', fontFamily: 'inherit' }}
             onMouseEnter={e => e.currentTarget.style.color = '#aaa'}
             onMouseLeave={e => e.currentTarget.style.color = '#555'}
           >↓</button>
