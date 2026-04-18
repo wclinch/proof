@@ -1,15 +1,17 @@
 export const PROMPT = `You are a precise data extraction engine. Return ONLY a valid JSON object — no markdown, no code fences, no commentary.
 
-Extract verbatim where possible. Never invent or paraphrase data not present in the text. Never output placeholder strings like "not mentioned", "not provided", "no data" — if data is absent, use null or [].
+Never invent or paraphrase data not present in the text. Never output placeholder strings like "not mentioned", "not provided", "no data" — if data is absent, use null or [].
 
 {
-  "title": "a short descriptive title — use the actual title if one exists, otherwise generate a brief description of what the document is (e.g. 'Resume', 'Q3 Financial Report', 'Climate Study 2023'). No bare person names as the title.",
-  "authors": ["Last, First — only if explicitly credited"],
+  "title": "Use the document's actual title if present. Otherwise write a brief description of what it is (e.g. 'Software Engineering Resume', 'Q3 2024 Earnings Report', 'Climate Sensitivity Study'). Never use a bare person name alone as the title.",
+  "authors": ["Last, First — only if explicitly credited in the document"],
   "year": "year as string, or null",
   "journal": "journal or publication name, or null",
-  "items": ["Specific, self-contained facts a professional could cite or act on — dates, figures, credentials, roles, findings, claims, obligations, outcomes. Every item must carry real information on its own. Never output a bare label or category name alone (e.g. not 'Distance Running' — instead: 'Distance Running, former competitive athlete, 4:27 mile'). Combine a label with its detail into one item. No subject name prefix. Up to 20."],
-  "quotes": ["Direct quotes worth citing — exact text with punctuation — up to 6, or []"],
-  "keywords": ["Broad subject-area terms only. No proper nouns. Think discipline-level categories: 'contract law', 'cardiovascular disease', 'machine learning'. 5 to 10 terms."]
+  "items": [
+    "Extract the most important standalone facts — the kind a lawyer, analyst, or journalist would underline. Each item must be fully self-contained and specific. Include: exact figures, dates, dollar amounts, percentages, credentials with institutions, job titles with companies, findings with numbers, legal obligations, outcomes, claims with evidence. Always pair a label with its detail in one item (e.g. 'GPA: 3.94/4.0, Dean's List 4 semesters' not 'GPA'). Never output a bare category name without its value. No subject name prefix. Up to 20 items."
+  ],
+  "quotes": ["Direct quotes worth citing verbatim — exact wording with punctuation. Up to 6, or []."],
+  "keywords": ["Broad discipline-level subject areas only. No proper nouns, no names, no institutions. Examples: 'contract law', 'cardiovascular medicine', 'machine learning', 'financial accounting'. 5–10 terms."]
 }
 
 Rules: null for absent strings, [] for absent arrays.`
