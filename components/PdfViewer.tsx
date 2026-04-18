@@ -23,7 +23,6 @@ function highlightInLayer(layer: Element, needle: string) {
   const spans = Array.from(layer.querySelectorAll('span'))
   if (!spans.length) return
 
-  // Score each span by how many needle words it contains
   const words = [...new Set(norm(needle).split(/\s+/).filter(w => w.length >= 3))]
   if (!words.length) return
 
@@ -35,11 +34,9 @@ function highlightInLayer(layer: Element, needle: string) {
   const bestIdx = scores.indexOf(maxScore)
   const hit = new Set<number>([bestIdx])
 
-  // Extend backward through spans that also have keyword hits
   let first = bestIdx
   while (first - 1 >= 0 && scores[first - 1] > 0) { first--; hit.add(first) }
 
-  // Extend forward through spans with hits or that look like wrapped continuations
   let last = bestIdx
   while (last + 1 < spans.length) {
     const curText  = spans[last].textContent?.trim() ?? ''
@@ -64,15 +61,11 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
   const [pageTexts, setPageTexts] = useState<string[]>([])
   const [missing,   setMissing]   = useState(false)
   const [width,     setWidth]     = useState(600)
-  const containerRef  = useRef<HTMLDivElement>(null)
-  const pageRefs      = useRef<(HTMLDivElement | null)[]>([])
-  // Which page index + needle to highlight — set when user clicks src,
-  // consumed by onRenderTextLayerSuccess if the layer isn't ready yet
-  const pendingHL     = useRef<{ pageIdx: number; needle: string } | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const pageRefs     = useRef<(HTMLDivElement | null)[]>([])
 
   useEffect(() => {
     setFile(null); setMissing(false); setNumPages(0); setPageTexts([])
-    pendingHL.current = null
     getFile(srcId).then(f => { if (f) setFile(f); else setMissing(true) })
   }, [srcId])
 
@@ -99,9 +92,7 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
     setPageTexts(texts)
   }
 
-  // Find target page + scroll when highlight/pageTexts change
   useEffect(() => {
-    pendingHL.current = null
     if (!highlight || !pageTexts.length) return
 
     const needle   = norm(highlight)
@@ -144,32 +135,21 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
     const pageEl = pageRefs.current[idx]
     pageEl?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
-    // Try immediately (text layer may already be rendered)
-    const layer = pageEl?.querySelector('.textLayer')
-    if (layer && layer.querySelectorAll('span').length > 0) {
-      highlightInLayer(layer, needle)
-    } else {
-      // Text layer not ready yet — onRenderTextLayerSuccess will pick this up
-      pendingHL.current = { pageIdx: idx, needle }
+    // Poll until text layer has spans (correct class name: .textLayer)
+    let attempts = 0
+    const tryHL = () => {
+      const layer = pageEl?.querySelector('.textLayer')
+      if (layer && layer.querySelectorAll('span').length > 0) {
+        highlightInLayer(layer, needle)
+      } else if (attempts++ < 15) {
+        setTimeout(tryHL, 200)
+      }
     }
+    tryHL()
   }, [highlight, pageTexts])
 
-  // Called by react-pdf when a page's text layer finishes rendering
-  const onTextLayerSuccess = useCallback((pageIdx: number) => {
-    const pending = pendingHL.current
-    if (!pending || pending.pageIdx !== pageIdx) return
-    const pageEl = pageRefs.current[pageIdx]
-    const layer  = pageEl?.querySelector('.textLayer')
-    if (layer) {
-      pendingHL.current = null
-      highlightInLayer(layer, pending.needle)
-    }
-  }, [])
-
-  // Clear highlights when returning to breakdown
   useEffect(() => {
     if (highlight) return
-    pendingHL.current = null
     containerRef.current?.querySelectorAll('span[data-proof-hl]').forEach(el => {
       el.removeAttribute('data-proof-hl')
       const s = el.getAttribute('style') ?? ''
@@ -216,7 +196,6 @@ export default function PdfViewer({ srcId, highlight }: { srcId: string; highlig
               width={width}
               renderTextLayer
               renderAnnotationLayer={false}
-              onRenderTextLayerSuccess={() => onTextLayerSuccess(i)}
             />
           </div>
         ))}
