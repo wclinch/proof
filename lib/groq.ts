@@ -7,7 +7,7 @@ Extract verbatim where possible. Never invent or paraphrase data not present in 
   "authors": ["Last, First — only if explicitly credited"],
   "year": "year as string, or null",
   "journal": "journal or publication name, or null",
-  "items": ["Everything worth knowing from this document — dates, numbers, credentials, roles, findings, events, claims, context — in the order they appear. Each item must be a complete, self-contained statement. Combine related details into one item rather than splitting them (e.g. 'State University, 2019–2023, GPA 3.8' not three separate items). Concise, no subject name prefix. Up to 20."],
+  "items": ["Specific, self-contained facts a professional could cite or act on — dates, figures, credentials, roles, findings, claims, obligations, outcomes. Every item must carry real information on its own. Never output a bare label or category name alone (e.g. not 'Distance Running' — instead: 'Distance Running, former competitive athlete, 4:27 mile'). Combine a label with its detail into one item. No subject name prefix. Up to 20."],
   "quotes": ["Direct quotes worth citing — exact text with punctuation — up to 6, or []"],
   "keywords": ["Broad subject-area terms only. No proper nouns. Think discipline-level categories: 'contract law', 'cardiovascular disease', 'machine learning'. 5 to 10 terms."]
 }

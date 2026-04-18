@@ -46,8 +46,7 @@ function highlightInLayer(layer: Element, needle: string) {
     const nextText = spans[last + 1].textContent?.trim() ?? ''
     if (!nextText) { last++; continue }
     const lastWord = curText.split(/\s+/).pop()?.toLowerCase().replace(/\W/g, '') ?? ''
-    const isCont   = scores[last + 1] > 0
-                  || CONTS.has(lastWord)
+    const isCont   = CONTS.has(lastWord)
                   || (/^[a-z]/.test(nextText) && !/[.!?]$/.test(curText))
     if (isCont) { hit.add(last + 1); last++ } else break
   }
