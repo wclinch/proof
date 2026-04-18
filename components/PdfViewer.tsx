@@ -29,12 +29,10 @@ function applyBright(span: HTMLElement) {
   span.setAttribute('data-proof-hl', '1')
 }
 
-function getMatchingSpans(layer: Element, words: string[]): HTMLElement[] {
+function getMatchingSpans(layer: Element, phrase: string): HTMLElement[] {
+  if (!phrase) return []
   const spans = Array.from(layer.querySelectorAll('span')) as HTMLElement[]
-  return spans.filter(s => {
-    const t = norm(s.textContent ?? '')
-    return words.some(w => t.includes(w))
-  })
+  return spans.filter(s => norm(s.textContent ?? '').includes(phrase))
 }
 
 export default function PdfViewer({ srcId, searchTerm }: { srcId: string; searchTerm: string | null }) {
@@ -78,16 +76,16 @@ export default function PdfViewer({ srcId, searchTerm }: { srcId: string; search
 
     if (!term?.trim()) { searchWords.current = []; return }
 
-    const words = [...new Set(norm(term).split(/\s+/).filter(w => w.length >= 2))]
-    searchWords.current = words
-    if (!words.length) return
+    const phrase = norm(term)
+    searchWords.current = [phrase]
+    if (!phrase) return
 
     const matches: HTMLElement[] = []
     pageRefs.current.forEach(pageEl => {
       if (!pageEl) return
       const layer = pageEl.querySelector('.textLayer')
       if (!layer) return
-      getMatchingSpans(layer, words).forEach(s => { applyDim(s); matches.push(s) })
+      getMatchingSpans(layer, phrase).forEach(s => { applyDim(s); matches.push(s) })
     })
 
     matchEls.current = matches
@@ -121,13 +119,13 @@ export default function PdfViewer({ srcId, searchTerm }: { srcId: string; search
 
   // When a text layer renders, apply search to it
   const onTextLayerRendered = useCallback((pageIdx: number) => {
-    const words = searchWords.current
-    if (!words.length) return
+    const phrase = searchWords.current[0]
+    if (!phrase) return
     const pageEl = pageRefs.current[pageIdx]
     const layer  = pageEl?.querySelector('.textLayer')
     if (!layer) return
 
-    const newSpans = getMatchingSpans(layer, words)
+    const newSpans = getMatchingSpans(layer, phrase)
     if (!newSpans.length) return
 
     // Insert into matchEls in document order (after all previous pages)
@@ -200,17 +198,26 @@ export default function PdfViewer({ srcId, searchTerm }: { srcId: string; search
           loading={<div style={{ padding: '24px', fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase' }}>rendering...</div>}
           error={<div style={{ padding: '24px', fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase' }}>could not render pdf.</div>}
         >
-          {Array.from({ length: numPages }, (_, i) => (
-            <div key={i} ref={el => setPageRef(el, i)} style={{ marginBottom: '12px' }}>
-              <Page
-                pageNumber={i + 1}
-                width={width}
-                renderTextLayer
-                renderAnnotationLayer={false}
-                onRenderTextLayerSuccess={() => onTextLayerRendered(i)}
-              />
-            </div>
-          ))}
+          {Array.from({ length: Math.ceil(numPages / 2) }, (_, row) => {
+            const left  = row * 2
+            const right = row * 2 + 1
+            const pageW = Math.floor((width - 8) / 2)
+            return (
+              <div key={row} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                {[left, right].map(i => i < numPages ? (
+                  <div key={i} ref={el => setPageRef(el, i)}>
+                    <Page
+                      pageNumber={i + 1}
+                      width={pageW}
+                      renderTextLayer
+                      renderAnnotationLayer={false}
+                      onRenderTextLayerSuccess={() => onTextLayerRendered(i)}
+                    />
+                  </div>
+                ) : <div key={i} style={{ width: pageW }} />)}
+              </div>
+            )
+          })}
         </Document>
       </div>
     </div>

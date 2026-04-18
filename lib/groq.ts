@@ -1,18 +1,21 @@
-export const PROMPT = `You are a key term extractor. Return ONLY a valid JSON object — no markdown, no code fences, no commentary.
+export const PROMPT = `You are a document structure extractor. Return ONLY a valid JSON object — no markdown, no code fences, no commentary.
 
 {
-  "title": "Use the document's actual title if present. Otherwise write a brief description (e.g. 'Software Engineering Resume', 'Q3 2024 Earnings Report', 'Firefighter Union Contract'). Never use a bare person name alone as the title.",
-  "keywords": ["specific searchable phrase", "another term", ...]
+  "title": "The document's actual title. If none, write a brief description (e.g. 'Q3 2024 Earnings Report', 'Firefighter Union Contract 2023'). Never use a bare person name as the title.",
+  "parties": ["Organization or person A", "Organization or person B"],
+  "date": "Effective date, date range, or publication year as a string — or null",
+  "sections": [
+    { "number": "1", "title": "Preamble" },
+    { "number": "2", "title": "Recognition" }
+  ],
+  "keywords": ["specific term", "another phrase"]
 }
 
-Rules for keywords:
-- Extract 12–18 terms total
-- Return them in the order they appear in the document (beginning to end) — this is critical
-- Each term should be 1–4 words, specific enough to be meaningful on its own
-- Terms should appear verbatim or near-verbatim in the document
-- Spread coverage across the FULL document — beginning, middle, and end equally
-- Avoid generic terms like "introduction", "conclusion", "section", "article"
-- null for missing title, [] for no keywords`
+Rules:
+- sections: Extract ALL section, article, or chapter titles in document order. Use the table of contents if present. number = the section number as a string (e.g. "14A"), title = the section name only (no number prefix). If the document has no clear sections (e.g. a resume or letter), leave sections as [] and put 8–12 specific searchable terms in keywords instead.
+- keywords: Only used when sections is empty. Specific phrases that appear verbatim in the document — not generic topic labels like "contract law".
+- parties: The organizations or individuals who are parties to this document. Empty array if none.
+- null for absent strings, [] for absent arrays.`
 
 export async function callGroq(key: string, content: string, source: string): Promise<string> {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {

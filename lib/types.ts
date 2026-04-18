@@ -2,7 +2,10 @@ export type SourceStatus = 'queued' | 'loading' | 'done' | 'error'
 
 export interface AnalysisResult {
   title: string
-  keywords: string[]
+  parties: string[]
+  date: string | null
+  sections: Array<{ number: string; title: string }>
+  keywords: string[]   // fallback for docs without clear sections
 }
 
 export interface QueuedSource {
