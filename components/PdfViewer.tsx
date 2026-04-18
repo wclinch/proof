@@ -9,6 +9,8 @@ pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 const norm = (s: string) =>
   s.replace(/[,|·•–—\-]/g, ' ').replace(/\s+/g, ' ').toLowerCase()
 
+const CONTS = new Set(['for','and','the','a','an','of','in','to','with','by','at','from','or','nor','but','as','that','which'])
+
 function highlightInLayer(layer: Element, needle: string) {
   layer.querySelectorAll('span[data-proof-hl]').forEach(el => {
     el.removeAttribute('data-proof-hl')
@@ -21,75 +23,33 @@ function highlightInLayer(layer: Element, needle: string) {
   const spans = Array.from(layer.querySelectorAll('span'))
   if (!spans.length) return
 
-  const charToSpan: number[] = []
-  let normFull = ''
-  spans.forEach((span, si) => {
-    const t = norm(span.textContent ?? '') + ' '
-    for (let i = 0; i < t.length; i++) charToSpan.push(si)
-    normFull += t
-  })
+  // Score each span by how many needle words it contains
+  const words = [...new Set(norm(needle).split(/\s+/).filter(w => w.length >= 3))]
+  if (!words.length) return
 
-  const normNeedle = norm(needle)
+  const normSpans = spans.map(s => norm(s.textContent ?? ''))
+  const scores    = normSpans.map(t => words.filter(w => t.includes(w)).length)
+  const maxScore  = Math.max(...scores)
+  if (maxScore < 1) return
 
-  const slices = [80, 50, 25, 12]
-    .map(n => normNeedle.slice(0, n))
-    .filter((s, i, a) => s.length >= 8 && a.indexOf(s) === i)
+  const bestIdx = scores.indexOf(maxScore)
+  const hit = new Set<number>([bestIdx])
 
-  let matchStart = -1, matchEnd = -1
-  for (const slice of slices) {
-    const idx = normFull.indexOf(slice)
-    if (idx !== -1) { matchStart = idx; matchEnd = idx + slice.length; break }
-  }
+  // Extend backward through spans that also have keyword hits
+  let first = bestIdx
+  while (first - 1 >= 0 && scores[first - 1] > 0) { first--; hit.add(first) }
 
-  if (matchStart === -1) {
-    const words = normNeedle.trim().split(/\s+/)
-    outer:
-    for (let w = Math.min(5, words.length); w >= 3; w--) {
-      for (let i = 0; i <= words.length - w; i++) {
-        const phrase = words.slice(i, i + w).join(' ')
-        if (phrase.length < 10) continue
-        const idx = normFull.indexOf(phrase)
-        if (idx !== -1) { matchStart = idx; matchEnd = idx + phrase.length; break outer }
-      }
-    }
-  }
-
-  if (matchStart === -1) return
-
-  // Extend match forward: find the last needle word present in normFull
-  // after matchStart, so multi-line items get fully highlighted
-  const needleWords = normNeedle.split(/\s+/).filter(w => w.length >= 3)
-  for (let wi = needleWords.length - 1; wi >= 0; wi--) {
-    const pos = normFull.indexOf(needleWords[wi], matchStart)
-    if (pos !== -1 && pos < matchStart + 500) {
-      matchEnd = Math.max(matchEnd, pos + needleWords[wi].length)
-      break
-    }
-  }
-
-  const hit = new Set<number>()
-  for (let i = matchStart; i < matchEnd && i < charToSpan.length; i++) hit.add(charToSpan[i])
-
-  // Extend hit to include wrapped continuation lines:
-  // if the last matched span ends without terminal punctuation and
-  // the next span starts lowercase OR the last word is a preposition/conjunction,
-  // it's the same bullet wrapping — include it.
-  const CONTINUATIONS = new Set(['for','and','the','a','an','of','in','to','with','by','at','from','or','nor','but','as','that','which'])
-  const sortedHits = Array.from(hit).sort((a, b) => a - b)
-  let lastHit = sortedHits[sortedHits.length - 1] ?? -1
-  while (lastHit >= 0 && lastHit + 1 < spans.length) {
-    const cur  = spans[lastHit].textContent?.trim() ?? ''
-    const next = spans[lastHit + 1].textContent?.trim() ?? ''
-    if (!next) { lastHit++; continue }
-    const lastWord      = cur.split(/\s+/).pop()?.toLowerCase().replace(/[.!?;,]$/, '') ?? ''
-    const endsOpen      = CONTINUATIONS.has(lastWord) || !/[.!?]$/.test(cur)
-    const nextLower     = /^[a-z]/.test(next)
-    if (endsOpen && (nextLower || CONTINUATIONS.has(lastWord))) {
-      hit.add(lastHit + 1)
-      lastHit++
-    } else {
-      break
-    }
+  // Extend forward through spans with hits or that look like wrapped continuations
+  let last = bestIdx
+  while (last + 1 < spans.length) {
+    const curText  = spans[last].textContent?.trim() ?? ''
+    const nextText = spans[last + 1].textContent?.trim() ?? ''
+    if (!nextText) { last++; continue }
+    const lastWord = curText.split(/\s+/).pop()?.toLowerCase().replace(/\W/g, '') ?? ''
+    const isCont   = scores[last + 1] > 0
+                  || CONTS.has(lastWord)
+                  || (/^[a-z]/.test(nextText) && !/[.!?]$/.test(curText))
+    if (isCont) { hit.add(last + 1); last++ } else break
   }
 
   hit.forEach(si => {
