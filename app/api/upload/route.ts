@@ -1,4 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+function stripMarkdown(md: string): string {
+  return md
+    .split('\n')
+    .map(line => {
+      if (/^[-*_]{3,}\s*$/.test(line.trim())) return ''   // horizontal rules
+      line = line.replace(/^#{1,6}\s+/, '')                // headings
+      if (line.trim().startsWith('|')) {                   // table rows
+        line = line.replace(/\|/g, ' ').trim()
+      }
+      line = line.replace(/^[\s]*[-*+]\s+/, '')            // list markers
+      line = line.replace(/^>\s*/, '')                     // blockquotes
+      line = line.replace(/\*\*([^*]+)\*\*/g, '$1')       // bold
+      line = line.replace(/\*([^*]+)\*/g, '$1')            // italic *
+      line = line.replace(/__([^_]+)__/g, '$1')            // bold __
+      line = line.replace(/_([^_]+)_/g, '$1')              // italic _
+      return line
+    })
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
 import { callGroq, parseGroqResponse, formatGroqError } from '@/lib/groq'
 import { extractPdfText } from '@/lib/pdf'
 import { checkRateLimit } from '@/lib/rateLimit'
@@ -41,7 +63,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const content  = fullText.slice(0, 30000)
+    const content  = stripMarkdown(fullText).slice(0, 30000)
     const raw      = await callGroq(process.env.GROQ_API_KEY, content, name)
     const analysis = parseGroqResponse(raw)
     return NextResponse.json({ analysis, content: fullText })
