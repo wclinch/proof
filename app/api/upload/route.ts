@@ -63,7 +63,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const content  = stripMarkdown(fullText).slice(0, 30000)
+    // Stay within Groq free-tier TPM budget (~4800 input tokens ≈ 19000 chars).
+    // For large docs: take first 67% + last 33% to capture both intro and conclusion.
+    const stripped = stripMarkdown(fullText)
+    const LIMIT    = 19000
+    const content  = stripped.length <= LIMIT
+      ? stripped
+      : stripped.slice(0, Math.ceil(LIMIT * 0.67)) + '\n\n' + stripped.slice(-Math.floor(LIMIT * 0.33))
     const raw      = await callGroq(process.env.GROQ_API_KEY, content, name)
     const analysis = parseGroqResponse(raw)
     return NextResponse.json({ analysis, content: fullText })
