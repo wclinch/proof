@@ -27,7 +27,7 @@ export async function callGroq(key: string, content: string, source: string): Pr
     body: JSON.stringify({
       model:       'llama-3.1-8b-instant',
       temperature: 0.2,
-      max_tokens:  1200,
+      max_tokens:  2000,
       messages: [
         { role: 'system', content: PROMPT },
         { role: 'user',   content: `Source: ${source}\n\nSource content:\n${content}` },
