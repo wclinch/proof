@@ -24,7 +24,7 @@ export async function callGroq(key: string, content: string, source: string): Pr
       'Authorization': `Bearer ${key}`,
     },
     body: JSON.stringify({
-      model:       'llama-3.1-8b-instant',
+      model:       'llama3-8b-8192',
       temperature: 0.2,
       max_tokens:  1200,
       messages: [
