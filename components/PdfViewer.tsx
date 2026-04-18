@@ -198,26 +198,17 @@ export default function PdfViewer({ srcId, searchTerm }: { srcId: string; search
           loading={<div style={{ padding: '24px', fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase' }}>rendering...</div>}
           error={<div style={{ padding: '24px', fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase' }}>could not render pdf.</div>}
         >
-          {Array.from({ length: Math.ceil(numPages / 2) }, (_, row) => {
-            const left  = row * 2
-            const right = row * 2 + 1
-            const pageW = Math.floor((width - 8) / 2)
-            return (
-              <div key={row} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                {[left, right].map(i => i < numPages ? (
-                  <div key={i} ref={el => setPageRef(el, i)}>
-                    <Page
-                      pageNumber={i + 1}
-                      width={pageW}
-                      renderTextLayer
-                      renderAnnotationLayer={false}
-                      onRenderTextLayerSuccess={() => onTextLayerRendered(i)}
-                    />
-                  </div>
-                ) : <div key={i} style={{ width: pageW }} />)}
-              </div>
-            )
-          })}
+          {Array.from({ length: numPages }, (_, i) => (
+            <div key={i} ref={el => setPageRef(el, i)} style={{ marginBottom: '8px' }}>
+              <Page
+                pageNumber={i + 1}
+                width={width}
+                renderTextLayer
+                renderAnnotationLayer={false}
+                onRenderTextLayerSuccess={() => onTextLayerRendered(i)}
+              />
+            </div>
+          ))}
         </Document>
       </div>
     </div>
