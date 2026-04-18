@@ -7,7 +7,7 @@ Extract verbatim where possible. Never invent or paraphrase data not present in 
   "authors": ["Last, First — only if explicitly credited"],
   "year": "year as string, or null",
   "journal": "journal or publication name, or null",
-  "items": ["Everything worth knowing from this document — dates, numbers, credentials, roles, findings, events, claims, context — in the order they appear. Each item must be a complete, self-contained statement. Combine related details into one item rather than splitting them (e.g. 'Oak Ridge High School, 2021–2025, GPA 3.5' not three separate items). Concise, no subject name prefix. Up to 20."],
+  "items": ["Key facts from this document extracted verbatim — use the exact words as they appear in the source. Do not paraphrase, summarize, or combine text from separate lines. Preserve original wording, numbers, dates, and punctuation. One continuous passage per item. Up to 30."],
   "quotes": ["Direct quotes worth citing — exact text with punctuation — up to 6, or []"],
   "keywords": ["Broad subject-area terms only. No proper nouns. Think discipline-level categories: 'contract law', 'cardiovascular disease', 'machine learning'. 5 to 10 terms."]
 }
