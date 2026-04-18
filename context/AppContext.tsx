@@ -24,7 +24,7 @@ interface AppState {
   anchorId: string | null
   showProjects: boolean
   centerView: 'analysis' | 'source'
-  highlightText: string | null
+  searchTerm: string | null
   contextMenu: ContextMenu | null
   projContextMenu: ProjContextMenu | null
   // derived
@@ -71,7 +71,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [anchorId, setAnchorId]         = useState<string | null>(null)
   const [showProjects, setShowProjects] = useState(false)
   const [centerView, setCenterView]     = useState<'analysis' | 'source'>('analysis')
-  const [highlightText, setHighlightText] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState<string | null>(null)
   const [contextMenu, setContextMenu]     = useState<ContextMenu | null>(null)
   const [projContextMenu, setProjContextMenu] = useState<ProjContextMenu | null>(null)
 
@@ -115,7 +115,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Reset center view + highlight when switching selected source
   useEffect(() => {
     setCenterView('analysis')
-    setHighlightText(null)
+    setSearchTerm(null)
   }, [selectedId])
 
   // Reset multi-selection when switching projects
@@ -382,14 +382,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function jumpToSource(text: string) {
     setCenterView('source')
-    setHighlightText(text)
+    setSearchTerm(text)
   }
 
   // ─── Context value ──────────────────────────────────────────────────────────
 
   const value: AppState = {
     mounted, projects, activeId, selectedId, selectedIds, anchorId,
-    showProjects, centerView, highlightText, contextMenu, projContextMenu,
+    showProjects, centerView, searchTerm, contextMenu, projContextMenu,
     activeProject, sources, selectedSource, isAnalyzing,
     user, isSubscribed, pdfCount, showPaywall, setShowPaywall,
     setShowProjects, setSelectedId, setSelectedIds, setAnchorId,

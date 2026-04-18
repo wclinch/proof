@@ -2,11 +2,6 @@ export type SourceStatus = 'queued' | 'loading' | 'done' | 'error'
 
 export interface AnalysisResult {
   title: string
-  authors: string[]
-  year: string | null
-  journal: string | null
-  items: string[]
-  quotes: string[]
   keywords: string[]
 }
 

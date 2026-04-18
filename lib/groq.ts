@@ -1,20 +1,18 @@
-export const PROMPT = `You are a precise data extraction engine. Return ONLY a valid JSON object — no markdown, no code fences, no commentary.
-
-Never invent or paraphrase data not present in the text. Never output placeholder strings like "not mentioned", "not provided", "no data" — if data is absent, use null or [].
+export const PROMPT = `You are a key term extractor. Return ONLY a valid JSON object — no markdown, no code fences, no commentary.
 
 {
-  "title": "Use the document's actual title if present. Otherwise write a brief description of what it is (e.g. 'Software Engineering Resume', 'Q3 2024 Earnings Report', 'Climate Sensitivity Study'). Never use a bare person name alone as the title.",
-  "authors": ["Last, First — only if explicitly credited in the document"],
-  "year": "year as string, or null",
-  "journal": "journal or publication name, or null",
-  "items": [
-    "Extract the most important standalone facts — the kind a lawyer, analyst, or journalist would underline. Each item must be fully self-contained and specific. Include: exact figures, dates, dollar amounts, percentages, credentials with institutions, job titles with companies, findings with numbers, legal obligations, outcomes, claims with evidence. Always pair a label with its detail in one item (e.g. 'GPA: 3.94/4.0, Dean's List 4 semesters' not 'GPA'). Never output a bare category name without its value. No subject name prefix. Up to 20 items."
-  ],
-  "quotes": ["Direct quotes worth citing verbatim — exact wording with punctuation. Up to 6, or []."],
-  "keywords": ["Broad discipline-level subject areas only. No proper nouns, no names, no institutions. Examples: 'contract law', 'cardiovascular medicine', 'machine learning', 'financial accounting'. 5–10 terms."]
+  "title": "Use the document's actual title if present. Otherwise write a brief description (e.g. 'Software Engineering Resume', 'Q3 2024 Earnings Report', 'Firefighter Union Contract'). Never use a bare person name alone as the title.",
+  "keywords": ["specific searchable phrase", "another term", ...]
 }
 
-Rules: null for absent strings, [] for absent arrays.`
+Rules for keywords:
+- Extract 12–18 terms total
+- Return them in the order they appear in the document (beginning to end) — this is critical
+- Each term should be 1–4 words, specific enough to be meaningful on its own
+- Terms should appear verbatim or near-verbatim in the document
+- Spread coverage across the FULL document — beginning, middle, and end equally
+- Avoid generic terms like "introduction", "conclusion", "section", "article"
+- null for missing title, [] for no keywords`
 
 export async function callGroq(key: string, content: string, source: string): Promise<string> {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
