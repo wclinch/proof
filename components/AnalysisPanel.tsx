@@ -118,6 +118,7 @@ export default function AnalysisPanel() {
       <div style={{
         flex: 1, minHeight: 0,
         overflowY: 'auto',
+        overflowX: 'hidden',
         padding: '20px 24px',
         display: 'flex', flexDirection: 'column',
       }}>
