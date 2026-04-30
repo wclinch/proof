@@ -44,7 +44,7 @@ export default async function Home() {
               Open Proof →
             </a>
             <span style={{ fontSize: '12px', color: '#666', letterSpacing: '0.04em' }}>
-              First 5 sources free. $3/month after.
+              Free to use. Sign in to save across devices.
             </span>
           </div>
         </section>
@@ -72,32 +72,10 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Positioning */}
-        <section style={{ borderTop: '1px solid #111', maxWidth: '620px', width: '100%', margin: '0 auto', padding: '64px 24px' }}>
-          <div style={{ fontSize: '11px', color: '#777', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
-            What this is not
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {([
-              ['Not an AI summary', 'Proof collects exactly what you select, verbatim. Nothing is interpreted, paraphrased, or generated.'],
-              ['Not a chatbot', 'No prompts, no conversation. You read and decide what matters. Proof just keeps it organized and reachable.'],
-              ['Not a search engine', 'You bring the documents. Proof keeps you in them — your highlights, your words, your analysis.'],
-            ] as const).map(([title, body]) => (
-              <div key={title} style={{ fontSize: '13px', color: '#777', lineHeight: 1.75 }}>
-                <span style={{ color: '#aaa' }}>{title}. </span>{body}
-              </div>
-            ))}
-          </div>
-        </section>
-
         {/* Pricing */}
         <section style={{ borderTop: '1px solid #111', maxWidth: '620px', width: '100%', margin: '0 auto', padding: '64px 24px' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '12px' }}>
-            <span style={{ fontSize: '28px', fontWeight: 500, color: '#aaa' }}>$3</span>
-            <span style={{ fontSize: '13px', color: '#666' }}>/ month</span>
-          </div>
           <p style={{ fontSize: '13px', color: '#777', lineHeight: 1.75, margin: '0 0 28px' }}>
-            First 5 sources free — no account needed. After that, $3/month. No tiers, no limits.
+            Free to use with no account. Sign in to sync your highlights and projects across devices — your PDFs stay on your machine either way.
           </p>
           <a href="/app" style={{ fontSize: '12px', color: '#777', letterSpacing: '0.08em', textDecoration: 'none', textTransform: 'uppercase' }}>
             Open Proof →

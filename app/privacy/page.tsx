@@ -14,33 +14,34 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>The short version</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Your documents stay on your device. PDFs are stored locally in your browser and never sent to any server. We collect account info and anonymized usage events. No document content, no file names, no IP addresses.
+            PDF files never leave your device — they're stored in your browser and never uploaded anywhere. If you sign in, your highlights and project structure sync to our servers so they're available across devices. We collect account info and anonymized usage events. No document content, no IP addresses.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we do not collect</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What stays on your device</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            We do not store document content, file names, or source text. We do not collect IP addresses. We do not sell data. Your PDFs, highlights, and drafts live in your browser and never leave your device.
+            PDF files are stored locally in your browser (IndexedDB) and are never uploaded to any server. They do not leave your machine.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we do collect</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What gets synced when signed in</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#999' }}>Account:</span> email address and subscription status. Required to manage access.
-          </p>
-          <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#999' }}>Usage analytics:</span> anonymized events — page visits, uploads, feature use. Collected via PostHog. No document content, no IP addresses. Used to understand how the product is being used.
+            When you sign in, your project names, source names, and highlight text are saved to our database so they're available across devices. This data is tied to your account and is not shared or sold. Without an account, everything stays local.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>No AI processing</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we collect</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Proof does not send your documents to any AI service. PDFs are stored locally in your browser only. No third-party processing of document content.
+            <span style={{ color: '#999' }}>Account:</span> email address. Required to manage sign-in and synced data.
+          </p>
+          <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
+            <span style={{ color: '#999' }}>Usage analytics:</span> anonymized events — page visits, uploads, feature use. No document content, no IP addresses.
           </p>
         </div>
+
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Contact</h2>

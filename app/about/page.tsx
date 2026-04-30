@@ -49,7 +49,7 @@ export default function About() {
               <span style={{ color: '#999' }}>4. Write</span> — the Synthesis panel is on the right. Click <span style={{ color: '#999' }}>···</span> in the header to export as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span>.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>5. Projects</span> — click Projects in the top bar to manage multiple workspaces. Sources and highlights persist across sessions.
+              <span style={{ color: '#999' }}>5. Projects</span> — click Projects in the top bar to manage multiple workspaces. Without an account, everything is saved locally in your browser. Sign in to sync your highlights and projects across devices.
             </p>
           </div>
         </div>
@@ -89,9 +89,9 @@ export default function About() {
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Pricing</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Saving your work</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            First 5 sources free, no account required. After that, $3/month — one flat price, no limits on sources or projects.
+            Free to use with no account. PDFs are always stored locally in your browser. Sign in to sync your highlights and projects across devices — your PDF files still stay on your machine and need to be re-opened on each device.
           </p>
         </div>
 
