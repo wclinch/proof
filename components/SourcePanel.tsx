@@ -4,7 +4,7 @@ import { useApp } from '@/context/AppContext'
 import SourceItem from './SourceItem'
 
 export default function SourcePanel({ width }: { width: number }) {
-  const { sources, uploadFiles, isAnalyzing } = useApp()
+  const { sources, uploadFiles, isAnalyzing, user } = useApp()
   const [dragOver, setDragOver]       = useState(false)
   const [filterInput, setFilterInput] = useState('')
   const [filter, setFilter]           = useState('')
@@ -114,6 +114,23 @@ export default function SourcePanel({ width }: { width: number }) {
           }
         </div>
       </div>
+
+      {!user && (
+        <a
+          href="/auth"
+          style={{
+            display: 'block', padding: '10px 14px',
+            fontSize: '10px', color: '#444', letterSpacing: '0.08em',
+            textTransform: 'uppercase', textDecoration: 'none',
+            borderTop: '1px solid #111', flexShrink: 0,
+            transition: 'color 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+        >
+          sign in to sync across devices →
+        </a>
+      )}
     </div>
   )
 }
