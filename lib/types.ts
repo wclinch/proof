@@ -8,6 +8,20 @@ export interface AnalysisResult {
   keywords: string[]   // fallback for docs without clear sections
 }
 
+export interface SpanEntry {
+  text: string       // full span text content
+  start?: number     // char offset where highlight starts within this span
+  end?: number       // char offset where highlight ends (undefined = to end)
+}
+
+export interface Highlight {
+  id: string
+  text: string
+  page: number
+  spans: SpanEntry[]
+  createdAt: number
+}
+
 export interface QueuedSource {
   id: string
   raw: string
@@ -15,6 +29,7 @@ export interface QueuedSource {
   result: AnalysisResult | null
   error: string | null
   label?: string
+  highlights?: Highlight[]
 }
 
 export interface Project {

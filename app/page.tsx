@@ -12,6 +12,7 @@ export default async function Home() {
   )
   const { data: { session } } = await supabase.auth.getSession()
   if (session) redirect('/app')
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#080808' }}>
       <Nav />
@@ -25,13 +26,12 @@ export default async function Home() {
           </div>
 
           <h1 style={{ fontSize: '32px', fontWeight: 500, color: '#bbb', lineHeight: 1.25, margin: '0 0 20px', letterSpacing: '-0.01em' }}>
-            Read it. Verify it.<br />Write from it. Never leave.
+            Read. Highlight. Write.<br />Never leave.
           </h1>
 
           <p style={{ fontSize: '15px', color: '#777', lineHeight: 1.8, margin: '0 0 40px', maxWidth: '480px' }}>
-            Drop a PDF. Everything worth knowing gets pulled out and tied to the
-            exact passage it came from. Click any item to verify it in context.
-            Write from it in the same window. Never leave.
+            Drop a PDF. Select text to collect highlights tied to their exact source location.
+            Write in the same window. Jump back to any passage instantly. No tab switching.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -56,10 +56,10 @@ export default async function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
-              ['Drop a PDF', 'Proof reads the full document and pulls out everything worth knowing — facts, stats, findings, quotes. Nothing paraphrased, nothing invented.'],
-              ['Verify anything', 'Click any item to jump to exactly where it appears in the source. Full sentence, full context — not a summary.'],
-              ['Stay in one place', 'Write in the panel on the right. No new tabs, no lost place, no switching back and forth.'],
-              ['Come back to it', 'Sources and drafts persist. Return to a project and pick up where you left off.'],
+              ['Drop a PDF', 'Your document is ready instantly. No processing, no waiting. The full source is right there.'],
+              ['Highlight what matters', 'Select any text in the PDF — a sentence, a paragraph, a stat. It gets collected in the panel on the left, tied to its exact location.'],
+              ['Jump back anytime', 'Every highlight has a jump button. Click it to go directly to that passage in the source. Full context, no searching.'],
+              ['Write from it', 'The synthesis editor is on the right. Your highlights are always visible while you write. No switching, no losing your place.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ display: 'flex', gap: '24px' }}>
                 <div style={{ width: '4px', flexShrink: 0, background: '#1a1a1a', borderRadius: '2px', alignSelf: 'stretch' }} />
@@ -79,9 +79,9 @@ export default async function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {([
-              ['Not an AI summary', 'Proof extracts verbatim and ties every item back to its source. Nothing is interpreted or invented.'],
-              ['Not a chatbot', 'No prompts, no conversation. You read, verify, and write. Proof just keeps it all in one window.'],
-              ['Not a search engine', 'You bring the documents. Proof gives you structured, verifiable access to what is inside them.'],
+              ['Not an AI summary', 'Proof collects exactly what you select, verbatim. Nothing is interpreted, paraphrased, or generated.'],
+              ['Not a chatbot', 'No prompts, no conversation. You read and decide what matters. Proof just keeps it organized and reachable.'],
+              ['Not a search engine', 'You bring the documents. Proof keeps you in them — your highlights, your words, your analysis.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ fontSize: '13px', color: '#777', lineHeight: 1.75 }}>
                 <span style={{ color: '#aaa' }}>{title}. </span>{body}
@@ -106,7 +106,6 @@ export default async function Home() {
 
       </main>
 
-      {/* Footer */}
       <footer style={{ borderTop: '1px solid #111', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '620px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.06em' }}>Proof</span>
         <div style={{ display: 'flex', gap: '20px' }}>

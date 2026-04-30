@@ -14,14 +14,14 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>The short version</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Your documents stay on your device. Uploaded content is never stored by Proof. We collect account info, anonymized usage events, and broad topic keywords from uploads. No document content, no file names, no IP addresses.
+            Your documents stay on your device. PDFs are stored locally in your browser and never sent to any server. We collect account info and anonymized usage events. No document content, no file names, no IP addresses.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we do not collect</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            We do not store document content, file names, or source text. We do not collect IP addresses. We do not sell data. Your projects, sources, and drafts live in your browser and never leave your device.
+            We do not store document content, file names, or source text. We do not collect IP addresses. We do not sell data. Your PDFs, highlights, and drafts live in your browser and never leave your device.
           </p>
         </div>
 
@@ -31,17 +31,14 @@ export default function Privacy() {
             <span style={{ color: '#999' }}>Account:</span> email address and subscription status. Required to manage access.
           </p>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#999' }}>Usage analytics:</span> anonymized events — page visits, uploads, feature use (e.g. verifying a fact, exporting). Collected via PostHog. No document content, no IP addresses. Used to understand how the product is being used.
-          </p>
-          <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#999' }}>Topic keywords:</span> broad subject-area tags extracted from each upload — things like &ldquo;contract law&rdquo; or &ldquo;machine learning&rdquo;. No names, no content, nothing traceable to you or your document.
+            <span style={{ color: '#999' }}>Usage analytics:</span> anonymized events — page visits, uploads, feature use. Collected via PostHog. No document content, no IP addresses. Used to understand how the product is being used.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>AI processing</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>No AI processing</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Document content is sent to <a href="https://www.llamaindex.ai/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'none' }}>LlamaParse</a> for text extraction, then to <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'none' }}>Groq</a> for analysis. Proof does not retain the content after processing.
+            Proof does not send your documents to any AI service. PDFs are stored locally in your browser only. No third-party processing of document content.
           </p>
         </div>
 

@@ -4,10 +4,11 @@ import type { User } from '@supabase/supabase-js'
 import type { Project, QueuedSource } from '@/lib/types'
 import {
   ACTIVE_KEY, SELECTED_KEY,
-  uid, getSessionId, newProject,
+  uid, newProject,
   loadProjects, saveProjects,
   PDF_FREE_LIMIT,
 } from '@/lib/storage'
+import { loadProjectsCloud, saveProjectsCloud } from '@/lib/sync'
 import { storeFile, deleteFile, getFile } from '@/lib/idb'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
 import { capture, identify, reset } from '@/lib/posthog'
@@ -23,8 +24,6 @@ interface AppState {
   selectedIds: Set<string>
   anchorId: string | null
   showProjects: boolean
-  centerView: 'analysis' | 'source'
-  searchTerm: string | null
   contextMenu: ContextMenu | null
   projContextMenu: ProjContextMenu | null
   // derived
@@ -42,7 +41,6 @@ interface AppState {
   setSelectedId: (id: string | null) => void
   setSelectedIds: (ids: Set<string>) => void
   setAnchorId: (id: string | null) => void
-  setCenterView: (v: 'analysis' | 'source') => void
   setContextMenu: (m: ContextMenu | null) => void
   setProjContextMenu: (m: ProjContextMenu | null) => void
   isAnalyzing: boolean
@@ -57,7 +55,6 @@ interface AppState {
   createProject: () => void
   switchProject: (id: string) => void
   deleteProject: (id: string) => void
-  jumpToSource: (text: string) => void
 }
 
 const AppContext = createContext<AppState | null>(null)
@@ -70,8 +67,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [selectedIds, setSelectedIds]   = useState<Set<string>>(new Set())
   const [anchorId, setAnchorId]         = useState<string | null>(null)
   const [showProjects, setShowProjects] = useState(false)
-  const [centerView, setCenterView]     = useState<'analysis' | 'source'>('analysis')
-  const [searchTerm, setSearchTerm] = useState<string | null>(null)
   const [contextMenu, setContextMenu]     = useState<ContextMenu | null>(null)
   const [projContextMenu, setProjContextMenu] = useState<ProjContextMenu | null>(null)
 
@@ -82,6 +77,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const analyzing         = useRef(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+
+  const userIdRef    = useRef<string | null>(null)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cloudReady   = useRef(false)
 
   // Escape closes all modals and menus
   useEffect(() => {
@@ -111,12 +110,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     window.addEventListener('click', handler)
     return () => window.removeEventListener('click', handler)
   }, [projContextMenu])
-
-  // Reset center view + highlight when switching selected source
-  useEffect(() => {
-    setCenterView('analysis')
-    setSearchTerm(null)
-  }, [selectedId])
 
   // Reset multi-selection when switching projects
   useEffect(() => {
@@ -179,7 +172,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setMounted(true)
   }, [])
 
+  // Keep userIdRef current so the debounced save can read it without stale closure
+  useEffect(() => { userIdRef.current = user?.id ?? null }, [user])
+
+  // Load from cloud when signed in, replacing local state
+  useEffect(() => {
+    if (!mounted || !user) { cloudReady.current = false; return }
+    cloudReady.current = false
+    loadProjectsCloud(user.id).then(cloud => {
+      if (cloud && cloud.length > 0) {
+        setProjects(cloud)
+        const savedActive = localStorage.getItem(ACTIVE_KEY)
+        const match = cloud.find(p => p.id === savedActive) ?? cloud[0]
+        setActiveId(match.id)
+        const savedSelected = localStorage.getItem(SELECTED_KEY)
+        if (savedSelected && match.sources.find((s: { id: string }) => s.id === savedSelected)) {
+          setSelectedId(savedSelected)
+        }
+      }
+      cloudReady.current = true
+    }).catch(() => { cloudReady.current = true })
+  }, [mounted, user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Always persist to localStorage (fast cache / fallback for signed-out users)
   useEffect(() => { if (projects.length) saveProjects(projects) }, [projects])
+
+  // Debounced cloud save — only fires when signed in and after initial cloud load
+  useEffect(() => {
+    if (!cloudReady.current || !userIdRef.current || !projects.length) return
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      if (userIdRef.current) saveProjectsCloud(userIdRef.current, projects)
+    }, 2000)
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
+  }, [projects])
+
   useEffect(() => { if (activeId) localStorage.setItem(ACTIVE_KEY, activeId) }, [activeId])
   useEffect(() => {
     if (selectedId) localStorage.setItem(SELECTED_KEY, selectedId)
@@ -245,54 +272,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     updateProject(activeId, { sources: [...sources, ...newSources] })
     setSelectedId(newSources[0].id)
-    analyzing.current = true
-    setIsAnalyzing(true)
 
-    const projId     = activeId
+    const projId = activeId
     for (let i = 0; i < list.length; i++) {
       const file = list[i]
       const src  = newSources[i]
 
-      // Client-side file size guard
       if (file.size > MAX_FILE_MB * 1024 * 1024) {
         patchSource(projId, src.id, { status: 'error', error: `File too large (max ${MAX_FILE_MB}MB)` })
         continue
       }
 
-      patchSource(projId, src.id, { status: 'loading' })
       try {
-        await storeFile(src.id, file).catch(() => {})
-        const form = new FormData()
-        form.append('file', file)
-        form.append('session_id', getSessionId())
-        const res  = await fetch('/api/upload', { method: 'POST', body: form })
-        const data = await res.json() as { error?: string; analysis?: unknown; content?: string }
-        if (data.error) {
-          patchSource(projId, src.id, { status: 'error', error: data.error })
-        } else {
-          const analysis = data.analysis as QueuedSource['result']
-          const aiTitle  = (analysis as any)?.title
-          patchSource(projId, src.id, {
-            status: 'done',
-            result: analysis,
-            ...(aiTitle ? { label: aiTitle } : {}),
-          })
-          capture('upload_complete', {
-            doc_type:      (analysis as any)?.title ?? null,
-            keyword_count: (analysis as any)?.keywords?.length ?? 0,
-            source_count:  pdfCount + i + 1,
-          })
-          if (pdfCount === 0 && i === 0 && user?.created_at) {
-            const minutesSinceSignup = Math.round((Date.now() - new Date(user.created_at).getTime()) / 60000)
-            capture('first_upload', { minutes_since_signup: minutesSinceSignup })
-          }
-        }
+        await storeFile(src.id, file)
+        patchSource(projId, src.id, { status: 'done' })
+        capture('upload_complete', { source_count: pdfCount + i + 1 })
       } catch {
-        patchSource(projId, src.id, { status: 'error', error: 'Upload failed — check your connection' })
+        patchSource(projId, src.id, { status: 'error', error: 'Failed to store file — try again.' })
       }
     }
-    analyzing.current = false
-    setIsAnalyzing(false)
   }
 
   async function retrySource(srcId: string) {
@@ -302,32 +300,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       patchSource(activeId, srcId, { status: 'error', error: 'File not found — re-upload to retry.' })
       return
     }
-    analyzing.current = true
-    setIsAnalyzing(true)
-    patchSource(activeId, srcId, { status: 'loading', error: null })
     try {
-      const form = new FormData()
-      form.append('file', file)
-      form.append('session_id', getSessionId())
-      const res  = await fetch('/api/upload', { method: 'POST', body: form })
-      const data = await res.json() as { error?: string; analysis?: unknown }
-      if (data.error) {
-        patchSource(activeId, srcId, { status: 'error', error: data.error })
-      } else {
-        const analysis = data.analysis as QueuedSource['result']
-        const aiTitle  = (analysis as any)?.title
-        patchSource(activeId, srcId, {
-          status: 'done',
-          result: analysis,
-          ...(aiTitle ? { label: aiTitle } : {}),
-        })
-        capture('upload_complete', { doc_type: (analysis as any)?.title ?? null, keyword_count: (analysis as any)?.keywords?.length ?? 0 })
-      }
+      await storeFile(srcId, file)
+      patchSource(activeId, srcId, { status: 'done', error: null })
     } catch {
-      patchSource(activeId, srcId, { status: 'error', error: 'Upload failed — check your connection' })
+      patchSource(activeId, srcId, { status: 'error', error: 'Failed to store file — try again.' })
     }
-    analyzing.current = false
-    setIsAnalyzing(false)
   }
 
   function removeSource(srcId: string) {
@@ -380,25 +358,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  function jumpToSource(text: string) {
-    setCenterView('source')
-    setSearchTerm(text)
-  }
-
   // ─── Context value ──────────────────────────────────────────────────────────
 
   const value: AppState = {
     mounted, projects, activeId, selectedId, selectedIds, anchorId,
-    showProjects, centerView, searchTerm, contextMenu, projContextMenu,
+    showProjects, contextMenu, projContextMenu,
     activeProject, sources, selectedSource, isAnalyzing,
     user, isSubscribed, pdfCount, showPaywall, setShowPaywall,
     setShowProjects, setSelectedId, setSelectedIds, setAnchorId,
-    setCenterView, setContextMenu, setProjContextMenu,
+    setContextMenu, setProjContextMenu,
     setProjects, updateProject, patchSource,
     uploadFiles, retrySource,
     removeSource, removeSelected,
     createProject, switchProject, deleteProject,
-    jumpToSource,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

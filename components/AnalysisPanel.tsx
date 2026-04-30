@@ -1,164 +1,277 @@
 'use client'
 import dynamic from 'next/dynamic'
-import { useState } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useApp } from '@/context/AppContext'
 import { capture } from '@/lib/posthog'
+import { uid } from '@/lib/storage'
+import type { Highlight, SpanEntry } from '@/lib/types'
+import { normStr } from '@/lib/norm'
 
 const PdfViewer = dynamic(() => import('./PdfViewer'), { ssr: false })
 
-function SectionRow({ number, title, onClick }: { number: string; title: string; onClick: () => void }) {
-  const [hov, setHov] = useState(false)
+// ─── Highlight card ───────────────────────────────────────────────────────────
+
+const MENU_BTN: React.CSSProperties = {
+  display: 'block', width: '100%', textAlign: 'left',
+  background: 'none', border: 'none', padding: '9px 14px',
+  cursor: 'pointer', fontSize: '12px', color: '#c55',
+  letterSpacing: '0.04em', fontFamily: 'inherit', outline: 'none',
+}
+
+function HighlightCard({
+  highlight,
+  onJump,
+  onDelete,
+}: {
+  highlight: Highlight
+  onJump: () => void
+  onDelete: () => void
+}) {
+  const [hov,        setHov]        = useState(false)
+  const [menu,       setMenu]       = useState<{ x: number; y: number } | null>(null)
+  const [confirming, setConfirming] = useState(false)
+
+  useEffect(() => {
+    if (!menu) return
+    function close() { setMenu(null); setConfirming(false) }
+    window.addEventListener('click', close)
+    return () => window.removeEventListener('click', close)
+  }, [menu])
+
+  function handleContextMenu(e: React.MouseEvent) {
+    e.preventDefault()
+    // BUG FIX: clamp menu position to viewport so it never appears off-screen
+    const MENU_W = 140, MENU_H = 40
+    setMenu({
+      x: Math.min(e.clientX, window.innerWidth  - MENU_W - 4),
+      y: Math.min(e.clientY, window.innerHeight - MENU_H - 4),
+    })
+    setConfirming(false)
+  }
+
+  function handleRemove() {
+    if (confirming) {
+      onDelete()
+      setMenu(null)
+      setConfirming(false)
+    } else {
+      setConfirming(true)
+    }
+  }
+
   return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        display: 'flex', alignItems: 'center', gap: '10px',
-        padding: '7px 10px',
-        cursor: 'pointer',
-        borderRadius: '3px',
-        background: hov ? '#111' : 'transparent',
-        transition: 'background 0.1s',
-      }}
-    >
-      <span style={{ fontSize: '10px', color: '#444', width: '22px', flexShrink: 0, textAlign: 'right' as const, fontVariantNumeric: 'tabular-nums' }}>
-        {number}
-      </span>
-      <span style={{ fontSize: '12px', color: hov ? '#ccc' : '#777', transition: 'color 0.1s', flex: 1, lineHeight: 1.4 }}>
-        {title}
-      </span>
+    <>
+      <div
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => setHov(false)}
+        onContextMenu={handleContextMenu}
+        style={{
+          padding: '10px 12px',
+          background: hov ? '#111' : 'transparent',
+          transition: 'background 0.1s',
+          display: 'flex', flexDirection: 'column', gap: '8px',
+          borderBottom: '1px solid #0f0f0f',
+          cursor: 'default',
+        }}
+      >
+        <p style={{ margin: 0, fontSize: '11px', color: hov ? '#aaa' : '#666', lineHeight: 1.6, transition: 'color 0.1s' }}>
+          {highlight.text.length > 160 ? highlight.text.slice(0, 160) + '…' : highlight.text}
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '10px', color: '#333', letterSpacing: '0.06em' }}>p. {highlight.page}</span>
+          <button
+            onClick={onJump}
+            style={{
+              background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+              fontSize: '10px', color: hov ? '#888' : '#444', fontFamily: 'inherit',
+              letterSpacing: '0.06em', textTransform: 'uppercase', outline: 'none',
+              transition: 'color 0.1s',
+            }}
+          >
+            jump →
+          </button>
+        </div>
+      </div>
+
+      {menu && (
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            position: 'fixed', left: menu.x, top: menu.y,
+            background: '#141414', border: '1px solid #2a2a2a',
+            borderRadius: '4px', zIndex: 200, minWidth: '140px',
+            overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+          }}
+        >
+          <button
+            onClick={handleRemove}
+            style={MENU_BTN}
+            onMouseEnter={e => (e.currentTarget.style.background = '#1e1e1e')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            {confirming ? 'Confirm?' : 'Remove'}
+          </button>
+        </div>
+      )}
+    </>
+  )
+}
+
+// ─── Highlights panel (left side) ────────────────────────────────────────────
+
+function HighlightsPanel({
+  highlights,
+  onJump,
+  onDelete,
+}: {
+  highlights: Highlight[]
+  onJump: (h: Highlight) => void
+  onDelete: (id: string) => void
+}) {
+  return (
+    <div style={{
+      width: '240px', flexShrink: 0,
+      display: 'flex', flexDirection: 'column',
+      overflowY: 'auto', overflowX: 'hidden',
+    }}>
+      <div style={{
+        padding: '12px 12px 8px 12px', flexShrink: 0,
+        fontSize: '10px', color: '#444', letterSpacing: '0.12em', textTransform: 'uppercase',
+      }}>
+        Highlights
+      </div>
+
+      {highlights.length === 0 ? (
+        <div style={{
+          padding: '8px 12px',
+          fontSize: '10px', color: '#333', letterSpacing: '0.06em',
+          textTransform: 'uppercase', lineHeight: 1.6,
+        }}>
+          Select text in the PDF to collect highlights.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', padding: '0 0 16px' }}>
+          {highlights.map(h => (
+            <HighlightCard
+              key={h.id}
+              highlight={h}
+              onJump={() => onJump(h)}
+              onDelete={() => onDelete(h.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
-function Chip({ label, onClick }: { label: string; onClick: () => void }) {
-  const [hov, setHov] = useState(false)
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        background: hov ? '#161616' : '#0d0d0d',
-        border: `1px solid ${hov ? '#2a2a2a' : '#1c1c1c'}`,
-        borderRadius: '3px',
-        padding: '4px 10px',
-        cursor: 'pointer',
-        outline: 'none',
-        fontSize: '12px',
-        color: hov ? '#aaa' : '#666',
-        fontFamily: 'inherit',
-        letterSpacing: '0.03em',
-        transition: 'background 0.1s, color 0.1s, border-color 0.1s',
-      }}
-    >
-      {label}
-    </button>
-  )
-}
+// ─── Main panel ───────────────────────────────────────────────────────────────
 
 export default function AnalysisPanel() {
-  const { selectedSource, centerView, setCenterView, searchTerm, jumpToSource, retrySource } = useApp()
-  const [query, setQuery] = useState('')
+  const {
+    selectedSource, activeId,
+    patchSource, retrySource,
+  } = useApp()
 
-  function handleSearch(term: string) {
-    const t = term.trim()
-    if (!t) return
-    capture('src_clicked')
-    jumpToSource(t)
-    setQuery(t)
-  }
+  const highlights: Highlight[] = selectedSource?.highlights ?? []
+  const [jumpTo, setJumpTo] = useState<{ page: number; ts: number } | null>(null)
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    handleSearch(query)
-  }
+  // Toggle: selecting already-highlighted text removes it, new text adds it
+  const handleHighlight = useCallback((text: string, page: number, spans: SpanEntry[]) => {
+    if (!selectedSource || !activeId) return
+    if (spans.length === 0) return  // BUG FIX: never store empty span arrays
+    const current = selectedSource.highlights ?? []
+
+    // BUG FIX: use shared normStr (same function as PdfViewer) so toggle detection
+    // is consistent with how span texts are stored and matched during rendering.
+    const newSpanTexts = new Set(spans.map(s => normStr(s.text)))
+    const normText     = normStr(text)
+
+    let removedSomething = false
+    const updated = current.flatMap(h => {
+      if (h.page !== page) return [h]
+      // Remove the entire highlight if:
+      // - the selected text matches the highlight text (full re-selection toggle), OR
+      // - any of the selected spans overlap with this highlight's spans (partial re-selection)
+      // Either way → remove the whole card. No partial de-highlight.
+      const overlaps =
+        normStr(h.text) === normText ||
+        (h.spans ?? []).some(s => newSpanTexts.has(normStr(s.text)))
+      if (overlaps) { removedSomething = true; return [] }
+      return [h]
+    })
+
+    if (removedSomething) {
+      patchSource(activeId, selectedSource.id, { highlights: updated })
+    } else {
+      const h: Highlight = { id: uid(), text, page, spans, createdAt: Date.now() }
+      patchSource(activeId, selectedSource.id, { highlights: [...current, h] })
+      capture('highlight_added')
+    }
+  }, [selectedSource, activeId, patchSource])
+
+  const handleDelete = useCallback((id: string) => {
+    if (!selectedSource || !activeId) return
+    patchSource(activeId, selectedSource.id, {
+      highlights: (selectedSource.highlights ?? []).filter(h => h.id !== id),
+    })
+  }, [selectedSource, activeId, patchSource])
+
+  const jumpSeqRef = useRef(0)
+  const handleJump = useCallback((h: Highlight) => {
+    // BUG FIX: use a monotonic counter instead of Date.now() so jumping to
+    // the same page twice in quick succession always triggers the scroll effect.
+    setJumpTo({ page: h.page, ts: ++jumpSeqRef.current })
+  }, [])
 
   const isDone = selectedSource?.status === 'done'
 
   return (
-    <div style={{
-      flex: 1, minWidth: 40,
-      display: 'flex', flexDirection: 'column',
-      overflow: 'hidden',
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: '0 20px', height: '40px', flexShrink: 0,
-        borderBottom: '1px solid #1a1a1a',
-        display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px',
-      }}>
-        {isDone && (
-          <>
-            <button
-              onClick={() => setCenterView('analysis')}
-              style={{
-                background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
-                fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase',
-                fontFamily: 'inherit', color: centerView === 'analysis' ? '#bbb' : '#777',
-                transition: 'color 0.15s',
-              }}
-              onMouseEnter={e => { if (centerView !== 'analysis') e.currentTarget.style.color = '#aaa' }}
-              onMouseLeave={e => { if (centerView !== 'analysis') e.currentTarget.style.color = '#777' }}
-            >
-              Find
-            </button>
-            <button
-              onClick={() => setCenterView('source')}
-              style={{
-                background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
-                fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase',
-                fontFamily: 'inherit', color: centerView === 'source' ? '#bbb' : '#777',
-                transition: 'color 0.15s',
-              }}
-              onMouseEnter={e => { if (centerView !== 'source') e.currentTarget.style.color = '#aaa' }}
-              onMouseLeave={e => { if (centerView !== 'source') e.currentTarget.style.color = '#777' }}
-            >
-              Source
-            </button>
-          </>
-        )}
-      </div>
+    <div style={{ flex: 1, minWidth: 40, display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
 
-      {/* Body */}
-      <div style={{
-        flex: 1, minHeight: 0,
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        display: 'flex', flexDirection: 'column',
-        ...(isDone && centerView === 'source' ? {} : { padding: '20px 24px' }),
-      }}>
+      {/* Left: highlights collector — only when a source is loaded */}
+      {isDone && (
+        <>
+          <HighlightsPanel
+            highlights={highlights}
+            onJump={handleJump}
+            onDelete={handleDelete}
+          />
+          <div style={{ width: '1px', flexShrink: 0, background: '#1a1a1a' }} />
+        </>
+      )}
+
+      {/* Right: PDF / status */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {!selectedSource && (
-          <div style={{ fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          <div style={{ padding: '24px', fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             select a source.
           </div>
         )}
 
         {selectedSource?.status === 'queued' && (
-          <div style={{ fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          <div style={{ padding: '24px', fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             queued.
           </div>
         )}
 
         {selectedSource?.status === 'loading' && (
-          <div style={{ fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          <div style={{ padding: '24px', fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             analyzing...
           </div>
         )}
 
         {selectedSource?.status === 'error' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               {selectedSource.error}
             </div>
             <button
               onClick={() => retrySource(selectedSource.id)}
               style={{
-                alignSelf: 'flex-start',
-                background: 'none', border: '1px solid #222', borderRadius: '3px',
-                padding: '5px 10px', cursor: 'pointer', outline: 'none',
+                alignSelf: 'flex-start', background: 'none', border: '1px solid #222',
+                borderRadius: '3px', padding: '5px 10px', cursor: 'pointer', outline: 'none',
                 fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase',
                 fontFamily: 'inherit', color: '#666',
               }}
@@ -170,101 +283,13 @@ export default function AnalysisPanel() {
           </div>
         )}
 
-        {isDone && centerView === 'source' && (
-          <PdfViewer srcId={selectedSource.id} searchTerm={searchTerm} />
-        )}
-
-        {isDone && centerView === 'analysis' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
-            {/* Document header */}
-            <div style={{ paddingBottom: '16px', borderBottom: '1px solid #1a1a1a' }}>
-              <div style={{
-                fontSize: '13px', fontWeight: 500, color: '#bbb', lineHeight: 1.4, marginBottom: '6px',
-                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-              }}>
-                {selectedSource.result?.title ?? 'Untitled'}
-              </div>
-              {(selectedSource.result?.parties?.length ?? 0) > 0 && (
-                <div style={{ fontSize: '11px', color: '#555', lineHeight: 1.6, marginBottom: '2px' }}>
-                  {selectedSource.result?.parties?.join(' · ')}
-                </div>
-              )}
-              {selectedSource.result?.date && (
-                <div style={{ fontSize: '11px', color: '#444' }}>
-                  {selectedSource.result.date}
-                </div>
-              )}
-            </div>
-
-            {/* Search bar */}
-            <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px' }}>
-              <input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="search this document..."
-                style={{
-                  flex: 1,
-                  background: '#0d0d0d',
-                  border: '1px solid #1e1e1e',
-                  borderRadius: '3px',
-                  padding: '8px 12px',
-                  fontSize: '12px',
-                  color: '#bbb',
-                  fontFamily: 'inherit',
-                  outline: 'none',
-                  letterSpacing: '0.03em',
-                }}
-                onFocus={e => e.currentTarget.style.borderColor = '#333'}
-                onBlur={e => e.currentTarget.style.borderColor = '#1e1e1e'}
-              />
-              <button
-                type="submit"
-                style={{
-                  background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '3px',
-                  padding: '8px 14px', fontSize: '11px', color: '#666', cursor: 'pointer',
-                  fontFamily: 'inherit', letterSpacing: '0.06em', textTransform: 'uppercase' as const, outline: 'none',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#aaa'; e.currentTarget.style.borderColor = '#333' }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#666'; e.currentTarget.style.borderColor = '#1e1e1e' }}
-              >
-                find
-              </button>
-            </form>
-
-            {/* Section navigation */}
-            {(selectedSource.result?.sections?.length ?? 0) > 0 && (
-              <div>
-                <div style={{ fontSize: '10px', color: '#444', letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: '4px', paddingLeft: '10px' }}>
-                  Sections
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {selectedSource.result?.sections?.map((sec, i) => (
-                    <SectionRow
-                      key={i}
-                      number={sec.number}
-                      title={sec.title}
-                      onClick={() => handleSearch(sec.title)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Keyword chips fallback (for docs without sections) */}
-            {(!(selectedSource.result?.sections?.length) && (selectedSource.result?.keywords?.length ?? 0) > 0) && (
-              <div>
-                <div style={{ fontSize: '10px', color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: '8px' }}>
-                  Suggested
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {selectedSource.result?.keywords?.map((kw, i) => (
-                    <Chip key={i} label={kw} onClick={() => handleSearch(kw)} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+        {isDone && (
+          <PdfViewer
+            srcId={selectedSource.id}
+            highlights={highlights}
+            jumpTo={jumpTo}
+            onHighlight={handleHighlight}
+          />
         )}
       </div>
     </div>
