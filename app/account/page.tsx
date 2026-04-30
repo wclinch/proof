@@ -4,57 +4,25 @@ import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
 import type { User } from '@supabase/supabase-js'
-import { loadProjects, PDF_FREE_LIMIT } from '@/lib/storage'
 
 export default function AccountPage() {
-  const [pdfCount, setPdfCount]         = useState(0)
-  const [user, setUser]                 = useState<User | null>(null)
-  const [accessToken, setAccessToken]   = useState<string | null>(null)
-  const [isSubscribed, setIsSubscribed]   = useState(false)
-  const [isCancelling, setIsCancelling]   = useState(false)
-  const [periodEnd, setPeriodEnd]         = useState<Date | null>(null)
-  const [loading, setLoading]                 = useState(true)
+  const [user, setUser]       = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Change password
-  const [newPassword, setNewPassword]   = useState('')
-  const [pwMsg, setPwMsg]               = useState<{ text: string; ok: boolean } | null>(null)
-  const [pwLoading, setPwLoading]       = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [pwMsg, setPwMsg]             = useState<{ text: string; ok: boolean } | null>(null)
+  const [pwLoading, setPwLoading]     = useState(false)
 
-  // Delete account confirm
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleteError, setDeleteError]     = useState<string | null>(null)
 
   const router = useRouter()
 
   useEffect(() => {
-    const projects = loadProjects()
-    const count = projects.reduce(
-      (acc, p) => acc + p.sources.filter((s: { status: string }) => s.status !== 'error').length, 0
-    )
-    setPdfCount(count)
-
     const sb = getSupabaseBrowser()
-    sb.auth.getSession().then(async ({ data: { session } }) => {
+    sb.auth.getSession().then(({ data: { session } }) => {
       if (!session) { router.push('/auth'); return }
       setUser(session.user)
-      setAccessToken(session.access_token)
-      const { data } = await (sb.from as any)('profiles').select('subscribed').eq('id', session.user.id).single() as { data: { subscribed: boolean } | null }
-      const subscribed = data?.subscribed ?? false
-      setIsSubscribed(subscribed)
-      if (subscribed) {
-        const subRes = await fetch('/api/stripe/subscription', {
-          headers: { authorization: `Bearer ${session.access_token}` },
-        })
-        if (subRes.ok) {
-          const { subscription } = await subRes.json()
-          if (subscription) {
-            setIsCancelling(subscription.isCancelling ?? false)
-            if (subscription.periodEnd) {
-              setPeriodEnd(new Date(subscription.periodEnd * 1000))
-            }
-          }
-        }
-      }
       setLoading(false)
     })
   }, [router])
@@ -115,6 +83,13 @@ export default function AccountPage() {
     fontSize: '11px', color: '#777', letterSpacing: '0.1em', textTransform: 'uppercase',
   }
 
+  const btnStyle: React.CSSProperties = {
+    alignSelf: 'flex-start', background: 'none', border: '1px solid #1a1a1a',
+    borderRadius: '4px', padding: '8px 16px', cursor: 'pointer', outline: 'none',
+    fontSize: '11px', color: '#777', letterSpacing: '0.08em',
+    textTransform: 'uppercase', fontFamily: 'inherit', transition: 'border-color 0.15s, color 0.15s',
+  }
+
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -139,74 +114,8 @@ export default function AccountPage() {
         <div style={sectionStyle}>
           <span style={labelStyle}>Account</span>
           <div style={{ fontSize: '14px', color: '#999' }}>{user?.email}</div>
-        </div>
-
-        {/* Plan */}
-        <div style={sectionStyle}>
-          <span style={labelStyle}>Plan</span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ fontSize: '14px', color: '#999' }}>
-              {isSubscribed
-                ? <>
-                    Pro — unlimited sources
-                    {periodEnd && (
-                      <div style={{ fontSize: '12px', color: '#555', marginTop: '4px', letterSpacing: '0.03em' }}>
-                        {isCancelling ? 'Ends' : 'Renews'}{' '}
-                        {periodEnd.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' })} UTC
-                      </div>
-                    )}
-                  </>
-                : `Free — ${pdfCount} of ${PDF_FREE_LIMIT} sources used`}
-            </div>
-            {!isSubscribed ? (
-              <button
-                onClick={async () => {
-                  if (!accessToken) return
-                  const res = await fetch('/api/stripe/checkout', {
-                    method: 'POST',
-                    headers: { authorization: `Bearer ${accessToken}` },
-                  })
-                  const { url } = await res.json()
-                  if (url) window.location.href = url
-                }}
-                style={{
-                  alignSelf: 'flex-start',
-                  background: '#0f0f0f', border: '1px solid #1a1a1a', borderRadius: '4px',
-                  padding: '8px 16px', cursor: 'pointer', outline: 'none',
-                  fontSize: '11px', color: '#555', letterSpacing: '0.08em',
-                  textTransform: 'uppercase', fontFamily: 'inherit',
-                  transition: 'border-color 0.15s, color 0.15s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#bbb' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#777' }}
-              >
-                Upgrade to Pro — $3/month →
-              </button>
-            ) : (
-              <button
-                onClick={async () => {
-                  if (!accessToken) return
-                  const res = await fetch('/api/stripe/portal', {
-                    method: 'POST',
-                    headers: { authorization: `Bearer ${accessToken}` },
-                  })
-                  const { url } = await res.json()
-                  if (url) window.location.href = url
-                }}
-                style={{
-                  alignSelf: 'flex-start',
-                  background: 'none', border: '1px solid #1a1a1a', borderRadius: '4px',
-                  padding: '8px 16px', cursor: 'pointer', outline: 'none',
-                  fontSize: '11px', color: '#777', letterSpacing: '0.08em',
-                  textTransform: 'uppercase', fontFamily: 'inherit',
-                  transition: 'border-color 0.15s, color 0.15s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#777' }}
-              >
-                Manage subscription
-              </button>
-            )}
+          <div style={{ fontSize: '12px', color: '#555', letterSpacing: '0.03em' }}>
+            Highlights and projects sync across devices.
           </div>
         </div>
 
@@ -231,14 +140,8 @@ export default function AccountPage() {
             <button
               type="submit"
               disabled={pwLoading}
-              style={{
-                alignSelf: 'flex-start',
-                background: 'none', border: '1px solid #1a1a1a', borderRadius: '4px',
-                padding: '8px 16px', cursor: pwLoading ? 'default' : 'pointer', outline: 'none',
-                fontSize: '11px', color: '#777', letterSpacing: '0.08em',
-                textTransform: 'uppercase', fontFamily: 'inherit',
-              }}
-              onMouseEnter={e => { if (!pwLoading) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' } }}
+              style={{ ...btnStyle, cursor: pwLoading ? 'default' : 'pointer' }}
+              onMouseEnter={e => { if (!pwLoading) { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' } }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#777' }}
             >
               {pwLoading ? 'Updating...' : 'Update password'}
@@ -252,12 +155,7 @@ export default function AccountPage() {
           <div>
             <button
               onClick={handleSignOut}
-              style={{
-                background: 'none', border: '1px solid #1a1a1a', borderRadius: '4px',
-                padding: '8px 16px', cursor: 'pointer', outline: 'none',
-                fontSize: '11px', color: '#777', letterSpacing: '0.08em',
-                textTransform: 'uppercase', fontFamily: 'inherit',
-              }}
+              style={btnStyle}
               onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#777' }}
             >
@@ -273,11 +171,9 @@ export default function AccountPage() {
             <button
               onClick={handleDeleteAccount}
               style={{
-                background: 'none', border: `1px solid ${confirmDelete ? '#933' : '#1a1a1a'}`,
-                borderRadius: '4px', padding: '8px 16px', cursor: 'pointer', outline: 'none',
-                fontSize: '11px', color: confirmDelete ? '#e55' : '#a44',
-                letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'inherit',
-                transition: 'border-color 0.15s, color 0.15s',
+                ...btnStyle,
+                border: `1px solid ${confirmDelete ? '#933' : '#1a1a1a'}`,
+                color: confirmDelete ? '#e55' : '#a44',
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = '#a44'; e.currentTarget.style.color = '#f66' }}
               onMouseLeave={e => {
@@ -287,22 +183,12 @@ export default function AccountPage() {
             >
               {confirmDelete ? 'Confirm — this cannot be undone' : 'Delete account'}
             </button>
-            {!confirmDelete && !deleteError && (
-              <div style={{ marginTop: '8px', fontSize: '11px', color: '#555', letterSpacing: '0.03em' }}>
-                A confirmation step is required.
-              </div>
-            )}
-            {deleteError && (
-              <div style={{ marginTop: '8px', fontSize: '11px', color: '#a44', letterSpacing: '0.03em' }}>
-                {deleteError}
-              </div>
-            )}
             {confirmDelete && (
               <button
                 onClick={() => setConfirmDelete(false)}
                 style={{
                   marginLeft: '12px', background: 'none', border: 'none',
-                  cursor: 'pointer', fontSize: '11px', color: '#777',
+                  cursor: 'pointer', fontSize: '11px', color: '#555',
                   letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'inherit',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#777')}
@@ -311,11 +197,18 @@ export default function AccountPage() {
                 Cancel
               </button>
             )}
+            {deleteError && (
+              <div style={{ marginTop: '8px', fontSize: '11px', color: '#a44', letterSpacing: '0.03em' }}>
+                {deleteError}
+              </div>
+            )}
           </div>
         </div>
 
         <div style={{ paddingTop: '8px' }}>
-          <a href="/app" style={{ fontSize: '12px', color: '#555', letterSpacing: '0.06em', textDecoration: 'none', textTransform: 'uppercase' }}
+          <a
+            href="/app"
+            style={{ fontSize: '12px', color: '#555', letterSpacing: '0.06em', textDecoration: 'none', textTransform: 'uppercase' }}
             onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#aaa')}
             onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#555')}
           >
