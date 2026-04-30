@@ -34,9 +34,6 @@ export default function AuthPage() {
         options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/app` },
       })
       if (err) { setError(err.message); setLoading(false); return }
-      if (data.user) {
-        await (sb.from as any)('profiles').upsert({ id: data.user.id, subscribed: false }, { onConflict: 'id' })
-      }
       if (data.session) { router.push('/app'); return }
       setSentType('confirm'); setSentTo(email); setLoading(false); return
     }

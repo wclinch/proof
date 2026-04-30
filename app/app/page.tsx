@@ -6,7 +6,6 @@ import AnalysisPanel     from '@/components/AnalysisPanel'
 import DraftPanel        from '@/components/DraftPanel'
 import ProjectsModal     from '@/components/ProjectsModal'
 import SourceContextMenu from '@/components/SourceContextMenu'
-import PaywallModal      from '@/components/PaywallModal'
 import { useApp }        from '@/context/AppContext'
 import { useState, useRef, useEffect } from 'react'
 
@@ -112,7 +111,6 @@ function Layout() {
       </div>
       <ProjectsModal />
       <SourceContextMenu />
-      <PaywallModal />
     </div>
   )
 }

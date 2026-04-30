@@ -6,7 +6,6 @@ import {
   ACTIVE_KEY, SELECTED_KEY,
   uid, newProject,
   loadProjects, saveProjects,
-  PDF_FREE_LIMIT,
 } from '@/lib/storage'
 import { loadProjectsCloud, saveProjectsCloud } from '@/lib/sync'
 import { storeFile, deleteFile, getFile } from '@/lib/idb'
@@ -32,10 +31,6 @@ interface AppState {
   selectedSource: QueuedSource | null
   // auth
   user: User | null
-  isSubscribed: boolean
-  pdfCount: number
-  showPaywall: boolean
-  setShowPaywall: (v: boolean) => void
   // setters exposed for local use in components
   setShowProjects: (v: boolean | ((prev: boolean) => boolean)) => void
   setSelectedId: (id: string | null) => void
@@ -70,10 +65,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [contextMenu, setContextMenu]     = useState<ContextMenu | null>(null)
   const [projContextMenu, setProjContextMenu] = useState<ProjContextMenu | null>(null)
 
-  const [user, setUser]               = useState<User | null>(null)
-  const [isSubscribed, setIsSubscribed] = useState(false)
-  const [showPaywall, setShowPaywall] = useState(false)
-  const isSubscribedRef               = useRef(false)
+  const [user, setUser] = useState<User | null>(null)
 
   const analyzing         = useRef(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -127,30 +119,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const sb = getSupabaseBrowser()
     sb.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
-      if (session?.user) checkSubscription(session.user.id)
     })
     const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
       if (session?.user) {
-        checkSubscription(session.user.id)
         identify(session.user.id, { email: session.user.email })
         capture('app_opened')
       } else {
-        setIsSubscribed(false)
-        isSubscribedRef.current = false
         reset()
       }
     })
     return () => subscription.unsubscribe()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function checkSubscription(userId: string) {
-    const sb = getSupabaseBrowser()
-    const { data } = await (sb.from as any)('profiles').select('subscribed').eq('id', userId).single() as { data: { subscribed: boolean } | null }
-    const sub = data?.subscribed ?? false
-    setIsSubscribed(sub)
-    isSubscribedRef.current = sub
-  }
 
   // Hydrate from localStorage once on mount
   useEffect(() => {
@@ -219,16 +199,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const sources        = activeProject?.sources ?? []
   const selectedSource = sources.find(s => s.id === selectedId) ?? null
 
-  // Count non-error sources across ALL projects — used for free tier cap
-  const pdfCount = projects.reduce(
-    (acc, p) => acc + p.sources.filter(s => s.status !== 'error').length, 0
-  )
-
-  // Auto-dismiss paywall when sources are removed and count drops below limit
-  useEffect(() => {
-    if (!isSubscribedRef.current && pdfCount < PDF_FREE_LIMIT) setShowPaywall(false)
-  }, [pdfCount])
-
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
   function updateProject(id: string, patch: Partial<Project>) {
@@ -258,13 +228,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     list = list.filter(f => !sources.some(s => s.label === f.name))
     if (!list.length) return
 
-    // Source cap for free users — based on current live count
-    if (!isSubscribedRef.current) {
-      const remaining = Math.max(0, PDF_FREE_LIMIT - pdfCount)
-      if (remaining === 0) { setShowPaywall(true); capture('paywall_shown', { pdf_count: pdfCount }); return }
-      if (list.length > remaining) list = list.slice(0, remaining)
-    }
-
     const newSources: QueuedSource[] = list.map(f => ({
       id: uid(), raw: `file:${f.name}`, status: 'queued',
       result: null, error: null, label: f.name,
@@ -286,7 +249,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         await storeFile(src.id, file)
         patchSource(projId, src.id, { status: 'done' })
-        capture('upload_complete', { source_count: pdfCount + i + 1 })
+        capture('upload_complete')
       } catch {
         patchSource(projId, src.id, { status: 'error', error: 'Failed to store file — try again.' })
       }
@@ -364,7 +327,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     mounted, projects, activeId, selectedId, selectedIds, anchorId,
     showProjects, contextMenu, projContextMenu,
     activeProject, sources, selectedSource, isAnalyzing,
-    user, isSubscribed, pdfCount, showPaywall, setShowPaywall,
+    user,
     setShowProjects, setSelectedId, setSelectedIds, setAnchorId,
     setContextMenu, setProjContextMenu,
     setProjects, updateProject, patchSource,

@@ -3,20 +3,9 @@ import type { Project } from './types'
 export const STORAGE_KEY  = 'proof-v2-projects'
 export const ACTIVE_KEY   = 'proof-v2-active'
 export const SELECTED_KEY = 'proof-v2-selected'
-export const SESSION_KEY  = 'proof-v2-session'
-export const PDF_FREE_LIMIT = 5
 
 export function uid(): string {
   return Math.random().toString(36).slice(2, 10)
-}
-
-export function getSessionId(): string {
-  let id = localStorage.getItem(SESSION_KEY)
-  if (!id) {
-    id = uid() + uid()
-    localStorage.setItem(SESSION_KEY, id)
-  }
-  return id
 }
 
 export function newProject(n: number): Project {
