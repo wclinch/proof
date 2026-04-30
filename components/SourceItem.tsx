@@ -4,10 +4,10 @@ import { useApp } from '@/context/AppContext'
 import type { QueuedSource } from '@/lib/types'
 
 const DOT: Record<string, string> = {
-  done:    '#2a6',
+  done:    '#444',
   error:   '#777',
   loading: '#777',
-  queued:  '#555',
+  queued:  '#333',
 }
 
 // SourceContextMenu dispatches this event to trigger inline renaming
