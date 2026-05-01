@@ -77,13 +77,13 @@ export default function PdfViewer({
 
   // ─── Page navigation plugin ───────────────────────────────────────────────────
 
-  const pageNavPlugin = pageNavigationPlugin()
+  const pageNavPlugin = useMemo(() => pageNavigationPlugin(), [])
   const { jumpToPage } = pageNavPlugin
   useEffect(() => { jumpToRef.current = jumpToPage }, [jumpToPage])
 
   // ─── Search plugin ────────────────────────────────────────────────────────────
 
-  const searchPluginInstance = searchPlugin()
+  const searchPluginInstance = useMemo(() => searchPlugin(), [])
   const { highlight: doSearch, clearHighlights, jumpToNextMatch, jumpToPreviousMatch } = searchPluginInstance
 
   function handleSearch(term: string) {
