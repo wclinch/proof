@@ -177,9 +177,9 @@ function HighlightsPanel({
       {highlights.length === 0 ? (
         <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {[
-            'Select text in the PDF — a save button appears above your selection.',
-            'Drag to select, or double-click for a single word.',
-            'Drag any highlight into the Synthesis panel on the right.',
+            'Click any paragraph in the PDF to save it instantly.',
+            'Click a saved paragraph again to remove it.',
+            'Drag any paragraph into the Synthesis panel on the right.',
           ].map((tip, i) => (
             <p key={i} style={{ margin: 0, fontSize: '11px', color: '#333', lineHeight: 1.6 }}>
               {tip}
@@ -290,8 +290,8 @@ export default function AnalysisPanel() {
                 },
                 {
                   n: '2',
-                  title: 'Select text to highlight',
-                  body: 'A save button appears above your selection. Use Shift+click for longer passages without dragging.',
+                  title: 'Click any paragraph',
+                  body: 'Single click on any paragraph to save it instantly. Click it again to remove it.',
                 },
                 {
                   n: '3',

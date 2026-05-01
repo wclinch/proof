@@ -5,22 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "cp node_modules/pdfjs-dist/build/pdf.worker.min.js public/pdf.worker.legacy.min.js && next build",
+    "build": "cp node_modules/react-pdf/node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs 2>/dev/null || cp node_modules/pdfjs-dist/build/pdf.worker.min.js public/pdf.worker.min.mjs && next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
-    "@react-pdf-viewer/core": "^3.12.0",
-    "@react-pdf-viewer/highlight": "^3.12.0",
-    "@react-pdf-viewer/page-navigation": "^3.12.0",
-    "@react-pdf-viewer/search": "^3.12.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.102.1",
     "next": "^16.2.4",
     "pdfjs-dist": "^3.11.174",
     "posthog-js": "^1.369.2",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-pdf": "^10.4.1"
   },
   "devDependencies": {
     "@types/node": "^20",
