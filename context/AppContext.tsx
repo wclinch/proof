@@ -31,6 +31,7 @@ interface AppState {
   selectedSource: QueuedSource | null
   // auth
   user: User | null
+  cloudSyncing: boolean
   // setters exposed for local use in components
   setShowProjects: (v: boolean | ((prev: boolean) => boolean)) => void
   setSelectedId: (id: string | null) => void
@@ -70,9 +71,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const analyzing         = useRef(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
 
-  const userIdRef    = useRef<string | null>(null)
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const cloudReady   = useRef(false)
+  const userIdRef      = useRef<string | null>(null)
+  const saveTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cloudReady     = useRef(false)
+  const [cloudSyncing, setCloudSyncing] = useState(false)
 
   // Escape closes all modals and menus
   useEffect(() => {
@@ -181,8 +183,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!cloudReady.current || !userIdRef.current || !projects.length) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(() => {
-      if (userIdRef.current) saveProjectsCloud(userIdRef.current, projects)
+    setCloudSyncing(true)
+    saveTimerRef.current = setTimeout(async () => {
+      if (userIdRef.current) await saveProjectsCloud(userIdRef.current, projects)
+      setCloudSyncing(false)
     }, 2000)
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
   }, [projects])
@@ -329,7 +333,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     mounted, projects, activeId, selectedId, selectedIds, anchorId,
     showProjects, contextMenu, projContextMenu,
     activeProject, sources, selectedSource, isAnalyzing,
-    user,
+    user, cloudSyncing,
     setShowProjects, setSelectedId, setSelectedIds, setAnchorId,
     setContextMenu, setProjContextMenu,
     setProjects, updateProject, patchSource,

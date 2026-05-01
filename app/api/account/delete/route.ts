@@ -23,9 +23,6 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
 
-  // Delete profile row first to avoid FK constraint blocking auth deletion
-  await adminClient.from('profiles').delete().eq('id', user.id)
-
   const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id)
   if (deleteError) {
     return NextResponse.json({ error: deleteError.message }, { status: 500 })

@@ -6,7 +6,7 @@ export default function ProjectBar() {
   const {
     activeProject, activeId, projects,
     updateProject, setShowProjects, createProject, sources,
-    user,
+    user, cloudSyncing,
   } = useApp()
 
   const [editingName, setEditingName] = useState(false)
@@ -137,13 +137,20 @@ export default function ProjectBar() {
       <div style={{ width: '1px', height: '14px', background: '#1a1a1a', flexShrink: 0 }} />
 
       {user ? (
-        <a href="/account" style={{ ...linkStyle, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-          title={user.email}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#999'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#666'}
-        >
-          {user.email}
-        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {cloudSyncing && (
+            <span style={{ fontSize: '10px', color: '#444', letterSpacing: '0.06em' }}>
+              saving...
+            </span>
+          )}
+          <a href="/account" style={{ ...linkStyle, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            title={user.email}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#999'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#666'}
+          >
+            {user.email}
+          </a>
+        </div>
       ) : (
         <a href="/auth" style={linkStyle}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#999'}
