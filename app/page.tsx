@@ -26,12 +26,12 @@ export default async function Home() {
           </div>
 
           <h1 style={{ fontSize: '32px', fontWeight: 500, color: '#bbb', lineHeight: 1.25, margin: '0 0 20px', letterSpacing: '-0.01em' }}>
-            Read. Highlight. Write.<br />Never leave.
+            Read. Clip. Write.<br />Never leave.
           </h1>
 
           <p style={{ fontSize: '15px', color: '#777', lineHeight: 1.8, margin: '0 0 40px', maxWidth: '480px' }}>
-            Drop a PDF. Select text to collect highlights tied to their exact source location.
-            Write in the same window. Jump back to any passage instantly. No tab switching.
+            Drop a PDF. Click any paragraph to clip it. Write in the same window.
+            Jump back to any passage instantly. No tab switching.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -56,10 +56,10 @@ export default async function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
-              ['Drop a PDF', 'Your document is ready instantly. No processing, no waiting. The full source is right there.'],
-              ['Highlight what matters', 'Select any text in the PDF — a sentence, a paragraph, a stat. It gets collected in the panel on the left, tied to its exact location.'],
-              ['Jump back anytime', 'Every highlight has a jump button. Click it to go directly to that passage in the source. Full context, no searching.'],
-              ['Write from it', 'The synthesis editor is on the right. Your highlights are always visible while you write. No switching, no losing your place.'],
+              ['Drop a PDF', 'Your document loads instantly. No processing, no waiting.'],
+              ['Click to clip', 'Click any paragraph to clip it. It appears in the left panel, tied to its exact page. Click again to remove it.'],
+              ['Jump back anytime', 'Every clip has a jump button. Click it to go directly back to that passage. Full context, no searching.'],
+              ['Write from it', 'The synthesis editor is on the right. Drag any clip into it to start writing. Export as .txt or .md when done.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ display: 'flex', gap: '24px' }}>
                 <div style={{ width: '4px', flexShrink: 0, background: '#1a1a1a', borderRadius: '2px', alignSelf: 'stretch' }} />

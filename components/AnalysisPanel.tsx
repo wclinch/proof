@@ -26,11 +26,13 @@ function HighlightCard({
   onJump: () => void
   onDelete: () => void
 }) {
-  const [hov,      setHov]      = useState(false)
-  const [dragging, setDragging] = useState(false)
+  const [hov,        setHov]        = useState(false)
+  const [expanded,   setExpanded]   = useState(false)
+  const [dragging,   setDragging]   = useState(false)
   const [menu,       setMenu]       = useState<{ x: number; y: number } | null>(null)
   const [confirming, setConfirming] = useState(false)
-  const isLong = highlight.text.length > 160
+  const PREVIEW = 120
+  const isLong = highlight.text.length > PREVIEW
 
   useEffect(() => {
     if (!menu) return
@@ -101,14 +103,15 @@ function HighlightCard({
           </span>
         )}
         <p
+          onClick={() => isLong && setExpanded(v => !v)}
           style={{
             margin: 0, fontSize: '11px', color: hov ? '#aaa' : '#666',
             lineHeight: 1.6, transition: 'color 0.1s',
-            cursor: 'default',
+            cursor: isLong ? 'pointer' : 'default',
             paddingRight: hov ? '40px' : '0',
           }}
         >
-          {hov || !isLong ? highlight.text : highlight.text.slice(0, 160) + '…'}
+          {expanded || !isLong ? highlight.text : highlight.text.slice(0, PREVIEW) + '…'}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '10px', color: '#333', letterSpacing: '0.06em' }}>p. {highlight.page}</span>
@@ -171,15 +174,15 @@ function HighlightsPanel({
         padding: '12px 12px 8px 12px', flexShrink: 0,
         fontSize: '10px', color: '#444', letterSpacing: '0.12em', textTransform: 'uppercase',
       }}>
-        Highlights
+        Clips
       </div>
 
       {highlights.length === 0 ? (
         <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {[
-            'Click any paragraph in the PDF to save it instantly.',
-            'Click a saved paragraph again to remove it.',
-            'Drag any paragraph into the Synthesis panel on the right.',
+            'Click any paragraph in the PDF to clip it.',
+            'Click a clipped paragraph again to remove it.',
+            'Drag any clip into the Synthesis panel to write from it.',
           ].map((tip, i) => (
             <p key={i} style={{ margin: 0, fontSize: '11px', color: '#333', lineHeight: 1.6 }}>
               {tip}
@@ -287,18 +290,18 @@ export default function AnalysisPanel() {
                 },
                 {
                   n: '2',
-                  title: 'Click any paragraph',
-                  body: 'Single click on any paragraph to save it instantly. Click it again to remove it.',
+                  title: 'Click to clip a paragraph',
+                  body: 'Single click on any paragraph to clip it. Click again to remove it.',
                 },
                 {
                   n: '3',
                   title: 'Jump back anytime',
-                  body: 'Every highlight has a jump button that scrolls the PDF directly to that passage.',
+                  body: 'Every clip has a jump button that scrolls the PDF directly back to that passage.',
                 },
                 {
                   n: '4',
-                  title: 'Write from your highlights',
-                  body: 'Drag any highlight into the Synthesis panel on the right. Export as .txt or .md when done.',
+                  title: 'Write from your clips',
+                  body: 'Drag any clip into the Synthesis panel on the right. Export as .txt or .md when done.',
                 },
               ].map(step => (
                 <div key={step.n} style={{ display: 'flex', gap: '16px' }}>

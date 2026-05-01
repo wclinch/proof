@@ -30,7 +30,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            A research workspace that keeps you inside your source documents while you write. Drop a PDF, select text to collect highlights tied to their exact location, jump back to any passage instantly, and write in the same window. No tab switching.
+            A research workspace that keeps you inside your source documents while you write. Drop a PDF, click any paragraph to clip it, jump back to any passage instantly, and write in the same window. No tab switching.
           </p>
         </div>
 
@@ -41,16 +41,16 @@ export default function About() {
               <span style={{ color: '#999' }}>1. Add a source</span> — drop a PDF or click to upload. It loads immediately.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>2. Select text to highlight</span> — select any text in the PDF. A <span style={{ color: '#999' }}>highlight →</span> button appears above your selection. Click it to save. Use drag, double-click (word), triple-click (paragraph), or Shift+click for longer ranges.
+              <span style={{ color: '#999' }}>2. Click to clip</span> — click any paragraph in the PDF to clip it. It appears instantly in the left panel tied to its page. Click a clipped paragraph again to remove it.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>3. Remove a highlight</span> — select already-highlighted text and the button reads <span style={{ color: '#999' }}>remove →</span>. Or right-click any highlight card in the left panel.
+              <span style={{ color: '#999' }}>3. Remove a clip</span> — click the paragraph again in the PDF, or right-click any clip card in the left panel.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>4. Jump back</span> — click <span style={{ color: '#999' }}>jump →</span> on any highlight card to scroll the PDF directly to that passage.
+              <span style={{ color: '#999' }}>4. Jump back</span> — click <span style={{ color: '#999' }}>jump →</span> on any clip to scroll the PDF directly to that passage.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>5. Write</span> — the Synthesis panel is on the right. Click <span style={{ color: '#999' }}>···</span> in the header to export as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span>.
+              <span style={{ color: '#999' }}>5. Write</span> — the Synthesis panel is on the right. Drag clips into it or write freely. Click <span style={{ color: '#999' }}>···</span> to export as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span>.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
               <span style={{ color: '#999' }}>6. Projects</span> — click Projects in the top bar to manage multiple workspaces. Without an account everything saves locally in your browser. Sign in to sync highlights and projects across devices.
@@ -62,11 +62,11 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Shortcuts</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {[
+              { keys: ['Click'], desc: 'Click any paragraph in the PDF to clip it. Click again to remove.' },
               { keys: ['Cmd+F', 'Ctrl+F'], desc: 'Open the in-PDF find bar' },
               { keys: ['Enter'], desc: 'Next find result (when find bar is open)' },
               { keys: ['Esc'], desc: 'Close find bar, or cancel a name edit' },
-              { keys: ['Shift+click'], desc: 'Extend selection from cursor to clicked point — fast way to highlight long passages' },
-              { keys: ['2-finger click'], desc: 'Open context menu on a highlight card or source — rename or remove' },
+              { keys: ['2-finger click'], desc: 'Open context menu on a clip or source — rename or remove' },
             ].map((row, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
                 <div style={{ display: 'flex', gap: '4px', flexShrink: 0, minWidth: '130px' }}>
