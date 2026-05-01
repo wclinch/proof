@@ -24,6 +24,12 @@ const BTN: React.CSSProperties = {
   boxShadow: '0 2px 12px rgba(0,0,0,0.6)', whiteSpace: 'nowrap',
 }
 
+const navBtn: React.CSSProperties = {
+  background: 'none', border: 'none', padding: '2px 6px', cursor: 'pointer',
+  fontSize: '12px', color: '#777', fontFamily: 'inherit', outline: 'none',
+  borderRadius: '3px',
+}
+
 export default function PdfViewer({
   srcId,
   highlights = [],
@@ -41,12 +47,16 @@ export default function PdfViewer({
   const [curPage,    setCurPage]    = useState(1)
   const [showFind,   setShowFind]   = useState(false)
   const [findTerm,   setFindTerm]   = useState('')
-  const findInputRef = useRef<HTMLInputElement>(null)
+  const [hlVersion,  setHlVersion]  = useState(0)
 
-  const highlightsRef = useRef(highlights)
-  const jumpToRef     = useRef<((idx: number) => void) | null>(null)
+  // Stable refs — plugins are created once, callbacks always read latest values
+  const highlightsRef   = useRef(highlights)
+  const onHighlightRef  = useRef(onHighlight)
+  const jumpToRef       = useRef<((idx: number) => void) | null>(null)
+  const findInputRef    = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { highlightsRef.current = highlights }, [highlights])
+  useEffect(() => { highlightsRef.current = highlights; setHlVersion(v => v + 1) }, [highlights])
+  useEffect(() => { onHighlightRef.current = onHighlight }, [onHighlight])
 
   useEffect(() => {
     let url: string | null = null
@@ -75,13 +85,14 @@ export default function PdfViewer({
     return () => window.removeEventListener('keydown', handler)
   }, [showFind])
 
-  // ─── Page navigation plugin ───────────────────────────────────────────────────
+  // ─── Plugins — all created once with [] to keep hook count stable ─────────────
 
-  const pageNavPlugin = useMemo(() => pageNavigationPlugin(), [])
+  const pageNavPlugin = useMemo(() => {
+    const p = pageNavigationPlugin()
+    return p
+  }, [])
   const { jumpToPage } = pageNavPlugin
   useEffect(() => { jumpToRef.current = jumpToPage }, [jumpToPage])
-
-  // ─── Search plugin ────────────────────────────────────────────────────────────
 
   const searchPluginInstance = useMemo(() => searchPlugin(), [])
   const { highlight: doSearch, clearHighlights, jumpToNextMatch, jumpToPreviousMatch } = searchPluginInstance
@@ -90,8 +101,6 @@ export default function PdfViewer({
     if (!term.trim()) { clearHighlights(); return }
     doSearch([{ keyword: term, matchCase: false, wholeWords: false }])
   }
-
-  // ─── Highlight plugin ─────────────────────────────────────────────────────────
 
   const highlightPluginInstance = useMemo(() => {
     function ov(a: HighlightRect, b: HighlightRect) {
@@ -126,7 +135,7 @@ export default function PdfViewer({
                   x: a.left / 100, y: a.top / 100,
                   w: a.width / 100, h: a.height / 100,
                 }))
-                onHighlight?.(text, page, rects)
+                onHighlightRef.current?.(text, page, rects)
                 toggle()
               }}
               style={BTN}
@@ -160,17 +169,14 @@ export default function PdfViewer({
       ),
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onHighlight])
+  }, [])
 
   // ─── Render ───────────────────────────────────────────────────────────────────
-
-  if (missing)   return <div style={MSG}>file not found — re-upload to view.</div>
-  if (!fileUrl)  return <div style={MSG}>loading...</div>
 
   return (
     <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* Toolbar */}
+      {/* Toolbar — only when loaded */}
       {totalPages > 0 && (
         <div style={{
           flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px',
@@ -197,23 +203,12 @@ export default function PdfViewer({
               defaultValue={curPage}
               title="Jump to page"
               onFocus={e => e.target.select()}
-              onBlur={e => {
-                const n = parseInt(e.target.value)
-                if (n >= 1 && n <= totalPages) jumpToPage(n - 1)
-              }}
+              onBlur={e => { const n = parseInt(e.target.value); if (n >= 1 && n <= totalPages) jumpToPage(n - 1) }}
               onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  const n = parseInt((e.target as HTMLInputElement).value)
-                  if (n >= 1 && n <= totalPages) jumpToPage(n - 1);
-                  (e.target as HTMLInputElement).blur()
-                }
+                if (e.key === 'Enter') { const n = parseInt((e.target as HTMLInputElement).value); if (n >= 1 && n <= totalPages) jumpToPage(n - 1); (e.target as HTMLInputElement).blur() }
                 if (e.key === 'Escape') (e.target as HTMLInputElement).blur()
               }}
-              style={{
-                width: '28px', background: 'transparent', border: 'none', outline: 'none',
-                fontSize: '10px', color: '#777', fontFamily: 'inherit',
-                letterSpacing: '0.06em', textAlign: 'center', padding: 0,
-              }}
+              style={{ width: '28px', background: 'transparent', border: 'none', outline: 'none', fontSize: '10px', color: '#777', fontFamily: 'inherit', letterSpacing: '0.06em', textAlign: 'center', padding: 0 }}
             />
             <span style={{ fontSize: '10px', color: '#333', letterSpacing: '0.06em' }}>/ {totalPages}</span>
           </div>
@@ -222,11 +217,7 @@ export default function PdfViewer({
 
       {/* Find bar */}
       {showFind && (
-        <div style={{
-          flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '0 12px', height: '34px', borderBottom: '1px solid #111',
-          background: '#0a0a0a',
-        }}>
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', padding: '0 12px', height: '34px', borderBottom: '1px solid #111', background: '#0a0a0a' }}>
           <input
             ref={findInputRef}
             value={findTerm}
@@ -236,11 +227,7 @@ export default function PdfViewer({
               if (e.key === 'Escape') { setShowFind(false); setFindTerm(''); clearHighlights() }
             }}
             placeholder="search..."
-            style={{
-              flex: 1, background: '#111', border: '1px solid #1a1a1a', borderRadius: '3px',
-              padding: '4px 10px', fontSize: '12px', color: '#bbb', outline: 'none',
-              fontFamily: 'inherit', letterSpacing: '0.04em',
-            }}
+            style={{ flex: 1, background: '#111', border: '1px solid #1a1a1a', borderRadius: '3px', padding: '4px 10px', fontSize: '12px', color: '#bbb', outline: 'none', fontFamily: 'inherit', letterSpacing: '0.04em' }}
             onFocus={e => (e.currentTarget.style.borderColor = '#333')}
             onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
           />
@@ -250,26 +237,24 @@ export default function PdfViewer({
         </div>
       )}
 
-      {/* Viewer */}
+      {/* Worker always rendered — keeps hook tree stable */}
       <div style={{ flex: 1, overflow: 'hidden', background: '#080808' }}>
         <Worker workerUrl={WORKER_URL}>
-          <div style={{ height: '100%', overflow: 'auto' }}>
-            <Viewer
-              fileUrl={fileUrl}
-              plugins={[highlightPluginInstance, pageNavPlugin, searchPluginInstance]}
-              defaultScale={1}
-              onPageChange={e => setCurPage(e.currentPage + 1)}
-              onDocumentLoad={e => setTotalPages(e.doc.numPages)}
-            />
-          </div>
+          {missing && <div style={MSG}>file not found — re-upload to view.</div>}
+          {!fileUrl && !missing && <div style={MSG}>loading...</div>}
+          {fileUrl && (
+            <div style={{ height: '100%', overflow: 'auto' }}>
+              <Viewer
+                fileUrl={fileUrl}
+                plugins={[highlightPluginInstance, pageNavPlugin, searchPluginInstance]}
+                defaultScale={1}
+                onPageChange={e => setCurPage(e.currentPage + 1)}
+                onDocumentLoad={e => setTotalPages(e.doc.numPages)}
+              />
+            </div>
+          )}
         </Worker>
       </div>
     </div>
   )
-}
-
-const navBtn: React.CSSProperties = {
-  background: 'none', border: 'none', padding: '2px 6px', cursor: 'pointer',
-  fontSize: '12px', color: '#777', fontFamily: 'inherit', outline: 'none',
-  borderRadius: '3px',
 }
