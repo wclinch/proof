@@ -55,13 +55,11 @@ export default function PdfViewer({
 
   // Page jump
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageInput,   setPageInput]   = useState('')
 
   const containerRef  = useRef<HTMLDivElement>(null)
   const pageRefs      = useRef<(HTMLDivElement | null)[]>([])
   const slotRoRef     = useRef<ResizeObserver | null>(null)
   const findInputRef  = useRef<HTMLInputElement>(null)
-  const muTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pageTexts     = useRef<Map<number, string[]>>(new Map())
 
   // Reset on source change
@@ -180,23 +178,21 @@ export default function PdfViewer({
     return map
   }, [findResults])
 
-  // ─── Text selection ───────────────────────────────────────────────────────────
-  // Drag-to-select: captured on mouseup (no click fires after a drag).
-  // Click-based (single / double / triple): captured on click event using
-  // event.detail to identify the click count. Debounce by detail so that
-  // a triple-click cancels the pending double-click timer before processing.
-  //   detail=1 → 400ms  (waits in case more clicks come)
-  //   detail=2 → 250ms  (waits in case triple-click follows)
-  //   detail≥3 → 10ms   (paragraph selected — process immediately)
+  // ─── Text selection (drag only) ───────────────────────────────────────────────
+  // Only drag-to-select triggers a highlight. Double/triple-click are left to
+  // browser default (word/paragraph selection) — user drags to save a highlight.
+  // A drag is detected by comparing mousedown and mouseup coordinates.
 
   useEffect(() => {
     const el = containerRef.current
     if (!el || !onHighlight) return
 
-    let clickPending = false
-    let clickTimer: ReturnType<typeof setTimeout> | null = null
+    let downX = 0
+    let downY = 0
 
     function handleMouseDown(e: MouseEvent) {
+      downX = e.clientX
+      downY = e.clientY
       const target = e.target as Node
       const inLayer = pageRefs.current.some(ref =>
         ref?.querySelector('.textLayer')?.contains(target)
@@ -204,7 +200,11 @@ export default function PdfViewer({
       if (!inLayer) window.getSelection()?.removeAllRanges()
     }
 
-    function processSelection() {
+    function handleMouseUp(e: MouseEvent) {
+      const dx = e.clientX - downX
+      const dy = e.clientY - downY
+      if (Math.sqrt(dx * dx + dy * dy) < 6) return // click, not drag
+
       const sel = window.getSelection()
       if (!sel || sel.isCollapsed) return
       const text = sel.toString().trim()
@@ -266,31 +266,11 @@ export default function PdfViewer({
       onHighlight?.(text, page, spans)
     }
 
-    function handleMouseUp() {
-      // After a real drag the browser suppresses the click event, so we
-      // use a 10ms window: if no click arrives, treat it as a drag selection.
-      clickPending = false
-      setTimeout(() => { if (!clickPending) processSelection() }, 10)
-    }
-
-    function handleClick(e: MouseEvent) {
-      clickPending = true
-      if (clickTimer) clearTimeout(clickTimer)
-      // detail≥3 = triple-click (paragraph) — fire fast.
-      // detail=2  = double-click (word)      — short wait in case triple follows.
-      // detail=1  = single click             — long wait; usually collapsed, no-op.
-      const delay = e.detail >= 3 ? 10 : e.detail === 2 ? 250 : 400
-      clickTimer = setTimeout(processSelection, delay)
-    }
-
     el.addEventListener('mousedown', handleMouseDown)
     el.addEventListener('mouseup',   handleMouseUp)
-    el.addEventListener('click',     handleClick)
     return () => {
       el.removeEventListener('mousedown', handleMouseDown)
       el.removeEventListener('mouseup',   handleMouseUp)
-      el.removeEventListener('click',     handleClick)
-      if (clickTimer) clearTimeout(clickTimer)
     }
   }, [onHighlight])
 
@@ -360,7 +340,6 @@ export default function PdfViewer({
     if (n >= 1 && n <= nPages) {
       pageRefs.current[n - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
-    setPageInput('')
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────────
@@ -396,15 +375,14 @@ export default function PdfViewer({
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ fontSize: '10px', color: '#444', letterSpacing: '0.06em' }}>p.</span>
             <input
-              value={pageInput}
-              onChange={e => setPageInput(e.target.value)}
-              onFocus={e => { const el = e.currentTarget; setPageInput(String(currentPage)); setTimeout(() => el.select(), 0) }}
+              key={currentPage}
+              defaultValue={currentPage}
+              onFocus={e => e.target.select()}
               onBlur={e => commitPageJump(e.target.value)}
               onKeyDown={e => {
-                if (e.key === 'Enter') { commitPageJump(pageInput); (e.target as HTMLInputElement).blur() }
-                if (e.key === 'Escape') { setPageInput(''); (e.target as HTMLInputElement).blur() }
+                if (e.key === 'Enter') { commitPageJump((e.target as HTMLInputElement).value); (e.target as HTMLInputElement).blur() }
+                if (e.key === 'Escape') { (e.target as HTMLInputElement).blur() }
               }}
-              placeholder={String(currentPage)}
               style={{
                 width: '28px', background: 'transparent', border: 'none', outline: 'none',
                 fontSize: '10px', color: '#777', fontFamily: 'inherit',
