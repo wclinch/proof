@@ -224,7 +224,7 @@ export default function PdfViewer({
 
     let firstIdx = -1, lastIdx = -1
     allSpans.forEach((spanEl, si) => {
-      if (firstIdx === -1 && spanEl.contains(range.startContainer)) firstIdx = si
+      if (spanEl.contains(range.startContainer)) firstIdx = si  // always update → innermost span wins
       if (spanEl.contains(range.endContainer)) lastIdx = si
     })
     if (firstIdx === -1 || lastIdx === -1) { sel.removeAllRanges(); setBtnPos(null); return }
