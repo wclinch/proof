@@ -43,6 +43,13 @@ button, nav, label { user-select: none; }
 }
 .nav-link:hover { color: #999; }
 
+/* react-pdf-viewer dark theme overrides */
+.rpv-core__viewer { background: #080808 !important; }
+.rpv-core__inner-pages { background: #080808 !important; }
+.rpv-core__page-layer { box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+.rpv-search__highlight { background: rgba(100,180,255,0.35) !important; }
+.rpv-search__highlight--current { background: rgba(100,180,255,0.65) !important; }
+
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.25; }
