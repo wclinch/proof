@@ -285,8 +285,52 @@ export default function AnalysisPanel() {
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {!selectedSource && (
-          <div style={{ padding: '24px', fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            select a source.
+          <div style={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '40px 32px',
+          }}>
+            <div style={{ maxWidth: '320px', width: '100%', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                  How it works
+                </span>
+              </div>
+              {[
+                {
+                  n: '1',
+                  title: 'Drop a PDF',
+                  body: 'Add a source from the left panel. It loads instantly — no processing.',
+                },
+                {
+                  n: '2',
+                  title: 'Select text to highlight',
+                  body: 'A save button appears above your selection. Use Shift+click for longer passages without dragging.',
+                },
+                {
+                  n: '3',
+                  title: 'Jump back anytime',
+                  body: 'Every highlight has a jump button that scrolls the PDF directly to that passage.',
+                },
+                {
+                  n: '4',
+                  title: 'Write from your highlights',
+                  body: 'Drag any highlight into the Synthesis panel on the right. Export as .txt or .md when done.',
+                },
+              ].map(step => (
+                <div key={step.n} style={{ display: 'flex', gap: '16px' }}>
+                  <span style={{
+                    fontSize: '11px', color: '#2a2a2a', flexShrink: 0,
+                    letterSpacing: '0.06em', marginTop: '2px',
+                  }}>
+                    {step.n}.
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '13px', color: '#555', fontWeight: 500 }}>{step.title}</span>
+                    <span style={{ fontSize: '12px', color: '#333', lineHeight: 1.7 }}>{step.body}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
