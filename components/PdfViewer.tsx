@@ -189,6 +189,7 @@ export default function PdfViewer({
 
     let downX = 0
     let downY = 0
+    let clickTimer: ReturnType<typeof setTimeout> | null = null
 
     function handleMouseDown(e: MouseEvent) {
       downX = e.clientX
@@ -200,11 +201,7 @@ export default function PdfViewer({
       if (!inLayer) window.getSelection()?.removeAllRanges()
     }
 
-    function handleMouseUp(e: MouseEvent) {
-      const dx = e.clientX - downX
-      const dy = e.clientY - downY
-      if (Math.sqrt(dx * dx + dy * dy) < 6) return // click, not drag
-
+    function processSelection() {
       const sel = window.getSelection()
       if (!sel || sel.isCollapsed) return
       const text = sel.toString().trim()
@@ -233,8 +230,7 @@ export default function PdfViewer({
         pageRef.querySelectorAll('.textLayer span:not(.markedContent)')
       ) as HTMLSpanElement[]
 
-      let firstIdx = -1
-      let lastIdx  = -1
+      let firstIdx = -1, lastIdx = -1
       allSpans.forEach((spanEl, si) => {
         if (firstIdx === -1 && spanEl.contains(range.startContainer)) firstIdx = si
         if (spanEl.contains(range.endContainer)) lastIdx = si
@@ -246,8 +242,7 @@ export default function PdfViewer({
         const spanEl = allSpans[si]
         const t = (spanEl.textContent ?? '').trim()
         if (!t) continue
-        let start: number | undefined
-        let end:   number | undefined
+        let start: number | undefined, end: number | undefined
         if (spanEl.contains(range.startContainer)) {
           const off = charOffsetInSpan(spanEl, range.startContainer, range.startOffset)
           if (off === -1) { sel.removeAllRanges(); return }
@@ -266,11 +261,30 @@ export default function PdfViewer({
       onHighlight?.(text, page, spans)
     }
 
+    function handleMouseUp(e: MouseEvent) {
+      const dx = e.clientX - downX
+      const dy = e.clientY - downY
+      if (Math.sqrt(dx * dx + dy * dy) < 6) return // click — handled by handleClick
+      processSelection()
+    }
+
+    // detail=2 (word): wait 300ms in case triple-click follows and cancels.
+    // detail≥3 (paragraph): cancel pending double-click timer, fire in 10ms.
+    function handleClick(e: MouseEvent) {
+      if (e.detail < 2) return
+      if (clickTimer) clearTimeout(clickTimer)
+      const delay = e.detail >= 3 ? 10 : 300
+      clickTimer = setTimeout(processSelection, delay)
+    }
+
     el.addEventListener('mousedown', handleMouseDown)
     el.addEventListener('mouseup',   handleMouseUp)
+    el.addEventListener('click',     handleClick)
     return () => {
       el.removeEventListener('mousedown', handleMouseDown)
       el.removeEventListener('mouseup',   handleMouseUp)
+      el.removeEventListener('click',     handleClick)
+      if (clickTimer) clearTimeout(clickTimer)
     }
   }, [onHighlight])
 
