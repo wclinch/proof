@@ -14,21 +14,21 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>The short version</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            PDF files never leave your device — they're stored in your browser and never uploaded anywhere. If you sign in, your highlights and project structure sync to our servers so they're available across devices. We collect account info and anonymized usage events. No document content, no IP addresses.
+            PDF files never leave your device. If you sign in, your highlights and project structure sync to our servers so they're available across devices. We collect your email address and anonymized usage events. No document content is ever sent anywhere.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What stays on your device</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            PDF files are stored locally in your browser (IndexedDB) and are never uploaded to any server. They do not leave your machine.
+            PDF files are stored in your browser (IndexedDB) and are never uploaded to any server. They do not leave your machine under any circumstances.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What gets synced when signed in</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What syncs when you sign in</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            When you sign in, your project names, source names, and highlight text are saved to our database so they're available across devices. This data is tied to your account and is not shared or sold. Without an account, everything stays local.
+            When you create an account, your project names, source file names, and highlight text are saved to our database so they're available on any device. This data is tied to your account and is never shared or sold. Without an account, everything stays local and is never transmitted.
           </p>
         </div>
 
@@ -38,10 +38,16 @@ export default function Privacy() {
             <span style={{ color: '#999' }}>Account:</span> email address. Required to manage sign-in and synced data.
           </p>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#999' }}>Usage analytics:</span> anonymized events — page visits, uploads, feature use. No document content, no IP addresses.
+            <span style={{ color: '#999' }}>Usage analytics:</span> anonymized events — page visits, uploads, highlights added. No document content, no IP addresses.
           </p>
         </div>
 
+        <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Deleting your data</h2>
+          <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
+            You can delete your account and all associated data at any time from the <a href="/account" style={{ color: '#777', textDecoration: 'none' }}>account page</a>. Local data (PDFs) is cleared when you clear your browser storage.
+          </p>
+        </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Contact</h2>

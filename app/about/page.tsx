@@ -29,7 +29,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            A research workspace that keeps you inside your source documents while you write. Drop a PDF, select text to collect highlights, jump back to any passage instantly. Everything stays in one window.
+            A research workspace that keeps you inside your source documents while you write. Drop a PDF, select text to collect highlights tied to their exact location, jump back to any passage instantly, and write in the same window. No tab switching.
           </p>
         </div>
 
@@ -37,19 +37,22 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How to use it</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>1. Add a source</span> — drop a PDF. It loads immediately, no processing required.
+              <span style={{ color: '#999' }}>1. Add a source</span> — drop a PDF or click to upload. It loads immediately.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>2. Read and highlight</span> — select any text in the PDF to save it as a highlight. Highlights appear in the left panel, each tied to its exact location. Right-click a highlight to remove it.
+              <span style={{ color: '#999' }}>2. Select text to highlight</span> — select any text in the PDF. A <span style={{ color: '#999' }}>highlight →</span> button appears above your selection. Click it to save. Use drag, double-click (word), triple-click (paragraph), or Shift+click for longer ranges.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>3. Jump back</span> — click <span style={{ color: '#999' }}>jump →</span> on any highlight to scroll the PDF directly to that passage.
+              <span style={{ color: '#999' }}>3. Remove a highlight</span> — select already-highlighted text and the button reads <span style={{ color: '#999' }}>remove →</span>. Or right-click any highlight card in the left panel.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>4. Write</span> — the Synthesis panel is on the right. Click <span style={{ color: '#999' }}>···</span> in the header to export as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span>.
+              <span style={{ color: '#999' }}>4. Jump back</span> — click <span style={{ color: '#999' }}>jump →</span> on any highlight card to scroll the PDF directly to that passage.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>5. Projects</span> — click Projects in the top bar to manage multiple workspaces. Without an account, everything is saved locally in your browser. Sign in to sync your highlights and projects across devices.
+              <span style={{ color: '#999' }}>5. Write</span> — the Synthesis panel is on the right. Click <span style={{ color: '#999' }}>···</span> in the header to export as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span>.
+            </p>
+            <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
+              <span style={{ color: '#999' }}>6. Projects</span> — click Projects in the top bar to manage multiple workspaces. Without an account everything saves locally in your browser. Sign in to sync highlights and projects across devices.
             </p>
           </div>
         </div>
@@ -58,14 +61,14 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Shortcuts</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {[
-              { keys: ['⌘↵', 'Ctrl+↵'], desc: 'Open a new draft (when no draft is active and no input is focused)' },
-              { keys: ['Tab'], desc: 'Indent 4 spaces inside the draft' },
-              { keys: ['Enter'], desc: 'Save a project or source name edit' },
-              { keys: ['Esc'], desc: 'Cancel a name edit, or close the projects panel' },
-              { keys: ['2-finger click'], desc: 'Open context menu on a highlight or source — remove with confirm step' },
+              { keys: ['Cmd+F', 'Ctrl+F'], desc: 'Open the in-PDF find bar' },
+              { keys: ['Enter'], desc: 'Next find result (when find bar is open)' },
+              { keys: ['Esc'], desc: 'Close find bar, or cancel a name edit' },
+              { keys: ['Shift+click'], desc: 'Extend selection from cursor to clicked point — fast way to highlight long passages' },
+              { keys: ['2-finger click'], desc: 'Open context menu on a highlight card or source — rename or remove' },
             ].map((row, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                <div style={{ display: 'flex', gap: '4px', flexShrink: 0, minWidth: '110px' }}>
+                <div style={{ display: 'flex', gap: '4px', flexShrink: 0, minWidth: '130px' }}>
                   {row.keys.map((k, j) => <Kbd key={j}>{k}</Kbd>)}
                 </div>
                 <span style={{ fontSize: '13px', color: '#777', lineHeight: 1.5 }}>{row.desc}</span>
@@ -77,21 +80,21 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Layout</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Three panels. Left: source list. Center: highlights collector (left half) + PDF viewer (right half). Right: synthesis editor — drag the divider to resize. <span style={{ color: '#999' }}>···</span> in the draft header opens export and discard.
+            Three panels. Left: source list. Center: highlights collector (left half) + PDF viewer with find bar and page jump (right half). Right: synthesis editor. Drag the divider between center and right to resize.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Compatibility</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Proof works best with standard PDFs — black text on a white background, generated from a word processor or typesetting tool. Highlighting is not supported on scanned documents, image-only PDFs, or documents with dark backgrounds.
+            Works best with standard PDFs — black text on white background, generated from a word processor or typesetting tool. Highlighting is not supported on scanned documents, image-only PDFs, or documents with non-standard text layers.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Saving your work</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Free to use with no account. PDFs are always stored locally in your browser. Sign in to sync your highlights and projects across devices — your PDF files still stay on your machine and need to be re-opened on each device.
+            Free to use with no account. PDFs are always stored locally in your browser. Sign in to sync your highlights and projects across devices — PDF files still stay on your machine and need to be re-opened on each device.
           </p>
         </div>
 
