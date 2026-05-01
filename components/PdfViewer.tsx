@@ -215,33 +215,29 @@ export default function PdfViewer({
       const clickedIdx = sorted.findIndex(s => s.el.contains(caretRange.startContainer))
       if (clickedIdx === -1) return
 
-      // Detect paragraph by top-to-top line spacing.
-      // Consecutive lines in a paragraph have consistent spacing.
-      // A paragraph break is when the gap jumps significantly more than that.
-      // Use top-to-top distance (not bottom-to-top) — works for any line spacing.
-      const lineH = sorted[clickedIdx].rect.height
+      // Paragraph detection: find the minimum top-to-top spacing among nearby
+      // spans — that's the within-paragraph line spacing. Break when spacing
+      // jumps > 1.5× that minimum. Cap at 10 spans so we never grab a whole page.
+      const MAX_SPANS = 10
 
-      // Sample typical line spacing from nearby spans
-      const spacings: number[] = []
-      for (let i = Math.max(1, clickedIdx - 5); i <= Math.min(sorted.length - 1, clickedIdx + 5); i++) {
+      const nearbySpacings: number[] = []
+      for (let i = Math.max(1, clickedIdx - 8); i <= Math.min(sorted.length - 1, clickedIdx + 8); i++) {
         const d = sorted[i].rect.top - sorted[i - 1].rect.top
-        if (d > 0 && d < 200) spacings.push(d)
+        if (d > 2 && d < 150) nearbySpacings.push(d)
       }
-      const avgSpacing = spacings.length > 0
-        ? spacings.reduce((a, b) => a + b) / spacings.length
-        : lineH * 2
-      const gap = avgSpacing * 1.6  // break if gap > 1.6× typical line spacing
+      const minSpacing = nearbySpacings.length > 0
+        ? Math.min(...nearbySpacings)
+        : sorted[clickedIdx].rect.height * 1.5
+      const threshold = minSpacing * 1.5
 
       let startIdx = clickedIdx
-      while (startIdx > 0) {
-        const d = sorted[startIdx].rect.top - sorted[startIdx - 1].rect.top
-        if (d > gap) break
+      while (startIdx > 0 && clickedIdx - startIdx < MAX_SPANS) {
+        if (sorted[startIdx].rect.top - sorted[startIdx - 1].rect.top > threshold) break
         startIdx--
       }
       let endIdx = clickedIdx
-      while (endIdx < sorted.length - 1) {
-        const d = sorted[endIdx + 1].rect.top - sorted[endIdx].rect.top
-        if (d > gap) break
+      while (endIdx < sorted.length - 1 && endIdx - clickedIdx < MAX_SPANS) {
+        if (sorted[endIdx + 1].rect.top - sorted[endIdx].rect.top > threshold) break
         endIdx++
       }
 
@@ -320,6 +316,25 @@ export default function PdfViewer({
                 <div ref={pi === 0 ? attachSlot : undefined}>
                   {pW > 0 && <Page pageNumber={pi + 1} width={pW} renderTextLayer renderAnnotationLayer={false} customTextRenderer={customTextRenderer} />}
                 </div>
+                {/* Thin left bar shows which paragraphs are clipped */}
+                {highlights.filter(h => h.page === pi + 1).map(h => {
+                  const rs = h.rects ?? []
+                  if (!rs.length) return null
+                  const top    = Math.min(...rs.map(r => r.y))
+                  const bottom = Math.max(...rs.map(r => r.y + r.h))
+                  return (
+                    <div key={h.id} style={{
+                      position: 'absolute',
+                      left: '4px',
+                      top:    `${top    * 100}%`,
+                      height: `${(bottom - top) * 100}%`,
+                      width: '2px',
+                      background: 'rgba(255,200,0,0.7)',
+                      borderRadius: '1px',
+                      pointerEvents: 'none',
+                    }} />
+                  )
+                })}
               </div>
             ))}
           </Document>

@@ -27,12 +27,10 @@ function HighlightCard({
   onDelete: () => void
 }) {
   const [hov,        setHov]        = useState(false)
-  const [expanded,   setExpanded]   = useState(false)
   const [dragging,   setDragging]   = useState(false)
   const [menu,       setMenu]       = useState<{ x: number; y: number } | null>(null)
   const [confirming, setConfirming] = useState(false)
   const PREVIEW = 120
-  const isLong = highlight.text.length > PREVIEW
 
   useEffect(() => {
     if (!menu) return
@@ -102,16 +100,12 @@ function HighlightCard({
             drag →
           </span>
         )}
-        <p
-          onClick={() => isLong && setExpanded(v => !v)}
-          style={{
-            margin: 0, fontSize: '11px', color: hov ? '#aaa' : '#666',
-            lineHeight: 1.6, transition: 'color 0.1s',
-            cursor: isLong ? 'pointer' : 'default',
-            paddingRight: hov ? '40px' : '0',
-          }}
-        >
-          {expanded || !isLong ? highlight.text : highlight.text.slice(0, PREVIEW) + '…'}
+        <p style={{
+          margin: 0, fontSize: '11px', color: hov ? '#aaa' : '#666',
+          lineHeight: 1.6, transition: 'color 0.1s', cursor: 'default',
+          paddingRight: hov ? '40px' : '0',
+        }}>
+          {highlight.text.length > PREVIEW ? highlight.text.slice(0, PREVIEW) + '…' : highlight.text}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '10px', color: '#333', letterSpacing: '0.06em' }}>p. {highlight.page}</span>
