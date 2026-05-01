@@ -99,21 +99,23 @@ export default function PdfViewer({
     return () => { task.destroy?.(); URL.revokeObjectURL(url) }
   }, [file])
 
-  // IntersectionObserver — update current page as user scrolls
+  // Track current page by finding which page top is closest to the container top
   useEffect(() => {
-    if (!nPages || !containerRef.current) return
-    const root = containerRef.current
-    const observers: IntersectionObserver[] = []
-    pageRefs.current.forEach((ref, i) => {
-      if (!ref) return
-      const obs = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) setCurrentPage(i + 1) },
-        { root, threshold: 0.3 }
-      )
-      obs.observe(ref)
-      observers.push(obs)
-    })
-    return () => observers.forEach(o => o.disconnect())
+    const el = containerRef.current
+    if (!el || !nPages) return
+    function onScroll() {
+      const containerTop = el!.getBoundingClientRect().top
+      let closest = 1, minDist = Infinity
+      pageRefs.current.forEach((ref, i) => {
+        if (!ref) return
+        const dist = Math.abs(ref.getBoundingClientRect().top - containerTop)
+        if (dist < minDist) { minDist = dist; closest = i + 1 }
+      })
+      setCurrentPage(closest)
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    onScroll() // set correct page on initial load
+    return () => el.removeEventListener('scroll', onScroll)
   }, [nPages])
 
   const attachSlot = useCallback((el: HTMLDivElement | null) => {
