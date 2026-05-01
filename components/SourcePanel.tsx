@@ -31,6 +31,10 @@ export default function SourcePanel({ width }: { width: number }) {
     return () => clearTimeout(t)
   }, [filterInput])
 
+  useEffect(() => {
+    return () => { if (dupTimer.current) clearTimeout(dupTimer.current) }
+  }, [])
+
   const shell: React.CSSProperties = {
     margin: '10px 10px 0',
     padding: '11px 14px',

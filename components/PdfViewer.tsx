@@ -83,6 +83,8 @@ export default function PdfViewer({
     pageTexts.current = new Map()
     setTextsReady(false)
     const url = URL.createObjectURL(file)
+    let revoked = false
+    const revoke = () => { if (!revoked) { revoked = true; URL.revokeObjectURL(url) } }
     const task = (pdfjs as any).getDocument(url)
     task.promise.then(async (pdf: any) => {
       for (let i = 1; i <= pdf.numPages; i++) {
@@ -94,9 +96,9 @@ export default function PdfViewer({
         pageTexts.current.set(i, strs)
       }
       setTextsReady(true)
-      URL.revokeObjectURL(url)
-    }).catch(() => URL.revokeObjectURL(url))
-    return () => { task.destroy?.(); URL.revokeObjectURL(url) }
+      revoke()
+    }).catch(revoke)
+    return () => { task.destroy?.(); revoke() }
   }, [file])
 
   // Track current page by finding which page top is closest to the container top

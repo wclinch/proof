@@ -15,6 +15,8 @@ export default function DraftPanel({ width }: { width: number }) {
   const [editMode, setEditMode]     = useState(
     !!(activeProject?.draftTitle?.trim() || activeProject?.draft?.trim())
   )
+  const activeIdRef   = useRef(activeId)
+  useEffect(() => { activeIdRef.current = activeId }, [activeId])
   const draftTitleRef = useRef<HTMLInputElement>(null)
   const textareaRef   = useRef<HTMLTextAreaElement>(null)
 
@@ -27,10 +29,11 @@ export default function DraftPanel({ width }: { width: number }) {
   }, [activeProject?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!activeId) return
-    const t = setTimeout(() => { updateProject(activeId, { draft: localDraft }) }, 800)
+    const t = setTimeout(() => {
+      if (activeIdRef.current) updateProject(activeIdRef.current, { draft: localDraft })
+    }, 800)
     return () => clearTimeout(t)
-  }, [localDraft]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [localDraft, updateProject])
 
   // Return to welcome guide when all content is cleared
   useEffect(() => {
@@ -38,9 +41,8 @@ export default function DraftPanel({ width }: { width: number }) {
   }, [localTitle, localDraft])
 
   useEffect(() => {
-    if (!activeId) return
-    updateProject(activeId, { draftTitle: localTitle })
-  }, [localTitle]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (activeIdRef.current) updateProject(activeIdRef.current, { draftTitle: localTitle })
+  }, [localTitle, updateProject])
 
   const hasDraft   = editMode
   const hasContent = !!(localTitle.trim() || localDraft.trim())

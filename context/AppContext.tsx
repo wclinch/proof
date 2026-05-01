@@ -312,6 +312,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function deleteProject(id: string) {
     const updated = projects.filter(p => p.id !== id)
+    setSelectedId(null)
+    setSelectedIds(new Set())
     if (!updated.length) {
       const p = newProject(1)
       setProjects([p])

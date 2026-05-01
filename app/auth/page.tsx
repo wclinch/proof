@@ -17,7 +17,10 @@ export default function AuthPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (window.location.search.includes('mode=signup')) setMode('signup')
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('mode') === 'signup') setMode('signup')
+    const err = params.get('error')
+    if (err) setError(err)
   }, [])
 
   function switchMode(m: Mode) { setMode(m); setError(null); setSentTo(null) }
