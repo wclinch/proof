@@ -44,12 +44,11 @@ export default function PdfViewer({
   const highlightsRef = useRef(highlights)
   useEffect(() => { highlightsRef.current = highlights }, [highlights])
 
-  const containerRef     = useRef<HTMLDivElement>(null)
-  const pageRefs         = useRef<(HTMLDivElement | null)[]>([])
-  const pageContentRefs  = useRef<(HTMLDivElement | null)[]>([])
-  const slotRoRef        = useRef<ResizeObserver | null>(null)
-  const findInputRef     = useRef<HTMLInputElement>(null)
-  const pageTexts        = useRef<Map<number, string[]>>(new Map())
+  const containerRef  = useRef<HTMLDivElement>(null)
+  const pageRefs      = useRef<(HTMLDivElement | null)[]>([])
+  const slotRoRef     = useRef<ResizeObserver | null>(null)
+  const findInputRef  = useRef<HTMLInputElement>(null)
+  const pageTexts     = useRef<Map<number, string[]>>(new Map())
 
   useEffect(() => {
     setFile(null); setMissing(false); setNPages(0)
@@ -57,7 +56,6 @@ export default function PdfViewer({
     setTextsReady(false)
     pageTexts.current = new Map()
     pageRefs.current = []
-    pageContentRefs.current = []
     getFile(srcId).then(f => f ? setFile(f) : setMissing(true))
   }, [srcId])
 
@@ -200,17 +198,14 @@ export default function PdfViewer({
     if (!anchorInLayer) { sel.removeAllRanges(); setBtnPos(null); return }
 
     let page = 1
-    let contentEl: HTMLDivElement | null = null
+    let pageEl: HTMLDivElement | null = null
     pageRefs.current.forEach((ref, i) => {
-      if (ref?.contains(sel.anchorNode)) {
-        page = i + 1
-        contentEl = pageContentRefs.current[i]
-      }
+      if (ref?.contains(sel.anchorNode)) { page = i + 1; pageEl = ref }
     })
-    if (!contentEl) { sel.removeAllRanges(); setBtnPos(null); return }
+    if (!pageEl) { sel.removeAllRanges(); setBtnPos(null); return }
 
     const range = sel.getRangeAt(0)
-    const pageRect = (contentEl as HTMLDivElement).getBoundingClientRect()
+    const pageRect = (pageEl as HTMLDivElement).getBoundingClientRect()
 
     const rects: HighlightRect[] = Array.from(range.getClientRects())
       .filter(r => r.width > 1 && r.height > 1)
@@ -445,15 +440,9 @@ export default function PdfViewer({
               <div
                 key={pi}
                 ref={el => { pageRefs.current[pi] = el }}
-                style={{ padding: '12px 16px', boxSizing: 'border-box' }}
+                style={{ padding: '12px 16px', boxSizing: 'border-box', position: 'relative' }}
               >
-                <div
-                  ref={el => {
-                    pageContentRefs.current[pi] = el
-                    if (pi === 0) attachSlot(el)
-                  }}
-                  style={{ position: 'relative' }}
-                >
+                <div ref={pi === 0 ? attachSlot : undefined}>
                   {pW > 0 && (
                     <Page
                       pageNumber={pi + 1}
@@ -463,25 +452,26 @@ export default function PdfViewer({
                       customTextRenderer={customTextRenderer}
                     />
                   )}
-                  {/* Highlight overlays — positioned as fractions of page dimensions */}
-                  {highlights
-                    .filter(h => h.page === pi + 1)
-                    .flatMap(h => (h.rects ?? []).map((rect, ri) => (
-                      <div
-                        key={`${h.id}-${ri}`}
-                        style={{
-                          position: 'absolute',
-                          left:   `${rect.x * 100}%`,
-                          top:    `${rect.y * 100}%`,
-                          width:  `${rect.w * 100}%`,
-                          height: `${rect.h * 100}%`,
-                          background: 'rgba(255, 213, 0, 0.38)',
-                          borderRadius: '1px',
-                          pointerEvents: 'none',
-                        }}
-                      />
-                    )))}
                 </div>
+                {/* Highlight overlays — absolute within outer page div */}
+                {highlights
+                  .filter(h => h.page === pi + 1)
+                  .flatMap(h => (h.rects ?? []).map((rect, ri) => (
+                    <div
+                      key={`${h.id}-${ri}`}
+                      style={{
+                        position: 'absolute',
+                        left:   `${rect.x * 100}%`,
+                        top:    `${rect.y * 100}%`,
+                        width:  `${rect.w * 100}%`,
+                        height: `${rect.h * 100}%`,
+                        background: 'rgba(255, 213, 0, 0.38)',
+                        borderRadius: '1px',
+                        pointerEvents: 'none',
+                        zIndex: 1,
+                      }}
+                    />
+                  )))}
               </div>
             ))}
           </Document>
