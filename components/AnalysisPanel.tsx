@@ -218,14 +218,16 @@ export default function AnalysisPanel() {
     if (rects.length === 0) return
     const current = selectedSource.highlights ?? []
 
-    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
-    const normText = norm(text)
+    function overlap(a: HighlightRect, b: HighlightRect) {
+      return a.x < b.x + b.w && a.x + a.w > b.x &&
+             a.y < b.y + b.h && a.y + a.h > b.y
+    }
 
     let removedSomething = false
     const updated = current.flatMap(h => {
       if (h.page !== page) return [h]
-      const overlaps = norm(h.text) === normText
-      if (overlaps) { removedSomething = true; return [] }
+      const hits = (h.rects ?? []).some(hr => rects.some(nr => overlap(hr, nr)))
+      if (hits) { removedSomething = true; return [] }
       return [h]
     })
 

@@ -233,9 +233,25 @@ export default function PdfViewer({
       const rect = sel.getRangeAt(0).getBoundingClientRect()
       if (!rect.width && !rect.height) { setBtnPos(null); return }
 
-      const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
-      const selNorm = norm(sel.toString().trim())
-      const isRemove = highlightsRef.current.some(h => norm(h.text) === selNorm)
+      // Detect overlap using rects — find which page, convert selection rects to fractions
+      let pageEl: HTMLDivElement | null = null
+      let pageIdx = -1
+      pageRefs.current.forEach((ref, i) => {
+        if (ref?.contains(sel.anchorNode)) { pageEl = ref; pageIdx = i + 1 }
+      })
+
+      let isRemove = false
+      if (pageEl) {
+        const pr = (pageEl as HTMLDivElement).getBoundingClientRect()
+        const selFracs = Array.from(sel.getRangeAt(0).getClientRects())
+          .filter(r => r.width > 1 && r.height > 1)
+          .map(r => ({ x: (r.left-pr.left)/pr.width, y: (r.top-pr.top)/pr.height, w: r.width/pr.width, h: r.height/pr.height }))
+        const ov = (a: {x:number;y:number;w:number;h:number}, b: {x:number;y:number;w:number;h:number}) =>
+          a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y
+        isRemove = highlightsRef.current
+          .filter(h => h.page === pageIdx)
+          .some(h => (h.rects ?? []).some(hr => selFracs.some(sr => ov(hr, sr))))
+      }
 
       setBtnIsRemove(isRemove)
       setBtnPos({ x: rect.left + rect.width / 2, y: rect.top })
