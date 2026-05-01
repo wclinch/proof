@@ -296,51 +296,57 @@ export default function PdfViewer({
   }, [])
 
   // Triple-click: extend selection to full paragraph.
-  // PDF text layers have one span per line so the browser only selects
-  // one line on triple-click. We detect paragraph boundaries by the
-  // vertical gap between consecutive spans and expand accordingly.
+  // Intercept at mousedown (before browser sets selection) and preventDefault
+  // so the browser never gets to set its own single-line triple-click selection.
+  // Spans are sorted by vertical position because PDF structure doesn't
+  // guarantee they appear in top-to-bottom DOM order.
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
-    function onTripleClick(e: MouseEvent) {
+    function onTripleMouseDown(e: MouseEvent) {
       if (e.detail < 3) return
       let pageRef: HTMLDivElement | null = null
       pageRefs.current.forEach(ref => { if (ref?.contains(e.target as Node)) pageRef = ref })
       if (!pageRef) return
 
+      // Sort spans by vertical position so gap detection is reliable
       const allSpans = Array.from(
         (pageRef as HTMLDivElement).querySelectorAll('.textLayer span:not(.markedContent)')
       ) as HTMLSpanElement[]
+      const sorted = allSpans
+        .map(s => ({ el: s, rect: s.getBoundingClientRect() }))
+        .filter(s => s.rect.height > 0)
+        .sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)
 
-      const clickedIdx = allSpans.findIndex(s => s.contains(e.target as Node))
+      const clickedIdx = sorted.findIndex(s => s.el.contains(e.target as Node))
       if (clickedIdx === -1) return
 
-      const lineH = allSpans[clickedIdx].getBoundingClientRect().height
-      const gap   = lineH * 0.8
+      e.preventDefault() // stop browser from setting its own selection
+
+      const lineH = sorted[clickedIdx].rect.height
+      const gap   = lineH * 1.2 // gap larger than a line height = paragraph break
 
       let startIdx = clickedIdx
       while (startIdx > 0) {
-        const prev = allSpans[startIdx - 1].getBoundingClientRect()
-        const curr = allSpans[startIdx].getBoundingClientRect()
-        if (curr.top - prev.bottom > gap) break
+        const gapSize = sorted[startIdx].rect.top - sorted[startIdx - 1].rect.bottom
+        if (gapSize > gap) break
         startIdx--
       }
       let endIdx = clickedIdx
-      while (endIdx < allSpans.length - 1) {
-        const curr = allSpans[endIdx].getBoundingClientRect()
-        const next = allSpans[endIdx + 1].getBoundingClientRect()
-        if (next.top - curr.bottom > gap) break
+      while (endIdx < sorted.length - 1) {
+        const gapSize = sorted[endIdx + 1].rect.top - sorted[endIdx].rect.bottom
+        if (gapSize > gap) break
         endIdx++
       }
 
       const range = document.createRange()
-      range.setStart(allSpans[startIdx], 0)
-      range.setEnd(allSpans[endIdx], allSpans[endIdx].childNodes.length)
+      range.setStart(sorted[startIdx].el, 0)
+      range.setEnd(sorted[endIdx].el, sorted[endIdx].el.childNodes.length)
       const sel = window.getSelection()
       if (sel) { sel.removeAllRanges(); sel.addRange(range) }
     }
-    el.addEventListener('click', onTripleClick)
-    return () => el.removeEventListener('click', onTripleClick)
+    el.addEventListener('mousedown', onTripleMouseDown)
+    return () => el.removeEventListener('mousedown', onTripleMouseDown)
   }, [])
 
   // ─── Span map for highlights ──────────────────────────────────────────────────
