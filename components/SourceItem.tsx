@@ -24,31 +24,9 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
 
   const isSelected  = selectedIds.has(src.id)
   const isPrimary   = selectedId === src.id
-  const displayName = src.label || src.result?.title || src.raw
+  const displayName = src.label || src.raw
 
   // Progress bar: React-controlled width so we can snap to 100% on completion
-  const [barWidth, setBarWidth] = useState(0)
-  const [showBar, setShowBar]   = useState(false)
-  useEffect(() => {
-    if (src.status !== 'loading') {
-      if (showBar) {
-        // Snap to 100%, then hide after transition
-        setBarWidth(100)
-        const t = setTimeout(() => setShowBar(false), 500)
-        return () => clearTimeout(t)
-      }
-      return
-    }
-    setBarWidth(0)
-    setShowBar(true)
-    // Simulate progress: fast at start, slows near end
-    const steps = [
-      [400,  12], [1200, 30], [2500, 50],
-      [4500, 65], [7000, 76], [11000, 83], [17000, 88],
-    ] as [number, number][]
-    const timers = steps.map(([delay, w]) => setTimeout(() => setBarWidth(w), delay))
-    return () => timers.forEach(clearTimeout)
-  }, [src.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Listen for rename trigger dispatched by SourceContextMenu
   useEffect(() => {
@@ -112,9 +90,7 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
       onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#0d0d0d' }}
       onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
     >
-      <span
-        className={src.status === 'loading' ? 'dot-loading' : undefined}
-        style={{
+      <span style={{
           width: '6px', height: '6px', borderRadius: '50%',
           flexShrink: 0, marginTop: '5px',
           background: DOT[src.status] ?? '#2a2a2a',
@@ -148,22 +124,6 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
             wordBreak: 'break-word',
           }}>
             {displayName}
-          </div>
-        )}
-        {showBar && (
-          <div style={{ marginTop: '4px' }}>
-            {src.status === 'loading' && (
-              <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '5px' }}>
-                analyzing...
-              </div>
-            )}
-            <div style={{ width: '100%', height: '2px', background: '#1a1a1a', borderRadius: '1px', overflow: 'hidden' }}>
-              <div style={{
-                height: '100%', background: '#333', borderRadius: '1px',
-                width: `${barWidth}%`,
-                transition: 'width 0.6s ease-out',
-              }} />
-            </div>
           </div>
         )}
         {src.status === 'error' && (

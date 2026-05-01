@@ -13,8 +13,7 @@ export default function ProjectBar() {
   const [projectName, setProjectName] = useState(activeProject?.name ?? '')
   const nameRef = useRef<HTMLInputElement>(null)
 
-  const doneCount    = sources.filter(s => s.status === 'done').length
-  const loadingCount = sources.filter(s => s.status === 'loading').length
+  const doneCount = sources.filter(s => s.status === 'done').length
 
   useEffect(() => {
     setProjectName(activeProject?.name ?? '')
@@ -95,7 +94,6 @@ export default function ProjectBar() {
       {sources.length > 0 && (
         <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.06em', flexShrink: 0 }}>
           {doneCount}/{sources.length}
-          {loadingCount > 0 ? ' · analyzing...' : ''}
         </span>
       )}
 

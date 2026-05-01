@@ -31,7 +31,8 @@ export default function DraftPanel({ width }: { width: number }) {
     updateProject(activeId, { draftTitle: localTitle })
   }, [localTitle]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const hasDraft = !!(activeProject?.draftCreated || localTitle || localDraft)
+  const hasDraft   = !!(activeProject?.draftCreated || localTitle || localDraft)
+  const hasContent = !!(localTitle.trim() || localDraft.trim())
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
@@ -154,7 +155,7 @@ export default function DraftPanel({ width }: { width: number }) {
         <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {dropTarget ? 'drop to insert →' : 'Synthesis'}
         </span>
-        {hasDraft && (
+        {hasContent && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0, marginLeft: '8px' }}>
             <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
               {wordCount}w

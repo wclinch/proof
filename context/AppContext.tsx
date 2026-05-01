@@ -39,7 +39,6 @@ interface AppState {
   setAnchorId: (id: string | null) => void
   setContextMenu: (m: ContextMenu | null) => void
   setProjContextMenu: (m: ProjContextMenu | null) => void
-  isAnalyzing: boolean
   // actions
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
   updateProject: (id: string, patch: Partial<Project>) => void
@@ -67,9 +66,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [projContextMenu, setProjContextMenu] = useState<ProjContextMenu | null>(null)
 
   const [user, setUser] = useState<User | null>(null)
-
-  const analyzing         = useRef(false)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
 
   const userIdRef      = useRef<string | null>(null)
   const saveTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -224,7 +220,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const MAX_FILE_MB = 20
 
   async function uploadFiles(files: FileList | File[]) {
-    if (!activeId || analyzing.current) return
+    if (!activeId) return
     let list = Array.from(files).filter(f =>
       f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
     ).slice(0, MAX_BATCH)
@@ -234,7 +230,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const newSources: QueuedSource[] = list.map(f => ({
       id: uid(), raw: `file:${f.name}`, status: 'queued',
-      result: null, error: null, label: f.name,
+      error: null, label: f.name,
     }))
 
     updateProject(activeId, { sources: [...sources, ...newSources] })
@@ -263,7 +259,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function retrySource(srcId: string) {
-    if (!activeId || analyzing.current) return
+    if (!activeId) return
     const file = await getFile(srcId)
     if (!file) {
       patchSource(activeId, srcId, { status: 'error', error: 'File not found — re-upload to retry.' })
@@ -332,7 +328,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value: AppState = {
     mounted, projects, activeId, selectedId, selectedIds, anchorId,
     showProjects, contextMenu, projContextMenu,
-    activeProject, sources, selectedSource, isAnalyzing,
+    activeProject, sources, selectedSource,
     user, cloudSyncing,
     setShowProjects, setSelectedId, setSelectedIds, setAnchorId,
     setContextMenu, setProjContextMenu,

@@ -340,12 +340,6 @@ export default function AnalysisPanel() {
           </div>
         )}
 
-        {selectedSource?.status === 'loading' && (
-          <div style={{ padding: '24px', fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            analyzing...
-          </div>
-        )}
-
         {selectedSource?.status === 'error' && (
           <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase' }}>

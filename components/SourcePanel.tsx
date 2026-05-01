@@ -4,7 +4,7 @@ import { useApp } from '@/context/AppContext'
 import SourceItem from './SourceItem'
 
 export default function SourcePanel({ width }: { width: number }) {
-  const { sources, uploadFiles, isAnalyzing, user } = useApp()
+  const { sources, uploadFiles, user } = useApp()
   const [dragOver, setDragOver]       = useState(false)
   const [filterInput, setFilterInput] = useState('')
   const [filter, setFilter]           = useState('')
@@ -56,12 +56,12 @@ export default function SourcePanel({ width }: { width: number }) {
             f.type === 'application/pdf' || f.name.endsWith('.pdf'))
           if (pdfs.length) handleUpload(pdfs)
         }}
-        onClick={() => !isAnalyzing && fileRef.current?.click()}
+        onClick={() => fileRef.current?.click()}
         style={{
           ...shell,
           background: dragOver ? '#141414' : '#0d0d0d',
           borderColor: dragOver ? '#333' : '#1a1a1a',
-          cursor: isAnalyzing ? 'default' : 'pointer',
+          cursor: 'pointer',
         }}
       >
         <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase', flex: 1 }}>
@@ -79,7 +79,7 @@ export default function SourcePanel({ width }: { width: number }) {
 
       {/* ── Source list ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '8px', borderTop: '1px solid #1a1a1a' }}>
-        {sources.length > 0 && (
+        {sources.length > 1 && (
           <div
             style={{ ...shell, cursor: 'text', padding: '9px 14px' }}
             onClick={() => filterRef.current?.focus()}
@@ -108,7 +108,7 @@ export default function SourcePanel({ width }: { width: number }) {
             : (() => {
                 const q = filter.trim().toLowerCase()
                 const visible = q
-                  ? sources.filter(s => (s.label || s.result?.title || s.raw).toLowerCase().includes(q))
+                  ? sources.filter(s => (s.label || s.raw).toLowerCase().includes(q))
                   : sources
                 return visible.length === 0
                   ? <div style={{ padding: '20px 14px', fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>no match.</div>
