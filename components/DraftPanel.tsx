@@ -186,8 +186,8 @@ export default function DraftPanel({ width }: { width: number }) {
 
       {/* Body */}
       {!hasDraft ? (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 32px' }}>
-          <div style={{ maxWidth: '280px', width: '100%', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+        <div style={{ flex: 1, padding: '32px 28px', overflowY: 'auto' }}>
+          <div style={{ maxWidth: '280px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                 Synthesis
