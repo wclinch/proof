@@ -28,12 +28,15 @@ export default function DraftPanel({ width }: { width: number }) {
     setEditMode(!!(t.trim() || d.trim()))
   }, [activeProject?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const updateProjectRef = useRef(updateProject)
+  useEffect(() => { updateProjectRef.current = updateProject }, [updateProject])
+
   useEffect(() => {
     const t = setTimeout(() => {
-      if (activeIdRef.current) updateProject(activeIdRef.current, { draft: localDraft })
+      if (activeIdRef.current) updateProjectRef.current(activeIdRef.current, { draft: localDraft })
     }, 800)
     return () => clearTimeout(t)
-  }, [localDraft, updateProject])
+  }, [localDraft])
 
   // Return to welcome guide when all content is cleared
   useEffect(() => {
@@ -41,8 +44,8 @@ export default function DraftPanel({ width }: { width: number }) {
   }, [localTitle, localDraft])
 
   useEffect(() => {
-    if (activeIdRef.current) updateProject(activeIdRef.current, { draftTitle: localTitle })
-  }, [localTitle, updateProject])
+    if (activeIdRef.current) updateProjectRef.current(activeIdRef.current, { draftTitle: localTitle })
+  }, [localTitle])
 
   const hasDraft   = editMode
   const hasContent = !!(localTitle.trim() || localDraft.trim())
