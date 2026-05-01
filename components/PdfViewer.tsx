@@ -306,8 +306,13 @@ export default function PdfViewer({
       const range = document.createRange()
       range.setStart(sorted[startIdx].el, 0)
       range.setEnd(sorted[endIdx].el, sorted[endIdx].el.childNodes.length)
-      const sel = window.getSelection()
-      if (sel) { sel.removeAllRanges(); sel.addRange(range) }
+
+      // Defer until after browser finishes its own triple-click mouseup handling,
+      // which would otherwise overwrite our selection back to one line.
+      requestAnimationFrame(() => {
+        const sel = window.getSelection()
+        if (sel) { sel.removeAllRanges(); sel.addRange(range) }
+      })
     }
     el.addEventListener('mousedown', onTripleMouseDown)
     return () => el.removeEventListener('mousedown', onTripleMouseDown)
