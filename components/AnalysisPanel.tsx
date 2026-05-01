@@ -4,8 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useApp } from '@/context/AppContext'
 import { capture } from '@/lib/posthog'
 import { uid } from '@/lib/storage'
-import type { Highlight, SpanEntry } from '@/lib/types'
-import { normStr } from '@/lib/norm'
+import type { Highlight, HighlightRect } from '@/lib/types'
 
 const PdfViewer = dynamic(() => import('./PdfViewer'), { ssr: false })
 
@@ -214,36 +213,19 @@ export default function AnalysisPanel() {
   const highlights: Highlight[] = selectedSource?.highlights ?? []
   const [jumpTo, setJumpTo] = useState<{ page: number; ts: number } | null>(null)
 
-  // Toggle: selecting already-highlighted text removes it, new text adds it
-  const handleHighlight = useCallback((text: string, page: number, spans: SpanEntry[]) => {
+  const handleHighlight = useCallback((text: string, page: number, rects: HighlightRect[]) => {
     if (!selectedSource || !activeId) return
-    if (spans.length === 0) return  // BUG FIX: never store empty span arrays
+    if (rects.length === 0) return
     const current = selectedSource.highlights ?? []
 
-    // BUG FIX: use shared normStr (same function as PdfViewer) so toggle detection
-    // is consistent with how span texts are stored and matched during rendering.
-    const newSpanTexts = new Set(spans.map(s => normStr(s.text)))
-    const normText     = normStr(text)
+    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
+    const normText = norm(text)
 
     let removedSomething = false
     const updated = current.flatMap(h => {
       if (h.page !== page) return [h]
-      // Remove the entire highlight if:
-      // - the selected text matches the highlight text (full re-selection toggle), OR
-      // - any of the selected spans overlap with this highlight's spans (partial re-selection)
-      // Either way → remove the whole card. No partial de-highlight.
-      const overlaps =
-        normStr(h.text) === normText ||
-        (h.spans ?? []).some(existingSpan => {
-          const newSpan = spans.find(s => normStr(s.text) === normStr(existingSpan.text))
-          if (!newSpan) return false
-          // Same span text — check if the highlighted ranges actually overlap
-          const aStart = existingSpan.start ?? 0
-          const aEnd   = existingSpan.end   ?? existingSpan.text.length
-          const bStart = newSpan.start ?? 0
-          const bEnd   = newSpan.end   ?? newSpan.text.length
-          return !(aEnd <= bStart || bEnd <= aStart)
-        })
+      const hlNorm = norm(h.text)
+      const overlaps = hlNorm === normText || hlNorm.includes(normText) || normText.includes(hlNorm)
       if (overlaps) { removedSomething = true; return [] }
       return [h]
     })
@@ -251,7 +233,7 @@ export default function AnalysisPanel() {
     if (removedSomething) {
       patchSource(activeId, selectedSource.id, { highlights: updated })
     } else {
-      const h: Highlight = { id: uid(), text, page, spans, createdAt: Date.now() }
+      const h: Highlight = { id: uid(), text, page, rects, createdAt: Date.now() }
       patchSource(activeId, selectedSource.id, { highlights: [...current, h] })
       capture('highlight_added')
     }

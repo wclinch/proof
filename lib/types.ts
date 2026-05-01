@@ -1,16 +1,17 @@
 type SourceStatus = 'queued' | 'done' | 'error'
 
-export interface SpanEntry {
-  text: string
-  start?: number
-  end?: number
+export interface HighlightRect {
+  x: number  // fraction of page width
+  y: number  // fraction of page height
+  w: number  // fraction of page width
+  h: number  // fraction of page height
 }
 
 export interface Highlight {
   id: string
   text: string
   page: number
-  spans: SpanEntry[]
+  rects: HighlightRect[]
   createdAt: number
 }
 

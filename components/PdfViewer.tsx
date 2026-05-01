@@ -3,10 +3,9 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/TextLayer.css'
 import { getFile } from '@/lib/idb'
-import type { Highlight, SpanEntry } from '@/lib/types'
+import type { Highlight, HighlightRect } from '@/lib/types'
 
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
-
 
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -16,7 +15,6 @@ const MSG: React.CSSProperties = {
   letterSpacing: '0.08em', textTransform: 'uppercase',
 }
 
-const MARK      = `style="background:rgba(255,213,0,0.38);border-radius:1px;color:inherit;"`
 const FIND_MARK = `style="background:rgba(100,180,255,0.35);border-radius:1px;color:inherit;"`
 
 export default function PdfViewer({
@@ -28,45 +26,41 @@ export default function PdfViewer({
   srcId: string
   highlights?: Highlight[]
   jumpTo?: { page: number; ts: number } | null
-  onHighlight?: (text: string, page: number, spans: SpanEntry[]) => void
+  onHighlight?: (text: string, page: number, rects: HighlightRect[]) => void
 }) {
   const [file,    setFile]    = useState<File | null>(null)
   const [nPages,  setNPages]  = useState(0)
   const [missing, setMissing] = useState(false)
   const [pW,      setPW]      = useState(0)
 
-  // Find state
-  const [showFind,  setShowFind]  = useState(false)
-  const [findTerm,  setFindTerm]  = useState('')
-  const [findIdx,   setFindIdx]   = useState(0)
+  const [showFind,   setShowFind]   = useState(false)
+  const [findTerm,   setFindTerm]   = useState('')
+  const [findIdx,    setFindIdx]    = useState(0)
   const [textsReady, setTextsReady] = useState(false)
-
-  // Page jump
   const [currentPage, setCurrentPage] = useState(1)
 
-  // Floating save button
   const [btnPos,      setBtnPos]      = useState<{ x: number; y: number } | null>(null)
   const [btnIsRemove, setBtnIsRemove] = useState(false)
   const highlightsRef = useRef(highlights)
   useEffect(() => { highlightsRef.current = highlights }, [highlights])
 
-  const containerRef  = useRef<HTMLDivElement>(null)
-  const pageRefs      = useRef<(HTMLDivElement | null)[]>([])
-  const slotRoRef     = useRef<ResizeObserver | null>(null)
-  const findInputRef  = useRef<HTMLInputElement>(null)
-  const pageTexts     = useRef<Map<number, string[]>>(new Map())
+  const containerRef     = useRef<HTMLDivElement>(null)
+  const pageRefs         = useRef<(HTMLDivElement | null)[]>([])
+  const pageContentRefs  = useRef<(HTMLDivElement | null)[]>([])
+  const slotRoRef        = useRef<ResizeObserver | null>(null)
+  const findInputRef     = useRef<HTMLInputElement>(null)
+  const pageTexts        = useRef<Map<number, string[]>>(new Map())
 
-  // Reset on source change
   useEffect(() => {
     setFile(null); setMissing(false); setNPages(0)
     setCurrentPage(1); setFindTerm(''); setShowFind(false)
     setTextsReady(false)
     pageTexts.current = new Map()
     pageRefs.current = []
+    pageContentRefs.current = []
     getFile(srcId).then(f => f ? setFile(f) : setMissing(true))
   }, [srcId])
 
-  // Extract all page texts up front using pdf.js so find works across every page
   useEffect(() => {
     if (!file) return
     pageTexts.current = new Map()
@@ -90,7 +84,6 @@ export default function PdfViewer({
     return () => { task.destroy?.(); revoke() }
   }, [file])
 
-  // Track current page by finding which page top is closest to the container top
   useEffect(() => {
     const el = containerRef.current
     if (!el || !nPages) return
@@ -105,7 +98,7 @@ export default function PdfViewer({
       setCurrentPage(closest)
     }
     el.addEventListener('scroll', onScroll, { passive: true })
-    onScroll() // set correct page on initial load
+    onScroll()
     return () => el.removeEventListener('scroll', onScroll)
   }, [nPages])
 
@@ -120,13 +113,11 @@ export default function PdfViewer({
     slotRoRef.current = ro
   }, [])
 
-  // Jump to highlight page
   useEffect(() => {
     if (!jumpTo) return
     pageRefs.current[jumpTo.page - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [jumpTo])
 
-  // Cmd+F opens find, Escape closes
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
@@ -134,16 +125,13 @@ export default function PdfViewer({
         setShowFind(true)
         setTimeout(() => findInputRef.current?.focus(), 30)
       }
-      if (e.key === 'Escape' && showFind) {
-        setShowFind(false)
-        setFindTerm('')
-      }
+      if (e.key === 'Escape' && showFind) { setShowFind(false); setFindTerm('') }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [showFind])
 
-  // ─── Find results ─────────────────────────────────────────────────────────────
+  // ─── Find ─────────────────────────────────────────────────────────────────────
 
   const findResults = useMemo(() => {
     if (!findTerm.trim() || !textsReady) return []
@@ -157,10 +145,8 @@ export default function PdfViewer({
     return out
   }, [findTerm, textsReady])
 
-  // Reset findIdx when results change
   useEffect(() => { setFindIdx(0) }, [findResults])
 
-  // Scroll to current find result
   useEffect(() => {
     if (!findResults.length) return
     const r = findResults[Math.min(findIdx, findResults.length - 1)]
@@ -176,11 +162,31 @@ export default function PdfViewer({
     return map
   }, [findResults])
 
-  // ─── Floating save button ─────────────────────────────────────────────────────
-  // selectionchange fires whenever the browser selection changes — drag, double-
-  // click, triple-click, shift+click, keyboard — we don't care how. If the
-  // selection is non-empty and inside the text layer, show a button above it.
-  // User clicks the button to save. No timing hacks needed.
+  const customTextRenderer = useCallback(
+    ({ str, pageIndex }: { str: string; pageIndex: number }) => {
+      if (!findTerm.trim()) return str
+      const findSpans = findMatchMap.get(pageIndex + 1)
+      if (!findSpans?.has(str)) return str
+      const term = findTerm.toLowerCase()
+      const lower = str.toLowerCase()
+      let result = '', i = 0
+      while (i < str.length) {
+        const idx = lower.indexOf(term, i)
+        if (idx === -1) { result += esc(str.slice(i)); break }
+        result += esc(str.slice(i, idx))
+        result += `<mark ${FIND_MARK}>${esc(str.slice(idx, idx + term.length))}</mark>`
+        i = idx + term.length
+      }
+      return result
+    },
+    [findMatchMap, findTerm]
+  )
+
+  // ─── Highlight capture — rect overlay approach ─────────────────────────────────
+  // We capture range.getClientRects() (the browser's exact visual selection
+  // rectangles) and store them as fractions of the page dimensions.
+  // On render, we draw absolute-positioned divs over the PDF. No span matching,
+  // no text search, no charOffsetInSpan — just pixel coordinates.
 
   const processSelection = useCallback(() => {
     const sel = window.getSelection()
@@ -194,70 +200,33 @@ export default function PdfViewer({
     if (!anchorInLayer) { sel.removeAllRanges(); setBtnPos(null); return }
 
     let page = 1
+    let contentEl: HTMLDivElement | null = null
     pageRefs.current.forEach((ref, i) => {
-      if (ref?.contains(sel.anchorNode)) page = i + 1
-    })
-
-    const pageRef = pageRefs.current[page - 1]
-    if (!pageRef) { sel.removeAllRanges(); setBtnPos(null); return }
-
-    const allSpans = Array.from(
-      pageRef.querySelectorAll('.textLayer span:not(.markedContent)')
-    ) as HTMLSpanElement[]
-
-    // Strip ALL whitespace before matching — sel.toString() has no spaces at
-    // PDF span boundaries (absolutely-positioned spans have no text nodes
-    // between them), so any separator we add would break indexOf.
-    const ws = (s: string) => s.replace(/\s+/g, '').toLowerCase()
-
-    // Map a no-whitespace index back to its position in the raw string
-    function noWStoRaw(raw: string, noWSIdx: number): number {
-      let cnt = 0
-      for (let i = 0; i < raw.length; i++) {
-        if (cnt === noWSIdx) return i
-        if (!/\s/.test(raw[i])) cnt++
+      if (ref?.contains(sel.anchorNode)) {
+        page = i + 1
+        contentEl = pageContentRefs.current[i]
       }
-      return raw.length
-    }
+    })
+    if (!contentEl) { sel.removeAllRanges(); setBtnPos(null); return }
 
-    const spanData: { rawText: string; noWSText: string; noWSPos: number }[] = []
-    let noWSPage = ''
-    for (const span of allSpans) {
-      const raw = span.textContent?.trim() ?? ''
-      if (!raw) continue
-      const n = ws(raw)
-      if (!n) continue
-      spanData.push({ rawText: raw, noWSText: n, noWSPos: noWSPage.length })
-      noWSPage += n
-    }
+    const range = sel.getRangeAt(0)
+    const pageRect = (contentEl as HTMLDivElement).getBoundingClientRect()
 
-    const noWSSel = ws(text)
-    const matchPos = noWSPage.indexOf(noWSSel)
-    if (matchPos === -1) { sel.removeAllRanges(); setBtnPos(null); return }
-    const matchEnd = matchPos + noWSSel.length
-
-    const spans: SpanEntry[] = []
-    for (const { rawText, noWSText, noWSPos } of spanData) {
-      const spanEnd = noWSPos + noWSText.length
-      const oStart  = Math.max(matchPos, noWSPos)
-      const oEnd    = Math.min(matchEnd, spanEnd)
-      if (oStart >= oEnd) continue
-      const startRaw = noWStoRaw(rawText, oStart - noWSPos)
-      const endRaw   = noWStoRaw(rawText, oEnd - noWSPos)
-      spans.push({
-        text:  rawText,
-        start: startRaw > 0              ? startRaw : undefined,
-        end:   endRaw   < rawText.length ? endRaw   : undefined,
-      })
-    }
+    const rects: HighlightRect[] = Array.from(range.getClientRects())
+      .filter(r => r.width > 1 && r.height > 1)
+      .map(r => ({
+        x: (r.left - pageRect.left) / pageRect.width,
+        y: (r.top  - pageRect.top)  / pageRect.height,
+        w: r.width  / pageRect.width,
+        h: r.height / pageRect.height,
+      }))
 
     sel.removeAllRanges()
     setBtnPos(null)
-    if (spans.length === 0) return
-    onHighlight?.(text, page, spans)
+    if (rects.length === 0) return
+    onHighlight?.(text, page, rects)
   }, [onHighlight])
 
-  // Show button whenever there's a valid selection inside the text layer
   useEffect(() => {
     function onSelectionChange() {
       const sel = window.getSelection()
@@ -269,13 +238,12 @@ export default function PdfViewer({
       const rect = sel.getRangeAt(0).getBoundingClientRect()
       if (!rect.width && !rect.height) { setBtnPos(null); return }
 
-      // Use DOM to detect if selection is inside a highlighted mark — more
-      // reliable than text comparison and matches what handleHighlight actually does.
-      const anchor = sel.anchorNode
-      const anchorEl = anchor?.nodeType === Node.TEXT_NODE
-        ? anchor.parentElement
-        : anchor as Element | null
-      const isRemove = !!(anchorEl?.closest?.('mark'))
+      const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
+      const selNorm = norm(sel.toString().trim())
+      const isRemove = highlightsRef.current.some(h => {
+        const hlNorm = norm(h.text)
+        return hlNorm === selNorm || hlNorm.includes(selNorm) || selNorm.includes(hlNorm)
+      })
 
       setBtnIsRemove(isRemove)
       setBtnPos({ x: rect.left + rect.width / 2, y: rect.top })
@@ -284,7 +252,6 @@ export default function PdfViewer({
     return () => document.removeEventListener('selectionchange', onSelectionChange)
   }, [])
 
-  // Clear selection when clicking outside the text layer
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -298,19 +265,11 @@ export default function PdfViewer({
     return () => el.removeEventListener('mousedown', onMouseDown)
   }, [])
 
-  // Triple-click: extend selection to full paragraph.
-  // Intercept at mousedown (before browser sets selection) and preventDefault
-  // so the browser never gets to set its own single-line triple-click selection.
-  // Spans are sorted by vertical position because PDF structure doesn't
-  // guarantee they appear in top-to-bottom DOM order.
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
     function onTripleMouseDown(e: MouseEvent) {
       if (e.detail < 3) return
-
-      // caretRangeFromPoint gives the exact text node at mouse coordinates —
-      // e.target can be a .markedContent span (filtered out) causing clickedIdx=-1.
       const caretRange = document.caretRangeFromPoint?.(e.clientX, e.clientY) ?? (() => {
         const pos = (document as any).caretPositionFromPoint?.(e.clientX, e.clientY)
         if (!pos) return null
@@ -336,18 +295,16 @@ export default function PdfViewer({
       if (clickedIdx === -1) return
 
       const lineH = sorted[clickedIdx].rect.height
-      const gap   = lineH * 1.2 // gap larger than a line height = paragraph break
+      const gap   = lineH * 1.2
 
       let startIdx = clickedIdx
       while (startIdx > 0) {
-        const gapSize = sorted[startIdx].rect.top - sorted[startIdx - 1].rect.bottom
-        if (gapSize > gap) break
+        if (sorted[startIdx].rect.top - sorted[startIdx - 1].rect.bottom > gap) break
         startIdx--
       }
       let endIdx = clickedIdx
       while (endIdx < sorted.length - 1) {
-        const gapSize = sorted[endIdx + 1].rect.top - sorted[endIdx].rect.bottom
-        if (gapSize > gap) break
+        if (sorted[endIdx + 1].rect.top - sorted[endIdx].rect.bottom > gap) break
         endIdx++
       }
 
@@ -361,67 +318,6 @@ export default function PdfViewer({
     return () => el.removeEventListener('mousedown', onTripleMouseDown)
   }, [])
 
-  // ─── Span map for highlights ──────────────────────────────────────────────────
-
-  const spanMaps = useMemo(() => {
-    const maps: Record<number, Map<string, SpanEntry>> = {}
-    highlights.forEach(h => {
-      if (!maps[h.page]) maps[h.page] = new Map()
-      ;(h.spans ?? []).forEach(entry => {
-        const e: SpanEntry = typeof entry === 'string' ? { text: entry as string } : entry
-        if (e.text?.trim()) maps[h.page].set(e.text.trim(), e)
-      })
-    })
-    return maps
-  }, [highlights])
-
-  // ─── Custom text renderer (highlights + find) ─────────────────────────────────
-
-  const customTextRenderer = useCallback(
-    ({ str, pageIndex }: { str: string; pageIndex: number }) => {
-      if (!str.trim()) return str
-      const pageNum = pageIndex + 1
-
-      // Highlight takes priority over find
-      const map   = spanMaps[pageNum]
-      const entry = map?.get(str.trim())
-      if (entry) {
-        const { start, end } = entry
-        if (start === undefined && end === undefined) {
-          return `<mark ${MARK}>${esc(str)}</mark>`
-        }
-        const s = Math.max(0, start ?? 0)
-        const e = Math.min(str.length, end ?? str.length)
-        if (s >= e) return str
-        const hl = str.slice(s, e)
-        if (!hl.trim()) return str
-        return `${esc(str.slice(0, s))}<mark ${MARK}>${esc(hl)}</mark>${esc(str.slice(e))}`
-      }
-
-      // Find match
-      const findSpans = findMatchMap.get(pageNum)
-      if (findSpans?.has(str) && findTerm.trim()) {
-        const term  = findTerm.toLowerCase()
-        const lower = str.toLowerCase()
-        let result = ''
-        let i = 0
-        while (i < str.length) {
-          const idx = lower.indexOf(term, i)
-          if (idx === -1) { result += esc(str.slice(i)); break }
-          result += esc(str.slice(i, idx))
-          result += `<mark ${FIND_MARK}>${esc(str.slice(idx, idx + term.length))}</mark>`
-          i = idx + term.length
-        }
-        return result
-      }
-
-      return str
-    },
-    [spanMaps, findMatchMap, findTerm]
-  )
-
-  // ─── Page jump ────────────────────────────────────────────────────────────────
-
   function commitPageJump(val: string) {
     const n = parseInt(val)
     if (n >= 1 && n <= nPages) {
@@ -429,67 +325,48 @@ export default function PdfViewer({
     }
   }
 
-  // ─── Render ───────────────────────────────────────────────────────────────────
-
   return (
     <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* Floating highlight button — appears above any text selection in the PDF */}
       {btnPos && onHighlight && (
         <button
           onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
           onClick={processSelection}
           style={{
             position: 'fixed',
-            left: btnPos.x,
-            top: btnPos.y - 10,
+            left: btnPos.x, top: btnPos.y - 10,
             transform: 'translate(-50%, -100%)',
             zIndex: 1000,
-            background: '#1c1c1c',
-            border: '1px solid #333',
-            borderRadius: '4px',
-            padding: '5px 14px',
-            fontSize: '11px',
-            color: '#ccc',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            outline: 'none',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
-            whiteSpace: 'nowrap',
+            background: '#1c1c1c', border: '1px solid #333', borderRadius: '4px',
+            padding: '5px 14px', fontSize: '11px', color: '#ccc',
+            cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.08em',
+            textTransform: 'uppercase', outline: 'none',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.6)', whiteSpace: 'nowrap',
           }}
         >
           {btnIsRemove ? 'remove →' : 'highlight →'}
         </button>
       )}
 
-      {/* Toolbar */}
       {file && !missing && nPages > 0 && (
         <div style={{
           flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px',
           padding: '0 12px', height: '32px', borderBottom: '1px solid #111',
           background: '#080808',
         }}>
-          {/* Find toggle */}
           <button
             onClick={() => { setShowFind(v => !v); setTimeout(() => findInputRef.current?.focus(), 30) }}
             title="Search in PDF (Cmd+F)"
             style={{
               background: showFind ? '#1a1a1a' : 'none', border: 'none', padding: '3px 8px',
-              borderRadius: '3px', cursor: 'pointer', fontSize: '10px', color: showFind ? '#aaa' : '#555',
-              letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
-              transition: 'color 0.15s',
+              borderRadius: '3px', cursor: 'pointer', fontSize: '10px',
+              color: showFind ? '#aaa' : '#555', letterSpacing: '0.08em',
+              textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
             }}
             onMouseEnter={e => (e.currentTarget.style.color = '#aaa')}
             onMouseLeave={e => (e.currentTarget.style.color = showFind ? '#aaa' : '#555')}
-          >
-            find
-          </button>
-
+          >find</button>
           <div style={{ flex: 1 }} />
-
-          {/* Page jump */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ fontSize: '10px', color: '#444', letterSpacing: '0.06em' }}>p.</span>
             <input
@@ -513,7 +390,6 @@ export default function PdfViewer({
         </div>
       )}
 
-      {/* Find bar */}
       {showFind && (
         <div style={{
           flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px',
@@ -525,10 +401,7 @@ export default function PdfViewer({
             value={findTerm}
             onChange={e => setFindTerm(e.target.value)}
             onKeyDown={e => {
-              if (e.key === 'Enter') {
-                if (!findResults.length) return
-                setFindIdx(i => (i + 1) % findResults.length)
-              }
+              if (e.key === 'Enter' && findResults.length) setFindIdx(i => (i + 1) % findResults.length)
               if (e.key === 'Escape') { setShowFind(false); setFindTerm('') }
             }}
             placeholder="search..."
@@ -540,37 +413,26 @@ export default function PdfViewer({
             onFocus={e => (e.currentTarget.style.borderColor = '#333')}
             onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
           />
-
           {findTerm.trim() && (
             <span style={{ fontSize: '10px', color: '#555', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
               {findResults.length === 0 ? 'no matches' : `${findIdx + 1} / ${findResults.length}`}
             </span>
           )}
-
           {findResults.length > 1 && (
             <>
-              <button onClick={() => setFindIdx(i => (i - 1 + findResults.length) % findResults.length)}
-                style={navBtn}>↑</button>
-              <button onClick={() => setFindIdx(i => (i + 1) % findResults.length)}
-                style={navBtn}>↓</button>
+              <button onClick={() => setFindIdx(i => (i - 1 + findResults.length) % findResults.length)} style={navBtn}>↑</button>
+              <button onClick={() => setFindIdx(i => (i + 1) % findResults.length)} style={navBtn}>↓</button>
             </>
           )}
-
-          <button
-            onClick={() => { setShowFind(false); setFindTerm('') }}
-            style={{ ...navBtn, color: '#555' }}
-          >
-            ×
-          </button>
+          <button onClick={() => { setShowFind(false); setFindTerm('') }} style={{ ...navBtn, color: '#555' }}>×</button>
         </div>
       )}
 
-      {/* PDF scroll area */}
       <div
         ref={containerRef}
         style={{ flex: 1, minWidth: 0, minHeight: 0, overflowY: 'scroll', overflowX: 'hidden' }}
       >
-        {missing  && <div style={MSG}>file not found — re-upload to view.</div>}
+        {missing   && <div style={MSG}>file not found — re-upload to view.</div>}
         {!file && !missing && <div style={MSG}>loading...</div>}
         {file && !missing && (
           <Document
@@ -585,7 +447,13 @@ export default function PdfViewer({
                 ref={el => { pageRefs.current[pi] = el }}
                 style={{ padding: '12px 16px', boxSizing: 'border-box' }}
               >
-                <div ref={pi === 0 ? attachSlot : undefined}>
+                <div
+                  ref={el => {
+                    pageContentRefs.current[pi] = el
+                    if (pi === 0) attachSlot(el)
+                  }}
+                  style={{ position: 'relative' }}
+                >
                   {pW > 0 && (
                     <Page
                       pageNumber={pi + 1}
@@ -595,6 +463,24 @@ export default function PdfViewer({
                       customTextRenderer={customTextRenderer}
                     />
                   )}
+                  {/* Highlight overlays — positioned as fractions of page dimensions */}
+                  {highlights
+                    .filter(h => h.page === pi + 1)
+                    .flatMap(h => (h.rects ?? []).map((rect, ri) => (
+                      <div
+                        key={`${h.id}-${ri}`}
+                        style={{
+                          position: 'absolute',
+                          left:   `${rect.x * 100}%`,
+                          top:    `${rect.y * 100}%`,
+                          width:  `${rect.w * 100}%`,
+                          height: `${rect.h * 100}%`,
+                          background: 'rgba(255, 213, 0, 0.38)',
+                          borderRadius: '1px',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                    )))}
                 </div>
               </div>
             ))}
@@ -608,5 +494,5 @@ export default function PdfViewer({
 const navBtn: React.CSSProperties = {
   background: 'none', border: 'none', padding: '2px 6px', cursor: 'pointer',
   fontSize: '12px', color: '#777', fontFamily: 'inherit', outline: 'none',
-  borderRadius: '3px', transition: 'color 0.15s',
+  borderRadius: '3px',
 }
