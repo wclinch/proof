@@ -180,11 +180,21 @@ export default function PdfViewer({
     return map
   }, [findResults])
 
-  // ─── Text selection (triple-click debounced) ──────────────────────────────────
+  // ─── Text selection ───────────────────────────────────────────────────────────
+  // Drag-to-select: captured on mouseup (no click fires after a drag).
+  // Click-based (single / double / triple): captured on click event using
+  // event.detail to identify the click count. Debounce by detail so that
+  // a triple-click cancels the pending double-click timer before processing.
+  //   detail=1 → 400ms  (waits in case more clicks come)
+  //   detail=2 → 250ms  (waits in case triple-click follows)
+  //   detail≥3 → 10ms   (paragraph selected — process immediately)
 
   useEffect(() => {
     const el = containerRef.current
     if (!el || !onHighlight) return
+
+    let clickPending = false
+    let clickTimer: ReturnType<typeof setTimeout> | null = null
 
     function handleMouseDown(e: MouseEvent) {
       const target = e.target as Node
@@ -197,7 +207,6 @@ export default function PdfViewer({
     function processSelection() {
       const sel = window.getSelection()
       if (!sel || sel.isCollapsed) return
-
       const text = sel.toString().trim()
       if (!text || text.length < 3) { sel.removeAllRanges(); return }
 
@@ -235,13 +244,10 @@ export default function PdfViewer({
       const spans: SpanEntry[] = []
       for (let si = firstIdx; si <= lastIdx; si++) {
         const spanEl = allSpans[si]
-        const raw = spanEl.textContent ?? ''
-        const t   = raw.trim()
+        const t = (spanEl.textContent ?? '').trim()
         if (!t) continue
-
         let start: number | undefined
         let end:   number | undefined
-
         if (spanEl.contains(range.startContainer)) {
           const off = charOffsetInSpan(spanEl, range.startContainer, range.startOffset)
           if (off === -1) { sel.removeAllRanges(); return }
@@ -260,18 +266,31 @@ export default function PdfViewer({
       onHighlight?.(text, page, spans)
     }
 
-    // Debounce mouseup by 30ms so triple-click fully completes before we capture
     function handleMouseUp() {
-      if (muTimerRef.current) clearTimeout(muTimerRef.current)
-      muTimerRef.current = setTimeout(processSelection, 30)
+      // After a real drag the browser suppresses the click event, so we
+      // use a 10ms window: if no click arrives, treat it as a drag selection.
+      clickPending = false
+      setTimeout(() => { if (!clickPending) processSelection() }, 10)
+    }
+
+    function handleClick(e: MouseEvent) {
+      clickPending = true
+      if (clickTimer) clearTimeout(clickTimer)
+      // detail≥3 = triple-click (paragraph) — fire fast.
+      // detail=2  = double-click (word)      — short wait in case triple follows.
+      // detail=1  = single click             — long wait; usually collapsed, no-op.
+      const delay = e.detail >= 3 ? 10 : e.detail === 2 ? 250 : 400
+      clickTimer = setTimeout(processSelection, delay)
     }
 
     el.addEventListener('mousedown', handleMouseDown)
     el.addEventListener('mouseup',   handleMouseUp)
+    el.addEventListener('click',     handleClick)
     return () => {
       el.removeEventListener('mousedown', handleMouseDown)
       el.removeEventListener('mouseup',   handleMouseUp)
-      if (muTimerRef.current) clearTimeout(muTimerRef.current)
+      el.removeEventListener('click',     handleClick)
+      if (clickTimer) clearTimeout(clickTimer)
     }
   }, [onHighlight])
 
@@ -379,7 +398,7 @@ export default function PdfViewer({
             <input
               value={pageInput}
               onChange={e => setPageInput(e.target.value)}
-              onFocus={e => { setPageInput(String(currentPage)); e.target.select() }}
+              onFocus={e => { const el = e.currentTarget; setPageInput(String(currentPage)); setTimeout(() => el.select(), 0) }}
               onBlur={e => commitPageJump(e.target.value)}
               onKeyDown={e => {
                 if (e.key === 'Enter') { commitPageJump(pageInput); (e.target as HTMLInputElement).blur() }
