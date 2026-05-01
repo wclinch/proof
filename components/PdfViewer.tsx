@@ -266,9 +266,13 @@ export default function PdfViewer({
       const rect = sel.getRangeAt(0).getBoundingClientRect()
       if (!rect.width && !rect.height) { setBtnPos(null); return }
 
-      const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
-      const selNorm = norm(sel.toString())
-      const isRemove = highlightsRef.current.some(h => norm(h.text) === selNorm)
+      // Use DOM to detect if selection is inside a highlighted mark — more
+      // reliable than text comparison and matches what handleHighlight actually does.
+      const anchor = sel.anchorNode
+      const anchorEl = anchor?.nodeType === Node.TEXT_NODE
+        ? anchor.parentElement
+        : anchor as Element | null
+      const isRemove = !!(anchorEl?.closest?.('mark'))
 
       setBtnIsRemove(isRemove)
       setBtnPos({ x: rect.left + rect.width / 2, y: rect.top })

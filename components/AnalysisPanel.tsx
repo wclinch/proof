@@ -234,7 +234,16 @@ export default function AnalysisPanel() {
       // Either way → remove the whole card. No partial de-highlight.
       const overlaps =
         normStr(h.text) === normText ||
-        (h.spans ?? []).some(s => newSpanTexts.has(normStr(s.text)))
+        (h.spans ?? []).some(existingSpan => {
+          const newSpan = spans.find(s => normStr(s.text) === normStr(existingSpan.text))
+          if (!newSpan) return false
+          // Same span text — check if the highlighted ranges actually overlap
+          const aStart = existingSpan.start ?? 0
+          const aEnd   = existingSpan.end   ?? existingSpan.text.length
+          const bStart = newSpan.start ?? 0
+          const bEnd   = newSpan.end   ?? newSpan.text.length
+          return !(aEnd <= bStart || bEnd <= aStart)
+        })
       if (overlaps) { removedSomething = true; return [] }
       return [h]
     })
