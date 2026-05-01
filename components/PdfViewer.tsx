@@ -4,7 +4,6 @@ import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/TextLayer.css'
 import { getFile } from '@/lib/idb'
 import type { Highlight, SpanEntry } from '@/lib/types'
-import { normStr } from '@/lib/norm'
 
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
@@ -55,6 +54,9 @@ export default function PdfViewer({
 
   // Page jump
   const [currentPage, setCurrentPage] = useState(1)
+
+  // Floating save button
+  const [btnPos, setBtnPos] = useState<{ x: number; y: number } | null>(null)
 
   const containerRef  = useRef<HTMLDivElement>(null)
   const pageRefs      = useRef<(HTMLDivElement | null)[]>([])
@@ -178,116 +180,103 @@ export default function PdfViewer({
     return map
   }, [findResults])
 
-  // ─── Text selection (drag only) ───────────────────────────────────────────────
-  // Only drag-to-select triggers a highlight. Double/triple-click are left to
-  // browser default (word/paragraph selection) — user drags to save a highlight.
-  // A drag is detected by comparing mousedown and mouseup coordinates.
+  // ─── Floating save button ─────────────────────────────────────────────────────
+  // selectionchange fires whenever the browser selection changes — drag, double-
+  // click, triple-click, shift+click, keyboard — we don't care how. If the
+  // selection is non-empty and inside the text layer, show a button above it.
+  // User clicks the button to save. No timing hacks needed.
 
+  const processSelection = useCallback(() => {
+    const sel = window.getSelection()
+    if (!sel || sel.isCollapsed) return
+    const text = sel.toString().trim()
+    if (!text || text.length < 3) { sel.removeAllRanges(); setBtnPos(null); return }
+
+    const anchorInLayer = pageRefs.current.some(ref =>
+      ref?.querySelector('.textLayer')?.contains(sel.anchorNode)
+    )
+    if (!anchorInLayer) { sel.removeAllRanges(); setBtnPos(null); return }
+
+    const range = sel.getRangeAt(0)
+    if (
+      range.startContainer.nodeType !== Node.TEXT_NODE ||
+      range.endContainer.nodeType   !== Node.TEXT_NODE
+    ) { sel.removeAllRanges(); setBtnPos(null); return }
+
+    let page = 1
+    pageRefs.current.forEach((ref, i) => {
+      if (ref?.contains(sel.anchorNode)) page = i + 1
+    })
+
+    const pageRef = pageRefs.current[page - 1]
+    if (!pageRef) { sel.removeAllRanges(); setBtnPos(null); return }
+
+    const allSpans = Array.from(
+      pageRef.querySelectorAll('.textLayer span:not(.markedContent)')
+    ) as HTMLSpanElement[]
+
+    let firstIdx = -1, lastIdx = -1
+    allSpans.forEach((spanEl, si) => {
+      if (firstIdx === -1 && spanEl.contains(range.startContainer)) firstIdx = si
+      if (spanEl.contains(range.endContainer)) lastIdx = si
+    })
+    if (firstIdx === -1 || lastIdx === -1) { sel.removeAllRanges(); setBtnPos(null); return }
+
+    const spans: SpanEntry[] = []
+    for (let si = firstIdx; si <= lastIdx; si++) {
+      const spanEl = allSpans[si]
+      const t = (spanEl.textContent ?? '').trim()
+      if (!t) continue
+      let start: number | undefined, end: number | undefined
+      if (spanEl.contains(range.startContainer)) {
+        const off = charOffsetInSpan(spanEl, range.startContainer, range.startOffset)
+        if (off === -1) { sel.removeAllRanges(); setBtnPos(null); return }
+        if (off > 0) start = off
+      }
+      if (spanEl.contains(range.endContainer)) {
+        const off = charOffsetInSpan(spanEl, range.endContainer, range.endOffset)
+        if (off === -1) { sel.removeAllRanges(); setBtnPos(null); return }
+        if (off < t.length) end = off
+      }
+      spans.push({ text: t, start, end })
+    }
+
+    sel.removeAllRanges()
+    setBtnPos(null)
+    if (spans.length === 0) return
+    onHighlight?.(text, page, spans)
+  }, [onHighlight])
+
+  // Show button whenever there's a valid selection inside the text layer
+  useEffect(() => {
+    function onSelectionChange() {
+      const sel = window.getSelection()
+      if (!sel || sel.isCollapsed || !sel.toString().trim()) { setBtnPos(null); return }
+      const inLayer = pageRefs.current.some(ref =>
+        ref?.querySelector('.textLayer')?.contains(sel.anchorNode)
+      )
+      if (!inLayer) { setBtnPos(null); return }
+      const rect = sel.getRangeAt(0).getBoundingClientRect()
+      if (!rect.width && !rect.height) { setBtnPos(null); return }
+      setBtnPos({ x: rect.left + rect.width / 2, y: rect.top })
+    }
+    document.addEventListener('selectionchange', onSelectionChange)
+    return () => document.removeEventListener('selectionchange', onSelectionChange)
+  }, [])
+
+  // Clear selection when clicking outside the text layer
   useEffect(() => {
     const el = containerRef.current
-    if (!el || !onHighlight) return
-
-    let downX = 0
-    let downY = 0
-    let clickTimer: ReturnType<typeof setTimeout> | null = null
-
-    function handleMouseDown(e: MouseEvent) {
-      downX = e.clientX
-      downY = e.clientY
-      const target = e.target as Node
+    if (!el) return
+    function onMouseDown(e: MouseEvent) {
       const inLayer = pageRefs.current.some(ref =>
-        ref?.querySelector('.textLayer')?.contains(target)
+        ref?.querySelector('.textLayer')?.contains(e.target as Node)
       )
       if (!inLayer) window.getSelection()?.removeAllRanges()
     }
-
-    function processSelection() {
-      const sel = window.getSelection()
-      if (!sel || sel.isCollapsed) return
-      const text = sel.toString().trim()
-      if (!text || text.length < 3) { sel.removeAllRanges(); return }
-
-      const anchorInLayer = pageRefs.current.some(ref =>
-        ref?.querySelector('.textLayer')?.contains(sel.anchorNode)
-      )
-      if (!anchorInLayer) { sel.removeAllRanges(); return }
-
-      const range = sel.getRangeAt(0)
-      if (
-        range.startContainer.nodeType !== Node.TEXT_NODE ||
-        range.endContainer.nodeType   !== Node.TEXT_NODE
-      ) { sel.removeAllRanges(); return }
-
-      let page = 1
-      pageRefs.current.forEach((ref, i) => {
-        if (ref?.contains(sel.anchorNode)) page = i + 1
-      })
-
-      const pageRef = pageRefs.current[page - 1]
-      if (!pageRef) { sel.removeAllRanges(); return }
-
-      const allSpans = Array.from(
-        pageRef.querySelectorAll('.textLayer span:not(.markedContent)')
-      ) as HTMLSpanElement[]
-
-      let firstIdx = -1, lastIdx = -1
-      allSpans.forEach((spanEl, si) => {
-        if (firstIdx === -1 && spanEl.contains(range.startContainer)) firstIdx = si
-        if (spanEl.contains(range.endContainer)) lastIdx = si
-      })
-      if (firstIdx === -1 || lastIdx === -1) { sel.removeAllRanges(); return }
-
-      const spans: SpanEntry[] = []
-      for (let si = firstIdx; si <= lastIdx; si++) {
-        const spanEl = allSpans[si]
-        const t = (spanEl.textContent ?? '').trim()
-        if (!t) continue
-        let start: number | undefined, end: number | undefined
-        if (spanEl.contains(range.startContainer)) {
-          const off = charOffsetInSpan(spanEl, range.startContainer, range.startOffset)
-          if (off === -1) { sel.removeAllRanges(); return }
-          if (off > 0) start = off
-        }
-        if (spanEl.contains(range.endContainer)) {
-          const off = charOffsetInSpan(spanEl, range.endContainer, range.endOffset)
-          if (off === -1) { sel.removeAllRanges(); return }
-          if (off < t.length) end = off
-        }
-        spans.push({ text: t, start, end })
-      }
-
-      sel.removeAllRanges()
-      if (spans.length === 0) return
-      onHighlight?.(text, page, spans)
-    }
-
-    function handleMouseUp(e: MouseEvent) {
-      if (e.shiftKey) { processSelection(); return }
-      const dx = e.clientX - downX
-      const dy = e.clientY - downY
-      if (Math.sqrt(dx * dx + dy * dy) < 6) return // click — handled by handleClick
-      processSelection()
-    }
-
-    // detail=2 (word): wait 300ms in case triple-click follows and cancels.
-    // detail≥3 (paragraph): cancel pending double-click timer, fire in 10ms.
-    function handleClick(e: MouseEvent) {
-      if (e.detail < 2) return
-      if (clickTimer) clearTimeout(clickTimer)
-      const delay = e.detail >= 3 ? 10 : 300
-      clickTimer = setTimeout(processSelection, delay)
-    }
-
-    el.addEventListener('mousedown', handleMouseDown)
-    el.addEventListener('mouseup',   handleMouseUp)
-    el.addEventListener('click',     handleClick)
-    return () => {
-      el.removeEventListener('mousedown', handleMouseDown)
-      el.removeEventListener('mouseup',   handleMouseUp)
-      el.removeEventListener('click',     handleClick)
-      if (clickTimer) clearTimeout(clickTimer)
-    }
-  }, [onHighlight])
+    el.addEventListener('mousedown', onMouseDown)
+    return () => el.removeEventListener('mousedown', onMouseDown)
+  }, [])
 
   // ─── Span map for highlights ──────────────────────────────────────────────────
 
@@ -361,6 +350,36 @@ export default function PdfViewer({
 
   return (
     <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+      {/* Floating highlight button — appears above any text selection in the PDF */}
+      {btnPos && onHighlight && (
+        <button
+          onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+          onClick={processSelection}
+          style={{
+            position: 'fixed',
+            left: btnPos.x,
+            top: btnPos.y - 10,
+            transform: 'translate(-50%, -100%)',
+            zIndex: 1000,
+            background: '#1c1c1c',
+            border: '1px solid #333',
+            borderRadius: '4px',
+            padding: '5px 14px',
+            fontSize: '11px',
+            color: '#ccc',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            outline: 'none',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          highlight →
+        </button>
+      )}
 
       {/* Toolbar */}
       {file && !missing && nPages > 0 && (
