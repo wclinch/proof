@@ -235,10 +235,7 @@ export default function PdfViewer({
 
       const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
       const selNorm = norm(sel.toString().trim())
-      const isRemove = highlightsRef.current.some(h => {
-        const hlNorm = norm(h.text)
-        return hlNorm === selNorm || hlNorm.includes(selNorm) || selNorm.includes(hlNorm)
-      })
+      const isRemove = highlightsRef.current.some(h => norm(h.text) === selNorm)
 
       setBtnIsRemove(isRemove)
       setBtnPos({ x: rect.left + rect.width / 2, y: rect.top })

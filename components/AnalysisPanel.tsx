@@ -224,8 +224,7 @@ export default function AnalysisPanel() {
     let removedSomething = false
     const updated = current.flatMap(h => {
       if (h.page !== page) return [h]
-      const hlNorm = norm(h.text)
-      const overlaps = hlNorm === normText || hlNorm.includes(normText) || normText.includes(hlNorm)
+      const overlaps = norm(h.text) === normText
       if (overlaps) { removedSomething = true; return [] }
       return [h]
     })
