@@ -235,6 +235,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     updateProject(activeId, { sources: [...sources, ...newSources] })
     setSelectedId(newSources[0].id)
+    setSelectedIds(new Set([newSources[0].id]))
+    setAnchorId(newSources[0].id)
 
     const projId = activeId
     for (let i = 0; i < list.length; i++) {
