@@ -1,4 +1,5 @@
 import Nav from '@/components/Nav'
+import BackButton from '@/components/BackButton'
 
 export default function Privacy() {
   return (
@@ -57,7 +58,7 @@ export default function Privacy() {
         </div>
 
         <div style={{ padding: '20px 0', textAlign: 'right' }}>
-          <a href="/app" className="nav-link">← Back</a>
+          <BackButton />
         </div>
 
       </main>

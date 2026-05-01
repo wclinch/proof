@@ -1,4 +1,5 @@
 import Nav from '@/components/Nav'
+import BackButton from '@/components/BackButton'
 
 const mono: React.CSSProperties = {
   fontFamily: 'inherit',
@@ -106,7 +107,7 @@ export default function About() {
         </div>
 
         <div style={{ padding: '20px 0', textAlign: 'right' }}>
-          <a href="/app" className="nav-link">← Back</a>
+          <BackButton />
         </div>
 
       </main>
