@@ -178,12 +178,16 @@ function HighlightsPanel({
       </div>
 
       {highlights.length === 0 ? (
-        <div style={{
-          padding: '8px 12px',
-          fontSize: '10px', color: '#333', letterSpacing: '0.06em',
-          textTransform: 'uppercase', lineHeight: 1.6,
-        }}>
-          Select text in the PDF to collect highlights.
+        <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {[
+            'Select text in the PDF — a save button appears above your selection.',
+            'Shift+click to extend a selection without dragging.',
+            'Drag any highlight into the Synthesis panel on the right.',
+          ].map((tip, i) => (
+            <p key={i} style={{ margin: 0, fontSize: '11px', color: '#333', lineHeight: 1.6 }}>
+              {tip}
+            </p>
+          ))}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', padding: '0 0 16px' }}>

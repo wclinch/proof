@@ -400,6 +400,7 @@ export default function PdfViewer({
           {/* Find toggle */}
           <button
             onClick={() => { setShowFind(v => !v); setTimeout(() => findInputRef.current?.focus(), 30) }}
+            title="Search in PDF (Cmd+F)"
             style={{
               background: showFind ? '#1a1a1a' : 'none', border: 'none', padding: '3px 8px',
               borderRadius: '3px', cursor: 'pointer', fontSize: '10px', color: showFind ? '#aaa' : '#555',
@@ -420,6 +421,7 @@ export default function PdfViewer({
             <input
               key={currentPage}
               defaultValue={currentPage}
+              title="Jump to page"
               onFocus={e => e.target.select()}
               onBlur={e => commitPageJump(e.target.value)}
               onKeyDown={e => {

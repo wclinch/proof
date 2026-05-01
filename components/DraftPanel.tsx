@@ -178,7 +178,7 @@ export default function DraftPanel({ width }: { width: number }) {
 
       {/* Body */}
       {!hasDraft ? (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '0 28px' }}>
           <button
             onClick={handleNewDraft}
             style={{
@@ -192,9 +192,14 @@ export default function DraftPanel({ width }: { width: number }) {
           >
             New
           </button>
-          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            NOTHING HERE YET · {typeof navigator !== 'undefined' && /mac/i.test(navigator.platform) ? '⌘↵' : 'CTRL+↵'}
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'center' }}>
+            <span style={{ fontSize: '11px', color: '#333', lineHeight: 1.6 }}>
+              Or drag any highlight here to start.
+            </span>
+            <span style={{ fontSize: '11px', color: '#2a2a2a', lineHeight: 1.6 }}>
+              Export as .txt or .md when done.
+            </span>
+          </div>
         </div>
       ) : (
         <>
