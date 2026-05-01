@@ -178,27 +178,40 @@ export default function DraftPanel({ width }: { width: number }) {
 
       {/* Body */}
       {!hasDraft ? (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '0 28px' }}>
-          <button
-            onClick={handleNewDraft}
-            style={{
-              background: '#0f0f0f', border: '1px solid #1a1a1a', borderRadius: '4px',
-              padding: '9px 20px', cursor: 'pointer', fontSize: '12px', color: '#555',
-              letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'inherit',
-              outline: 'none', transition: 'border-color 0.15s, color 0.15s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#555' }}
-          >
-            New
-          </button>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'center' }}>
-            <span style={{ fontSize: '11px', color: '#333', lineHeight: 1.6 }}>
-              Or drag any highlight here to start.
-            </span>
-            <span style={{ fontSize: '11px', color: '#2a2a2a', lineHeight: 1.6 }}>
-              Export as .txt or .md when done.
-            </span>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 32px' }}>
+          <div style={{ maxWidth: '280px', width: '100%', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                Synthesis
+              </span>
+              <span style={{ fontSize: '12px', color: '#333', lineHeight: 1.7, marginTop: '6px' }}>
+                Write from your research. Your highlights stay visible while you work.
+              </span>
+            </div>
+            {[
+              'Drag any highlight from the left directly into this panel.',
+              'Or click New to start a blank note.',
+              'Export as .txt or .md when done.',
+            ].map((tip, i) => (
+              <div key={i} style={{ display: 'flex', gap: '12px' }}>
+                <span style={{ fontSize: '11px', color: '#2a2a2a', flexShrink: 0, marginTop: '2px' }}>{i + 1}.</span>
+                <span style={{ fontSize: '12px', color: '#333', lineHeight: 1.7 }}>{tip}</span>
+              </div>
+            ))}
+            <button
+              onClick={handleNewDraft}
+              style={{
+                alignSelf: 'flex-start',
+                background: 'none', border: '1px solid #1a1a1a', borderRadius: '4px',
+                padding: '7px 18px', cursor: 'pointer', fontSize: '11px', color: '#444',
+                letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'inherit',
+                outline: 'none', transition: 'border-color 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
+            >
+              New →
+            </button>
           </div>
         </div>
       ) : (
