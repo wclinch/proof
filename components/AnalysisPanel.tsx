@@ -29,6 +29,7 @@ function HighlightCard({
 }) {
   const [hov,        setHov]        = useState(false)
   const [expanded,   setExpanded]   = useState(false)
+  const [dragging,   setDragging]   = useState(false)
   const [menu,       setMenu]       = useState<{ x: number; y: number } | null>(null)
   const [confirming, setConfirming] = useState(false)
   const isLong = highlight.text.length > 160
@@ -64,16 +65,24 @@ function HighlightCard({
   return (
     <>
       <div
+        draggable
+        onDragStart={e => {
+          setDragging(true)
+          e.dataTransfer.effectAllowed = 'copy'
+          e.dataTransfer.setData('application/x-proof-highlight', `"${highlight.text}" — p. ${highlight.page}`)
+        }}
+        onDragEnd={() => setDragging(false)}
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
         onContextMenu={handleContextMenu}
         style={{
           padding: '10px 12px',
           background: hov ? '#111' : 'transparent',
-          transition: 'background 0.1s',
+          transition: 'background 0.1s, opacity 0.1s',
           display: 'flex', flexDirection: 'column', gap: '8px',
           borderBottom: '1px solid #0f0f0f',
-          cursor: 'default',
+          cursor: 'grab',
+          opacity: dragging ? 0.4 : 1,
         }}
       >
         <p

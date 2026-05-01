@@ -11,7 +11,9 @@ export default function DraftPanel({ width }: { width: number }) {
   const [localDraft, setLocalDraft] = useState(activeProject?.draft ?? '')
   const [ctxMenu, setCtxMenu]       = useState<CtxMenu | null>(null)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const [dropTarget, setDropTarget] = useState(false)
   const draftTitleRef = useRef<HTMLInputElement>(null)
+  const textareaRef   = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     setLocalTitle(activeProject?.draftTitle ?? '')
@@ -70,6 +72,43 @@ export default function DraftPanel({ width }: { width: number }) {
     URL.revokeObjectURL(a.href)
   }
 
+  function handleHighlightDragOver(e: React.DragEvent) {
+    if (!e.dataTransfer.types.includes('application/x-proof-highlight')) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+    setDropTarget(true)
+  }
+
+  function handleHighlightDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setDropTarget(false)
+    const text = e.dataTransfer.getData('application/x-proof-highlight')
+    if (!text) return
+
+    if (!activeId) return
+
+    // Auto-create draft if it doesn't exist
+    if (!hasDraft) {
+      updateProject(activeId, { draftCreated: true, draft: text })
+      setLocalDraft(text)
+      return
+    }
+
+    const el = textareaRef.current
+    const pos = el ? (el.selectionStart ?? localDraft.length) : localDraft.length
+    const before = localDraft.slice(0, pos)
+    const after  = localDraft.slice(pos)
+    const pad    = before && !before.endsWith('\n') ? '\n' : ''
+    const insert = pad + text
+    const next   = before + insert + after
+    setLocalDraft(next)
+    requestAnimationFrame(() => {
+      if (!el) return
+      el.focus()
+      el.selectionStart = el.selectionEnd = pos + insert.length
+    })
+  }
+
   function handleTab(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key !== 'Tab') return
     e.preventDefault()
@@ -98,15 +137,23 @@ export default function DraftPanel({ width }: { width: number }) {
   }
 
   return (
-    <div style={{ width, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div
+      style={{ width, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+      onDragOver={handleHighlightDragOver}
+      onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropTarget(false) }}
+      onDrop={handleHighlightDrop}
+    >
       {/* Header */}
       <div style={{
         padding: '0 20px', height: '40px', flexShrink: 0,
         borderBottom: '1px solid #1a1a1a',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         fontSize: '12px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase',
+        background: dropTarget ? '#0f0f0f' : 'transparent', transition: 'background 0.15s',
       }}>
-        <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Synthesis</span>
+        <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {dropTarget ? 'drop to insert →' : 'Synthesis'}
+        </span>
         {hasDraft && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0, marginLeft: '8px' }}>
             <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
@@ -169,6 +216,7 @@ export default function DraftPanel({ width }: { width: number }) {
 
           {/* Textarea */}
           <textarea
+            ref={textareaRef}
             className="draft-body"
             value={localDraft}
             onChange={e => setLocalDraft(e.target.value)}
