@@ -222,16 +222,13 @@ export default function PdfViewer({
       pageRef.querySelectorAll('.textLayer span:not(.markedContent)')
     ) as HTMLSpanElement[]
 
-    let firstIdx = -1, lastIdx = -1
-    allSpans.forEach((spanEl, si) => {
-      if (spanEl.contains(range.startContainer)) firstIdx = si  // always update → innermost span wins
-      if (spanEl.contains(range.endContainer)) lastIdx = si
-    })
-    if (firstIdx === -1 || lastIdx === -1) { sel.removeAllRanges(); setBtnPos(null); return }
+    // intersectsNode directly tests each span against the selection —
+    // no firstIdx/lastIdx iteration that can include out-of-range spans.
+    const selectedSpans = allSpans.filter(s => s.textContent?.trim() && range.intersectsNode(s))
+    if (selectedSpans.length === 0) { sel.removeAllRanges(); setBtnPos(null); return }
 
     const spans: SpanEntry[] = []
-    for (let si = firstIdx; si <= lastIdx; si++) {
-      const spanEl = allSpans[si]
+    for (const spanEl of selectedSpans) {
       const t = (spanEl.textContent ?? '').trim()
       if (!t) continue
       let start: number | undefined, end: number | undefined
@@ -305,11 +302,22 @@ export default function PdfViewer({
     if (!el) return
     function onTripleMouseDown(e: MouseEvent) {
       if (e.detail < 3) return
+
+      // caretRangeFromPoint gives the exact text node at mouse coordinates —
+      // e.target can be a .markedContent span (filtered out) causing clickedIdx=-1.
+      const caretRange = document.caretRangeFromPoint?.(e.clientX, e.clientY) ?? (() => {
+        const pos = (document as any).caretPositionFromPoint?.(e.clientX, e.clientY)
+        if (!pos) return null
+        const r = document.createRange(); r.setStart(pos.offsetNode, pos.offset); return r
+      })()
+      if (!caretRange) return
+
       let pageRef: HTMLDivElement | null = null
-      pageRefs.current.forEach(ref => { if (ref?.contains(e.target as Node)) pageRef = ref })
+      pageRefs.current.forEach(ref => { if (ref?.contains(caretRange.startContainer)) pageRef = ref })
       if (!pageRef) return
 
-      // Sort spans by vertical position so gap detection is reliable
+      e.preventDefault()
+
       const allSpans = Array.from(
         (pageRef as HTMLDivElement).querySelectorAll('.textLayer span:not(.markedContent)')
       ) as HTMLSpanElement[]
@@ -318,10 +326,8 @@ export default function PdfViewer({
         .filter(s => s.rect.height > 0)
         .sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)
 
-      const clickedIdx = sorted.findIndex(s => s.el.contains(e.target as Node))
+      const clickedIdx = sorted.findIndex(s => s.el.contains(caretRange.startContainer))
       if (clickedIdx === -1) return
-
-      e.preventDefault() // stop browser from setting its own selection
 
       const lineH = sorted[clickedIdx].rect.height
       const gap   = lineH * 1.2 // gap larger than a line height = paragraph break
