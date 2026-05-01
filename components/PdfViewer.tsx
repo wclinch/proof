@@ -291,6 +291,54 @@ export default function PdfViewer({
     return () => el.removeEventListener('mousedown', onMouseDown)
   }, [])
 
+  // Triple-click: extend selection to full paragraph.
+  // PDF text layers have one span per line so the browser only selects
+  // one line on triple-click. We detect paragraph boundaries by the
+  // vertical gap between consecutive spans and expand accordingly.
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    function onTripleClick(e: MouseEvent) {
+      if (e.detail < 3) return
+      let pageRef: HTMLDivElement | null = null
+      pageRefs.current.forEach(ref => { if (ref?.contains(e.target as Node)) pageRef = ref })
+      if (!pageRef) return
+
+      const allSpans = Array.from(
+        (pageRef as HTMLDivElement).querySelectorAll('.textLayer span:not(.markedContent)')
+      ) as HTMLSpanElement[]
+
+      const clickedIdx = allSpans.findIndex(s => s.contains(e.target as Node))
+      if (clickedIdx === -1) return
+
+      const lineH = allSpans[clickedIdx].getBoundingClientRect().height
+      const gap   = lineH * 0.8
+
+      let startIdx = clickedIdx
+      while (startIdx > 0) {
+        const prev = allSpans[startIdx - 1].getBoundingClientRect()
+        const curr = allSpans[startIdx].getBoundingClientRect()
+        if (curr.top - prev.bottom > gap) break
+        startIdx--
+      }
+      let endIdx = clickedIdx
+      while (endIdx < allSpans.length - 1) {
+        const curr = allSpans[endIdx].getBoundingClientRect()
+        const next = allSpans[endIdx + 1].getBoundingClientRect()
+        if (next.top - curr.bottom > gap) break
+        endIdx++
+      }
+
+      const range = document.createRange()
+      range.setStart(allSpans[startIdx], 0)
+      range.setEnd(allSpans[endIdx], allSpans[endIdx].childNodes.length)
+      const sel = window.getSelection()
+      if (sel) { sel.removeAllRanges(); sel.addRange(range) }
+    }
+    el.addEventListener('click', onTripleClick)
+    return () => el.removeEventListener('click', onTripleClick)
+  }, [])
+
   // ─── Span map for highlights ──────────────────────────────────────────────────
 
   const spanMaps = useMemo(() => {
