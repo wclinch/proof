@@ -8,6 +8,24 @@ import type { Highlight, HighlightRect } from '@/lib/types'
 
 const PdfViewer = dynamic(() => import('./PdfViewer'), { ssr: false })
 
+// ─── Resize handle ───────────────────────────────────────────────────────────
+
+function ResizeHandle({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) => void }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: '4px', flexShrink: 0, cursor: 'col-resize', zIndex: 10,
+        background: hovered ? '#2e2e2e' : '#1a1a1a',
+        transition: 'background 0.15s',
+      }}
+    />
+  )
+}
+
 // ─── Highlight card ───────────────────────────────────────────────────────────
 
 const MENU_BTN: React.CSSProperties = {
@@ -30,7 +48,9 @@ function HighlightCard({
   const [dragging,   setDragging]   = useState(false)
   const [menu,       setMenu]       = useState<{ x: number; y: number } | null>(null)
   const [confirming, setConfirming] = useState(false)
+  const [expanded,   setExpanded]   = useState(false)
   const PREVIEW = 120
+  const isLong = highlight.text.length > PREVIEW
 
   useEffect(() => {
     if (!menu) return
@@ -41,7 +61,6 @@ function HighlightCard({
 
   function handleContextMenu(e: React.MouseEvent) {
     e.preventDefault()
-    // BUG FIX: clamp menu position to viewport so it never appears off-screen
     const MENU_W = 140, MENU_H = 40
     setMenu({
       x: Math.min(e.clientX, window.innerWidth  - MENU_W - 4),
@@ -68,7 +87,6 @@ function HighlightCard({
           setDragging(true)
           e.dataTransfer.effectAllowed = 'copy'
           e.dataTransfer.setData('application/x-proof-highlight', `"${highlight.text}" — p. ${highlight.page}`)
-          // Custom drag ghost: just the text, not the whole card
           const ghost = document.createElement('div')
           ghost.textContent = highlight.text.length > 80 ? highlight.text.slice(0, 80) + '…' : highlight.text
           ghost.style.cssText = 'position:fixed;top:-999px;left:0;background:#1a1a1a;color:#aaa;padding:6px 10px;border-radius:3px;font-size:11px;font-family:inherit;max-width:220px;line-height:1.5;border:1px solid #333;'
@@ -100,13 +118,25 @@ function HighlightCard({
             drag →
           </span>
         )}
-        <p style={{
-          margin: 0, fontSize: '11px', color: hov ? '#aaa' : '#666',
-          lineHeight: 1.6, transition: 'color 0.1s', cursor: 'default',
-          paddingRight: hov ? '40px' : '0',
-        }}>
-          {highlight.text.length > PREVIEW ? highlight.text.slice(0, PREVIEW) + '…' : highlight.text}
+        <p
+          onClick={() => isLong && setExpanded(v => !v)}
+          style={{
+            margin: 0, fontSize: '11px', color: hov ? '#aaa' : '#666',
+            lineHeight: 1.6, transition: 'color 0.1s',
+            paddingRight: hov ? '40px' : '0',
+            cursor: isLong ? 'pointer' : 'default',
+          }}
+        >
+          {expanded ? highlight.text : (isLong ? highlight.text.slice(0, PREVIEW) + '…' : highlight.text)}
         </p>
+        {isLong && (
+          <span
+            onClick={() => setExpanded(v => !v)}
+            style={{ fontSize: '9px', color: '#333', letterSpacing: '0.06em', cursor: 'pointer', userSelect: 'none' }}
+          >
+            {expanded ? 'collapse ↑' : 'expand ↓'}
+          </span>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '10px', color: '#333', letterSpacing: '0.06em' }}>p. {highlight.page}</span>
           <button
@@ -153,14 +183,16 @@ function HighlightsPanel({
   highlights,
   onJump,
   onDelete,
+  width,
 }: {
   highlights: Highlight[]
   onJump: (h: Highlight) => void
   onDelete: (id: string) => void
+  width: number
 }) {
   return (
     <div style={{
-      width: '240px', flexShrink: 0,
+      width: `${width}px`, flexShrink: 0,
       display: 'flex', flexDirection: 'column',
       overflowY: 'auto', overflowX: 'hidden',
     }}>
@@ -201,6 +233,9 @@ function HighlightsPanel({
 
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
+const MIN_CLIPS = 160
+const MAX_CLIPS = 500
+
 export default function AnalysisPanel() {
   const {
     selectedSource, activeId,
@@ -209,6 +244,40 @@ export default function AnalysisPanel() {
 
   const highlights: Highlight[] = selectedSource?.highlights ?? []
   const [jumpTo, setJumpTo] = useState<{ page: number; ts: number } | null>(null)
+
+  const [clipsWidth, setClipsWidth] = useState(() => {
+    if (typeof window === 'undefined') return 240
+    const saved = parseInt(localStorage.getItem('proof-ui-clips-width') || '0', 10)
+    return saved > 0 ? Math.max(MIN_CLIPS, Math.min(MAX_CLIPS, saved)) : 240
+  })
+  const clipsWidthRef = useRef(clipsWidth)
+
+  function startClipsDrag(e: React.MouseEvent) {
+    e.preventDefault()
+    const startX = e.clientX
+    const startW = clipsWidthRef.current
+
+    function onMove(ev: MouseEvent) {
+      if (ev.buttons === 0) { onUp(); return }
+      const delta = ev.clientX - startX
+      const w = Math.max(MIN_CLIPS, Math.min(MAX_CLIPS, startW + delta))
+      clipsWidthRef.current = w
+      setClipsWidth(w)
+      localStorage.setItem('proof-ui-clips-width', String(w))
+    }
+
+    function onUp() {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
+    }
+
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'col-resize'
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
 
   const handleHighlight = useCallback((text: string, page: number, rects: HighlightRect[]) => {
     if (!selectedSource || !activeId) return
@@ -243,8 +312,6 @@ export default function AnalysisPanel() {
 
   const jumpSeqRef = useRef(0)
   const handleJump = useCallback((h: Highlight) => {
-    // BUG FIX: use a monotonic counter instead of Date.now() so jumping to
-    // the same page twice in quick succession always triggers the scroll effect.
     setJumpTo({ page: h.page, ts: ++jumpSeqRef.current })
   }, [])
 
@@ -253,15 +320,16 @@ export default function AnalysisPanel() {
   return (
     <div style={{ flex: 1, minWidth: 40, display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
 
-      {/* Left: highlights collector — only when a source is loaded */}
+      {/* Left: clips collector — only when a source is loaded */}
       {isDone && (
         <>
           <HighlightsPanel
             highlights={highlights}
             onJump={handleJump}
             onDelete={handleDelete}
+            width={clipsWidth}
           />
-          <div style={{ width: '1px', flexShrink: 0, background: '#1a1a1a' }} />
+          <ResizeHandle onMouseDown={startClipsDrag} />
         </>
       )}
 

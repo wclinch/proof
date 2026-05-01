@@ -151,22 +151,39 @@ export default function PdfViewer({
 
   const customTextRenderer = useCallback(
     ({ str, pageIndex }: { str: string; pageIndex: number }) => {
-      if (!findTerm.trim()) return str
-      const findSpans = findMatchMap.get(pageIndex + 1)
-      if (!findSpans?.has(str)) return str
-      const term = findTerm.toLowerCase()
-      const lower = str.toLowerCase()
-      let result = '', i = 0
-      while (i < str.length) {
-        const idx = lower.indexOf(term, i)
-        if (idx === -1) { result += esc(str.slice(i)); break }
-        result += esc(str.slice(i, idx))
-        result += `<mark ${FIND_MARK}>${esc(str.slice(idx, idx + term.length))}</mark>`
-        i = idx + term.length
+      const page = pageIndex + 1
+      const trimmed = str.trim()
+
+      const findSpans = findTerm.trim() ? findMatchMap.get(page) : null
+      const isFind = findSpans?.has(str) ?? false
+      // Subtle gold tint on spans that belong to a saved clip
+      const isClipped = trimmed.length >= 5 &&
+        highlights.some(h => h.page === page && h.text.toLowerCase().includes(trimmed.toLowerCase()))
+
+      if (!isClipped && !isFind) return str
+
+      let inner: string
+      if (isFind) {
+        const term = findTerm.toLowerCase()
+        const lower = str.toLowerCase()
+        let acc = '', i = 0
+        while (i < str.length) {
+          const idx = lower.indexOf(term, i)
+          if (idx === -1) { acc += esc(str.slice(i)); break }
+          acc += esc(str.slice(i, idx))
+          acc += `<mark ${FIND_MARK}>${esc(str.slice(idx, idx + term.length))}</mark>`
+          i = idx + term.length
+        }
+        inner = acc
+      } else {
+        inner = esc(str)
       }
-      return result
+
+      return isClipped
+        ? `<span style="background:rgba(200,160,0,0.18);border-radius:1px;">${inner}</span>`
+        : inner
     },
-    [findMatchMap, findTerm]
+    [findMatchMap, findTerm, highlights]
   )
 
   // ─── Click-to-paragraph ───────────────────────────────────────────────────────
@@ -203,32 +220,29 @@ export default function PdfViewer({
       })
       if (!pageRef) return
 
-      // Get all spans sorted by reading order
+      // Get all spans sorted by reading order, filtering page numbers and junk
       const allSpans = Array.from(
         (pageRef as HTMLDivElement).querySelectorAll('.textLayer span:not(.markedContent)')
       ) as HTMLSpanElement[]
       const sorted = allSpans
         .map(s => ({ el: s, rect: s.getBoundingClientRect() }))
-        .filter(s => s.rect.height > 0 && s.el.textContent?.trim())
+        .filter(s => {
+          const t = s.el.textContent?.trim() ?? ''
+          if (!t || s.rect.height === 0) return false
+          // Skip isolated page numbers (purely numeric, ≤ 3 chars)
+          if (/^\d+$/.test(t) && t.length <= 3) return false
+          return true
+        })
         .sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)
 
       const clickedIdx = sorted.findIndex(s => s.el.contains(caretRange.startContainer))
       if (clickedIdx === -1) return
 
-      // Paragraph detection: find the minimum top-to-top spacing among nearby
-      // spans — that's the within-paragraph line spacing. Break when spacing
-      // jumps > 1.5× that minimum. Cap at 10 spans so we never grab a whole page.
-      const MAX_SPANS = 10
-
-      const nearbySpacings: number[] = []
-      for (let i = Math.max(1, clickedIdx - 8); i <= Math.min(sorted.length - 1, clickedIdx + 8); i++) {
-        const d = sorted[i].rect.top - sorted[i - 1].rect.top
-        if (d > 2 && d < 150) nearbySpacings.push(d)
-      }
-      const minSpacing = nearbySpacings.length > 0
-        ? Math.min(...nearbySpacings)
-        : sorted[clickedIdx].rect.height * 1.5
-      const threshold = minSpacing * 1.5
+      // Paragraph detection: use the clicked span's height as the line-height
+      // baseline. Break when the gap to the next span exceeds 1.8× that height.
+      // Hard-cap at 8 spans so we never grab a whole column.
+      const MAX_SPANS = 8
+      const threshold = sorted[clickedIdx].rect.height * 1.8
 
       let startIdx = clickedIdx
       while (startIdx > 0 && clickedIdx - startIdx < MAX_SPANS) {
@@ -316,7 +330,7 @@ export default function PdfViewer({
                 <div ref={pi === 0 ? attachSlot : undefined}>
                   {pW > 0 && <Page pageNumber={pi + 1} width={pW} renderTextLayer renderAnnotationLayer={false} customTextRenderer={customTextRenderer} />}
                 </div>
-                {/* Thin left bar shows which paragraphs are clipped */}
+                {/* Left margin bar marks which paragraphs are clipped */}
                 {highlights.filter(h => h.page === pi + 1).map(h => {
                   const rs = h.rects ?? []
                   if (!rs.length) return null
@@ -325,12 +339,13 @@ export default function PdfViewer({
                   return (
                     <div key={h.id} style={{
                       position: 'absolute',
-                      left: '4px',
+                      left: '5px',
                       top:    `${top    * 100}%`,
-                      height: `${(bottom - top) * 100}%`,
-                      width: '2px',
-                      background: 'rgba(255,200,0,0.7)',
-                      borderRadius: '1px',
+                      bottom: `${(1 - bottom) * 100}%`,
+                      minHeight: '6px',
+                      width: '3px',
+                      background: 'rgba(220,170,0,0.9)',
+                      borderRadius: '2px',
                       pointerEvents: 'none',
                     }} />
                   )
