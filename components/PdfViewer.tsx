@@ -56,7 +56,10 @@ export default function PdfViewer({
   const [currentPage, setCurrentPage] = useState(1)
 
   // Floating save button
-  const [btnPos, setBtnPos] = useState<{ x: number; y: number } | null>(null)
+  const [btnPos,      setBtnPos]      = useState<{ x: number; y: number } | null>(null)
+  const [btnIsRemove, setBtnIsRemove] = useState(false)
+  const highlightsRef = useRef(highlights)
+  useEffect(() => { highlightsRef.current = highlights }, [highlights])
 
   const containerRef  = useRef<HTMLDivElement>(null)
   const pageRefs      = useRef<(HTMLDivElement | null)[]>([])
@@ -258,6 +261,12 @@ export default function PdfViewer({
       if (!inLayer) { setBtnPos(null); return }
       const rect = sel.getRangeAt(0).getBoundingClientRect()
       if (!rect.width && !rect.height) { setBtnPos(null); return }
+
+      const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
+      const selNorm = norm(sel.toString())
+      const isRemove = highlightsRef.current.some(h => norm(h.text) === selNorm)
+
+      setBtnIsRemove(isRemove)
       setBtnPos({ x: rect.left + rect.width / 2, y: rect.top })
     }
     document.addEventListener('selectionchange', onSelectionChange)
@@ -377,7 +386,7 @@ export default function PdfViewer({
             whiteSpace: 'nowrap',
           }}
         >
-          highlight →
+          {btnIsRemove ? 'remove →' : 'highlight →'}
         </button>
       )}
 
