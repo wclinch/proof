@@ -15,7 +15,6 @@ export function newProject(n: number): Project {
     sources: [],
     draft: '',
     draftTitle: '',
-    draftCreated: false,
   }
 }
 

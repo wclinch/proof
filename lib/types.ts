@@ -29,5 +29,4 @@ export interface Project {
   sources: QueuedSource[]
   draft: string
   draftTitle: string
-  draftCreated: boolean
 }
