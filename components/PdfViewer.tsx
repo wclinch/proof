@@ -205,37 +205,49 @@ export default function PdfViewer({
       pageRef.querySelectorAll('.textLayer span:not(.markedContent)')
     ) as HTMLSpanElement[]
 
-    // Build normalized page text and a position map back to each span.
-    // Using text search instead of DOM Range APIs — range.startContainer /
-    // endContainer are unreliable in absolutely-positioned PDF text layers.
-    const norm = (s: string) => s.replace(/\s+/g, ' ').toLowerCase().trim()
-    const spanData: { rawText: string; normText: string; normPos: number }[] = []
-    let normPage = ''
+    // Strip ALL whitespace before matching — sel.toString() has no spaces at
+    // PDF span boundaries (absolutely-positioned spans have no text nodes
+    // between them), so any separator we add would break indexOf.
+    const ws = (s: string) => s.replace(/\s+/g, '').toLowerCase()
+
+    // Map a no-whitespace index back to its position in the raw string
+    function noWStoRaw(raw: string, noWSIdx: number): number {
+      let cnt = 0
+      for (let i = 0; i < raw.length; i++) {
+        if (cnt === noWSIdx) return i
+        if (!/\s/.test(raw[i])) cnt++
+      }
+      return raw.length
+    }
+
+    const spanData: { rawText: string; noWSText: string; noWSPos: number }[] = []
+    let noWSPage = ''
     for (const span of allSpans) {
       const raw = span.textContent?.trim() ?? ''
       if (!raw) continue
-      const n = norm(raw)
-      spanData.push({ rawText: raw, normText: n, normPos: normPage.length })
-      normPage += n + ' '
+      const n = ws(raw)
+      if (!n) continue
+      spanData.push({ rawText: raw, noWSText: n, noWSPos: noWSPage.length })
+      noWSPage += n
     }
 
-    const normSel = norm(text)
-    const matchPos = normPage.indexOf(normSel)
+    const noWSSel = ws(text)
+    const matchPos = noWSPage.indexOf(noWSSel)
     if (matchPos === -1) { sel.removeAllRanges(); setBtnPos(null); return }
-    const matchEnd = matchPos + normSel.length
+    const matchEnd = matchPos + noWSSel.length
 
     const spans: SpanEntry[] = []
-    for (const { rawText, normText, normPos } of spanData) {
-      const spanEnd = normPos + normText.length
-      const oStart = Math.max(matchPos, normPos)
-      const oEnd   = Math.min(matchEnd, spanEnd)
+    for (const { rawText, noWSText, noWSPos } of spanData) {
+      const spanEnd = noWSPos + noWSText.length
+      const oStart  = Math.max(matchPos, noWSPos)
+      const oEnd    = Math.min(matchEnd, spanEnd)
       if (oStart >= oEnd) continue
-      const startOff = oStart - normPos
-      const endOff   = oEnd - normPos
+      const startRaw = noWStoRaw(rawText, oStart - noWSPos)
+      const endRaw   = noWStoRaw(rawText, oEnd - noWSPos)
       spans.push({
         text:  rawText,
-        start: startOff > 0             ? startOff : undefined,
-        end:   endOff   < rawText.length ? endOff   : undefined,
+        start: startRaw > 0              ? startRaw : undefined,
+        end:   endRaw   < rawText.length ? endRaw   : undefined,
       })
     }
 
