@@ -94,13 +94,6 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
     setEditing(false)
   }
 
-  function handleNameClick(e: React.MouseEvent) {
-    if (!isPrimary) return // first click selects via row handler — let it bubble
-    e.stopPropagation()
-    setLabelInput(displayName ?? '')
-    setEditing(true)
-  }
-
   return (
     <div
       onClick={handleClick}
@@ -143,22 +136,17 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
               if (e.key === 'Escape') setEditing(false)
             }}
             style={{
-              background: '#111', border: '1px solid #2a2a2a', borderRadius: '3px',
+              background: 'transparent', border: 'none', borderBottom: '1px solid #333',
               outline: 'none', width: '100%', fontSize: '12px', color: '#ccc',
-              fontFamily: 'inherit', padding: '2px 6px', boxSizing: 'border-box',
+              fontFamily: 'inherit', padding: '1px 0', boxSizing: 'border-box',
             }}
           />
         ) : (
-          <div
-            onClick={handleNameClick}
-            title={isPrimary ? 'Click to rename' : undefined}
-            style={{
-              fontSize: '12px', lineHeight: 1.4,
-              color: src.status === 'done' ? '#ccc' : '#777',
-              wordBreak: 'break-word',
-              cursor: isPrimary ? 'text' : 'pointer',
-            }}
-          >
+          <div style={{
+            fontSize: '12px', lineHeight: 1.4,
+            color: src.status === 'done' ? '#ccc' : '#777',
+            wordBreak: 'break-word',
+          }}>
             {displayName}
           </div>
         )}
