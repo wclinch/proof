@@ -32,6 +32,11 @@ export default function DraftPanel({ width }: { width: number }) {
     return () => clearTimeout(t)
   }, [localDraft]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Return to welcome guide when all content is cleared
+  useEffect(() => {
+    if (!localTitle.trim() && !localDraft.trim()) setEditMode(false)
+  }, [localTitle, localDraft])
+
   useEffect(() => {
     if (!activeId) return
     updateProject(activeId, { draftTitle: localTitle })
