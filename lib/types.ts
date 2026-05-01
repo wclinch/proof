@@ -1,4 +1,4 @@
-export type SourceStatus = 'queued' | 'done' | 'error'
+type SourceStatus = 'queued' | 'done' | 'error'
 
 export interface SpanEntry {
   text: string

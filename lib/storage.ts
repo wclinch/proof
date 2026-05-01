@@ -1,6 +1,6 @@
 import type { Project } from './types'
 
-export const STORAGE_KEY  = 'proof-v2-projects'
+const STORAGE_KEY  = 'proof-v2-projects'
 export const ACTIVE_KEY   = 'proof-v2-active'
 export const SELECTED_KEY = 'proof-v2-selected'
 
