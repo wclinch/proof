@@ -7,17 +7,6 @@ import type { Highlight, SpanEntry } from '@/lib/types'
 
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
-function charOffsetInSpan(span: Element, container: Node, offset: number): number {
-  if (container.nodeType !== Node.TEXT_NODE) return -1
-  const walker = document.createTreeWalker(span, NodeFilter.SHOW_TEXT)
-  let chars = 0
-  let node: Node | null
-  while ((node = walker.nextNode())) {
-    if (node === container) return chars + offset
-    chars += (node as Text).length
-  }
-  return -1
-}
 
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -204,12 +193,6 @@ export default function PdfViewer({
     )
     if (!anchorInLayer) { sel.removeAllRanges(); setBtnPos(null); return }
 
-    const range = sel.getRangeAt(0)
-    if (
-      range.startContainer.nodeType !== Node.TEXT_NODE ||
-      range.endContainer.nodeType   !== Node.TEXT_NODE
-    ) { sel.removeAllRanges(); setBtnPos(null); return }
-
     let page = 1
     pageRefs.current.forEach((ref, i) => {
       if (ref?.contains(sel.anchorNode)) page = i + 1
@@ -222,27 +205,38 @@ export default function PdfViewer({
       pageRef.querySelectorAll('.textLayer span:not(.markedContent)')
     ) as HTMLSpanElement[]
 
-    // intersectsNode directly tests each span against the selection —
-    // no firstIdx/lastIdx iteration that can include out-of-range spans.
-    const selectedSpans = allSpans.filter(s => s.textContent?.trim() && range.intersectsNode(s))
-    if (selectedSpans.length === 0) { sel.removeAllRanges(); setBtnPos(null); return }
+    // Build normalized page text and a position map back to each span.
+    // Using text search instead of DOM Range APIs — range.startContainer /
+    // endContainer are unreliable in absolutely-positioned PDF text layers.
+    const norm = (s: string) => s.replace(/\s+/g, ' ').toLowerCase().trim()
+    const spanData: { rawText: string; normText: string; normPos: number }[] = []
+    let normPage = ''
+    for (const span of allSpans) {
+      const raw = span.textContent?.trim() ?? ''
+      if (!raw) continue
+      const n = norm(raw)
+      spanData.push({ rawText: raw, normText: n, normPos: normPage.length })
+      normPage += n + ' '
+    }
+
+    const normSel = norm(text)
+    const matchPos = normPage.indexOf(normSel)
+    if (matchPos === -1) { sel.removeAllRanges(); setBtnPos(null); return }
+    const matchEnd = matchPos + normSel.length
 
     const spans: SpanEntry[] = []
-    for (const spanEl of selectedSpans) {
-      const t = (spanEl.textContent ?? '').trim()
-      if (!t) continue
-      let start: number | undefined, end: number | undefined
-      if (spanEl.contains(range.startContainer)) {
-        const off = charOffsetInSpan(spanEl, range.startContainer, range.startOffset)
-        if (off === -1) { sel.removeAllRanges(); setBtnPos(null); return }
-        if (off > 0) start = off
-      }
-      if (spanEl.contains(range.endContainer)) {
-        const off = charOffsetInSpan(spanEl, range.endContainer, range.endOffset)
-        if (off === -1) { sel.removeAllRanges(); setBtnPos(null); return }
-        if (off < t.length) end = off
-      }
-      spans.push({ text: t, start, end })
+    for (const { rawText, normText, normPos } of spanData) {
+      const spanEnd = normPos + normText.length
+      const oStart = Math.max(matchPos, normPos)
+      const oEnd   = Math.min(matchEnd, spanEnd)
+      if (oStart >= oEnd) continue
+      const startOff = oStart - normPos
+      const endOff   = oEnd - normPos
+      spans.push({
+        text:  rawText,
+        start: startOff > 0             ? startOff : undefined,
+        end:   endOff   < rawText.length ? endOff   : undefined,
+      })
     }
 
     sel.removeAllRanges()
