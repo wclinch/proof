@@ -11,11 +11,9 @@ export default function ProjectsModal() {
     projContextMenu, setProjContextMenu,
   } = useApp()
 
-  const [editingProjId, setEditingProjId]           = useState<string | null>(null)
-  const [projNameInput, setProjNameInput]           = useState('')
+  const [editingProjId, setEditingProjId]             = useState<string | null>(null)
+  const [projNameInput, setProjNameInput]             = useState('')
   const [confirmDeleteProjId, setConfirmDeleteProjId] = useState<string | null>(null)
-  const [importError, setImportError]               = useState<string | null>(null)
-  const importRef = useRef<HTMLInputElement>(null)
 
   if (!showProjects) return null
 
@@ -23,51 +21,6 @@ export default function ProjectsModal() {
     const name = projNameInput.trim() || fallback
     updateProject(projId, { name })
     setEditingProjId(null)
-  }
-
-  function handleExport() {
-    const blob = new Blob([JSON.stringify(projects, null, 2)], { type: 'application/json' })
-    const a    = document.createElement('a')
-    a.href     = URL.createObjectURL(blob)
-    a.download = `proof-projects-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(a.href)
-  }
-
-  function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
-    setImportError(null)
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = ev => {
-      try {
-        const parsed = JSON.parse(ev.target?.result as string) as Project[]
-        if (!Array.isArray(parsed) || !parsed.every(p => p.id && p.name && Array.isArray(p.sources))) {
-          setImportError('Invalid file format.')
-          return
-        }
-        // Merge: add projects whose IDs don't already exist
-        const existingIds = new Set(projects.map(p => p.id))
-        const incoming    = parsed.filter(p => !existingIds.has(p.id))
-        if (incoming.length === 0) {
-          setImportError('All projects already exist.')
-          return
-        }
-        // Ensure imported projects have all required fields
-        const safe: Project[] = incoming.map(p => ({
-          ...p,
-          draft:        p.draft        ?? '',
-          draftTitle:   p.draftTitle   ?? '',
-          draftCreated: p.draftCreated ?? false,
-        }))
-        setProjects(prev => [...prev, ...safe])
-      } catch {
-        setImportError('Could not read file.')
-      }
-    }
-    reader.onerror = () => setImportError('Could not read file.')
-    reader.readAsText(file)
-    e.target.value = ''
   }
 
   return (
@@ -165,42 +118,6 @@ export default function ProjectsModal() {
             ))}
           </div>
 
-          {/* Footer: export / import */}
-          <div style={{
-            padding: '8px 20px', borderTop: '1px solid #111',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
-          }}>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                onClick={handleExport}
-                style={{
-                  background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
-                  fontSize: '11px', color: '#333', letterSpacing: '0.06em',
-                  textTransform: 'uppercase', fontFamily: 'inherit',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#666')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#333')}
-              >
-                Export
-              </button>
-              <button
-                onClick={() => importRef.current?.click()}
-                style={{
-                  background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none',
-                  fontSize: '11px', color: '#333', letterSpacing: '0.06em',
-                  textTransform: 'uppercase', fontFamily: 'inherit',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#666')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#333')}
-              >
-                Import
-              </button>
-              <input ref={importRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleImport} />
-            </div>
-            {importError && (
-              <span style={{ fontSize: '11px', color: '#733', letterSpacing: '0.04em' }}>{importError}</span>
-            )}
-          </div>
         </div>
       </div>
 
