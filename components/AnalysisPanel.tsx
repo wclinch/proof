@@ -70,6 +70,13 @@ function HighlightCard({
           setDragging(true)
           e.dataTransfer.effectAllowed = 'copy'
           e.dataTransfer.setData('application/x-proof-highlight', `"${highlight.text}" — p. ${highlight.page}`)
+          // Custom drag ghost: just the text, not the whole card
+          const ghost = document.createElement('div')
+          ghost.textContent = highlight.text.length > 80 ? highlight.text.slice(0, 80) + '…' : highlight.text
+          ghost.style.cssText = 'position:fixed;top:-999px;left:0;background:#1a1a1a;color:#aaa;padding:6px 10px;border-radius:3px;font-size:11px;font-family:inherit;max-width:220px;line-height:1.5;border:1px solid #333;'
+          document.body.appendChild(ghost)
+          e.dataTransfer.setDragImage(ghost, 12, 12)
+          setTimeout(() => document.body.removeChild(ghost), 0)
         }}
         onDragEnd={() => setDragging(false)}
         onMouseEnter={() => setHov(true)}
@@ -83,22 +90,28 @@ function HighlightCard({
           borderBottom: '1px solid #0f0f0f',
           cursor: 'grab',
           opacity: dragging ? 0.4 : 1,
+          position: 'relative',
         }}
       >
+        {hov && (
+          <span style={{
+            position: 'absolute', top: '8px', right: '10px',
+            fontSize: '9px', color: '#333', letterSpacing: '0.06em',
+            textTransform: 'uppercase', pointerEvents: 'none',
+          }}>
+            drag →
+          </span>
+        )}
         <p
           onClick={() => isLong && setExpanded(v => !v)}
           style={{
             margin: 0, fontSize: '11px', color: hov ? '#aaa' : '#666',
             lineHeight: 1.6, transition: 'color 0.1s',
             cursor: isLong ? 'pointer' : 'default',
+            paddingRight: hov ? '40px' : '0',
           }}
         >
           {expanded || !isLong ? highlight.text : highlight.text.slice(0, 160) + '…'}
-          {isLong && (
-            <span style={{ marginLeft: '4px', fontSize: '10px', color: '#444' }}>
-              {expanded ? '↑' : '↓'}
-            </span>
-          )}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '10px', color: '#333', letterSpacing: '0.06em' }}>p. {highlight.page}</span>
