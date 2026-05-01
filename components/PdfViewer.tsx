@@ -215,14 +215,35 @@ export default function PdfViewer({
       const clickedIdx = sorted.findIndex(s => s.el.contains(caretRange.startContainer))
       if (clickedIdx === -1) return
 
-      // Detect paragraph by vertical gap (gap > 1.2× line height = paragraph break)
+      // Detect paragraph by top-to-top line spacing.
+      // Consecutive lines in a paragraph have consistent spacing.
+      // A paragraph break is when the gap jumps significantly more than that.
+      // Use top-to-top distance (not bottom-to-top) — works for any line spacing.
       const lineH = sorted[clickedIdx].rect.height
-      const gap   = lineH * 1.2
+
+      // Sample typical line spacing from nearby spans
+      const spacings: number[] = []
+      for (let i = Math.max(1, clickedIdx - 5); i <= Math.min(sorted.length - 1, clickedIdx + 5); i++) {
+        const d = sorted[i].rect.top - sorted[i - 1].rect.top
+        if (d > 0 && d < 200) spacings.push(d)
+      }
+      const avgSpacing = spacings.length > 0
+        ? spacings.reduce((a, b) => a + b) / spacings.length
+        : lineH * 2
+      const gap = avgSpacing * 1.6  // break if gap > 1.6× typical line spacing
 
       let startIdx = clickedIdx
-      while (startIdx > 0 && sorted[startIdx].rect.top - sorted[startIdx - 1].rect.bottom <= gap) startIdx--
+      while (startIdx > 0) {
+        const d = sorted[startIdx].rect.top - sorted[startIdx - 1].rect.top
+        if (d > gap) break
+        startIdx--
+      }
       let endIdx = clickedIdx
-      while (endIdx < sorted.length - 1 && sorted[endIdx + 1].rect.top - sorted[endIdx].rect.bottom <= gap) endIdx++
+      while (endIdx < sorted.length - 1) {
+        const d = sorted[endIdx + 1].rect.top - sorted[endIdx].rect.top
+        if (d > gap) break
+        endIdx++
+      }
 
       const pageRect = (pageRef as HTMLDivElement).getBoundingClientRect()
       const para = sorted.slice(startIdx, endIdx + 1)
@@ -299,18 +320,6 @@ export default function PdfViewer({
                 <div ref={pi === 0 ? attachSlot : undefined}>
                   {pW > 0 && <Page pageNumber={pi + 1} width={pW} renderTextLayer renderAnnotationLayer={false} customTextRenderer={customTextRenderer} />}
                 </div>
-                {/* Paragraph highlight overlays */}
-                {highlights.filter(h => h.page === pi + 1).flatMap(h =>
-                  (h.rects ?? []).map((rect, ri) => (
-                    <div key={`${h.id}-${ri}`} style={{
-                      position: 'absolute',
-                      left: `${rect.x * 100}%`, top: `${rect.y * 100}%`,
-                      width: `${rect.w * 100}%`, height: `${rect.h * 100}%`,
-                      background: 'rgba(255,213,0,0.38)', borderRadius: '1px',
-                      pointerEvents: 'none', zIndex: 1,
-                    }} />
-                  ))
-                )}
               </div>
             ))}
           </Document>
