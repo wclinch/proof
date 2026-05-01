@@ -4,13 +4,10 @@ import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/TextLayer.css'
 import { getFile } from '@/lib/idb'
 import type { Highlight, SpanEntry } from '@/lib/types'
+import { normStr } from '@/lib/norm'
 
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
-import { normStr } from '@/lib/norm'
-
-// Walk text nodes to find the absolute char offset of container+offset within span.
-// Returns -1 when the container is not a TEXT_NODE or is not found inside span.
 function charOffsetInSpan(span: Element, container: Node, offset: number): number {
   if (container.nodeType !== Node.TEXT_NODE) return -1
   const walker = document.createTreeWalker(span, NodeFilter.SHOW_TEXT)
@@ -31,7 +28,8 @@ const MSG: React.CSSProperties = {
   letterSpacing: '0.08em', textTransform: 'uppercase',
 }
 
-const MARK = `style="background:rgba(255,213,0,0.38);border-radius:1px;color:inherit;"`
+const MARK      = `style="background:rgba(255,213,0,0.38);border-radius:1px;color:inherit;"`
+const FIND_MARK = `style="background:rgba(100,180,255,0.35);border-radius:1px;color:inherit;"`
 
 export default function PdfViewer({
   srcId,
@@ -49,15 +47,71 @@ export default function PdfViewer({
   const [missing, setMissing] = useState(false)
   const [pW,      setPW]      = useState(0)
 
-  const containerRef = useRef<HTMLDivElement>(null)
-  const pageRefs     = useRef<(HTMLDivElement | null)[]>([])
-  const slotRoRef    = useRef<ResizeObserver | null>(null)
+  // Find state
+  const [showFind,  setShowFind]  = useState(false)
+  const [findTerm,  setFindTerm]  = useState('')
+  const [findIdx,   setFindIdx]   = useState(0)
+  const [textsReady, setTextsReady] = useState(false)
 
+  // Page jump
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageInput,   setPageInput]   = useState('')
+
+  const containerRef  = useRef<HTMLDivElement>(null)
+  const pageRefs      = useRef<(HTMLDivElement | null)[]>([])
+  const slotRoRef     = useRef<ResizeObserver | null>(null)
+  const findInputRef  = useRef<HTMLInputElement>(null)
+  const muTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pageTexts     = useRef<Map<number, string[]>>(new Map())
+
+  // Reset on source change
   useEffect(() => {
     setFile(null); setMissing(false); setNPages(0)
+    setCurrentPage(1); setFindTerm(''); setShowFind(false)
+    setTextsReady(false)
+    pageTexts.current = new Map()
     pageRefs.current = []
     getFile(srcId).then(f => f ? setFile(f) : setMissing(true))
   }, [srcId])
+
+  // Extract all page texts up front using pdf.js so find works across every page
+  useEffect(() => {
+    if (!file) return
+    pageTexts.current = new Map()
+    setTextsReady(false)
+    const url = URL.createObjectURL(file)
+    const task = (pdfjs as any).getDocument(url)
+    task.promise.then(async (pdf: any) => {
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const pg = await pdf.getPage(i)
+        const content = await pg.getTextContent()
+        const strs = (content.items as any[])
+          .filter(item => typeof item.str === 'string' && item.str.trim())
+          .map(item => item.str as string)
+        pageTexts.current.set(i, strs)
+      }
+      setTextsReady(true)
+      URL.revokeObjectURL(url)
+    }).catch(() => URL.revokeObjectURL(url))
+    return () => { task.destroy?.(); URL.revokeObjectURL(url) }
+  }, [file])
+
+  // IntersectionObserver — update current page as user scrolls
+  useEffect(() => {
+    if (!nPages || !containerRef.current) return
+    const root = containerRef.current
+    const observers: IntersectionObserver[] = []
+    pageRefs.current.forEach((ref, i) => {
+      if (!ref) return
+      const obs = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setCurrentPage(i + 1) },
+        { root, threshold: 0.3 }
+      )
+      obs.observe(ref)
+      observers.push(obs)
+    })
+    return () => observers.forEach(o => o.disconnect())
+  }, [nPages])
 
   const attachSlot = useCallback((el: HTMLDivElement | null) => {
     if (slotRoRef.current) { slotRoRef.current.disconnect(); slotRoRef.current = null }
@@ -70,20 +124,69 @@ export default function PdfViewer({
     slotRoRef.current = ro
   }, [])
 
+  // Jump to highlight page
   useEffect(() => {
     if (!jumpTo) return
     pageRefs.current[jumpTo.page - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [jumpTo])
 
-  // ─── Text selection capture ───────────────────────────────────────────────────
+  // Cmd+F opens find, Escape closes
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault()
+        setShowFind(true)
+        setTimeout(() => findInputRef.current?.focus(), 30)
+      }
+      if (e.key === 'Escape' && showFind) {
+        setShowFind(false)
+        setFindTerm('')
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [showFind])
+
+  // ─── Find results ─────────────────────────────────────────────────────────────
+
+  const findResults = useMemo(() => {
+    if (!findTerm.trim() || !textsReady) return []
+    const term = findTerm.toLowerCase()
+    const out: { page: number; spanText: string }[] = []
+    Array.from(pageTexts.current.keys()).sort((a, b) => a - b).forEach(page => {
+      pageTexts.current.get(page)?.forEach(span => {
+        if (span.toLowerCase().includes(term)) out.push({ page, spanText: span })
+      })
+    })
+    return out
+  }, [findTerm, textsReady])
+
+  // Reset findIdx when results change
+  useEffect(() => { setFindIdx(0) }, [findResults])
+
+  // Scroll to current find result
+  useEffect(() => {
+    if (!findResults.length) return
+    const r = findResults[Math.min(findIdx, findResults.length - 1)]
+    if (r) pageRefs.current[r.page - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [findIdx, findResults])
+
+  const findMatchMap = useMemo(() => {
+    const map = new Map<number, Set<string>>()
+    findResults.forEach(r => {
+      if (!map.has(r.page)) map.set(r.page, new Set())
+      map.get(r.page)!.add(r.spanText)
+    })
+    return map
+  }, [findResults])
+
+  // ─── Text selection (triple-click debounced) ──────────────────────────────────
+
   useEffect(() => {
     const el = containerRef.current
     if (!el || !onHighlight) return
 
     function handleMouseDown(e: MouseEvent) {
-      // Only clear lingering selections when clicking OUTSIDE the text layer.
-      // Must NOT clear inside — that breaks triple-click (click→word→paragraph
-      // accumulates across three mousedown/up cycles and any clear resets it).
       const target = e.target as Node
       const inLayer = pageRefs.current.some(ref =>
         ref?.querySelector('.textLayer')?.contains(target)
@@ -91,25 +194,19 @@ export default function PdfViewer({
       if (!inLayer) window.getSelection()?.removeAllRanges()
     }
 
-    function handleMouseUp() {
+    function processSelection() {
       const sel = window.getSelection()
-      if (!sel || sel.isCollapsed) { return }
+      if (!sel || sel.isCollapsed) return
 
       const text = sel.toString().trim()
       if (!text || text.length < 3) { sel.removeAllRanges(); return }
 
-      // Anchor must be inside a PDF text layer — rejects selections that started outside
-      const anchorInLayer = pageRefs.current.some(ref => {
-        const layer = ref?.querySelector('.textLayer')
-        return layer?.contains(sel.anchorNode)
-      })
+      const anchorInLayer = pageRefs.current.some(ref =>
+        ref?.querySelector('.textLayer')?.contains(sel.anchorNode)
+      )
       if (!anchorInLayer) { sel.removeAllRanges(); return }
 
       const range = sel.getRangeAt(0)
-
-      // BUG FIX: validate that both ends of the range are TEXT_NODEs.
-      // If either is an Element node (e.g. the span itself), charOffsetInSpan
-      // returns -1 and offsets silently default to "entire span", causing over-capture.
       if (
         range.startContainer.nodeType !== Node.TEXT_NODE ||
         range.endContainer.nodeType   !== Node.TEXT_NODE
@@ -123,20 +220,15 @@ export default function PdfViewer({
       const pageRef = pageRefs.current[page - 1]
       if (!pageRef) { sel.removeAllRanges(); return }
 
-      // Exclude .markedContent wrapper spans — they contain other spans and their
-      // .contains() check would match any child text node, making them incorrectly
-      // grab firstIdx/lastIdx and capturing far more text than the user selected.
       const allSpans = Array.from(
         pageRef.querySelectorAll('.textLayer span:not(.markedContent)')
       ) as HTMLSpanElement[]
 
-      // Find the span indices that contain the selection's start and end nodes.
-      // The browser's hit-testing already determined these correctly — trust them.
       let firstIdx = -1
       let lastIdx  = -1
       allSpans.forEach((spanEl, si) => {
         if (firstIdx === -1 && spanEl.contains(range.startContainer)) firstIdx = si
-        if (spanEl.contains(range.endContainer)) lastIdx = si  // keep updating → gets last
+        if (spanEl.contains(range.endContainer)) lastIdx = si
       })
       if (firstIdx === -1 || lastIdx === -1) { sel.removeAllRanges(); return }
 
@@ -152,24 +244,14 @@ export default function PdfViewer({
 
         if (spanEl.contains(range.startContainer)) {
           const off = charOffsetInSpan(spanEl, range.startContainer, range.startOffset)
-          // BUG FIX: off === -1 means the container wasn't found — skip this span entirely
-          // rather than silently defaulting to "highlight from beginning".
           if (off === -1) { sel.removeAllRanges(); return }
-          // off > 0 means selection starts partway through — store it.
-          // off === 0 means selection starts at the beginning — leave start undefined
-          // (undefined is equivalent to 0 in customTextRenderer and avoids a no-op mark tag).
           if (off > 0) start = off
         }
-
         if (spanEl.contains(range.endContainer)) {
           const off = charOffsetInSpan(spanEl, range.endContainer, range.endOffset)
-          // BUG FIX: off === -1 means not found — bail.
           if (off === -1) { sel.removeAllRanges(); return }
-          // off < t.length means selection ends partway through — store it.
-          // off === t.length means selection ends at the end — leave end undefined.
           if (off < t.length) end = off
         }
-
         spans.push({ text: t, start, end })
       }
 
@@ -178,103 +260,237 @@ export default function PdfViewer({
       onHighlight?.(text, page, spans)
     }
 
+    // Debounce mouseup by 30ms so triple-click fully completes before we capture
+    function handleMouseUp() {
+      if (muTimerRef.current) clearTimeout(muTimerRef.current)
+      muTimerRef.current = setTimeout(processSelection, 30)
+    }
+
     el.addEventListener('mousedown', handleMouseDown)
     el.addEventListener('mouseup',   handleMouseUp)
     return () => {
       el.removeEventListener('mousedown', handleMouseDown)
       el.removeEventListener('mouseup',   handleMouseUp)
+      if (muTimerRef.current) clearTimeout(muTimerRef.current)
     }
   }, [onHighlight])
 
-  // ─── Span lookup map ──────────────────────────────────────────────────────────
-  // Key: exact trimmed span text. No norm() — prevents false-positive matches
-  // across different spans that happen to normalize identically.
+  // ─── Span map for highlights ──────────────────────────────────────────────────
+
   const spanMaps = useMemo(() => {
     const maps: Record<number, Map<string, SpanEntry>> = {}
     highlights.forEach(h => {
       if (!maps[h.page]) maps[h.page] = new Map()
       ;(h.spans ?? []).forEach(entry => {
-        // BUG FIX: handle legacy highlights where spans were stored as plain strings
-        const e: SpanEntry = typeof entry === 'string'
-          ? { text: entry as string }
-          : entry as SpanEntry
+        const e: SpanEntry = typeof entry === 'string' ? { text: entry as string } : entry
         if (e.text?.trim()) maps[h.page].set(e.text.trim(), e)
       })
     })
     return maps
   }, [highlights])
 
-  // ─── Custom text renderer ─────────────────────────────────────────────────────
+  // ─── Custom text renderer (highlights + find) ─────────────────────────────────
+
   const customTextRenderer = useCallback(
     ({ str, pageIndex }: { str: string; pageIndex: number }) => {
       if (!str.trim()) return str
-      const map   = spanMaps[pageIndex + 1]
-      if (!map) return str
-      const entry = map.get(str.trim())
-      if (!entry) return str
+      const pageNum = pageIndex + 1
 
-      const { start, end } = entry
-
-      // Full span highlight — no offsets stored
-      if (start === undefined && end === undefined) {
-        return `<mark ${MARK}>${esc(str)}</mark>`
+      // Highlight takes priority over find
+      const map   = spanMaps[pageNum]
+      const entry = map?.get(str.trim())
+      if (entry) {
+        const { start, end } = entry
+        if (start === undefined && end === undefined) {
+          return `<mark ${MARK}>${esc(str)}</mark>`
+        }
+        const s = Math.max(0, start ?? 0)
+        const e = Math.min(str.length, end ?? str.length)
+        if (s >= e) return str
+        const hl = str.slice(s, e)
+        if (!hl.trim()) return str
+        return `${esc(str.slice(0, s))}<mark ${MARK}>${esc(hl)}</mark>${esc(str.slice(e))}`
       }
 
-      const s = Math.max(0, start ?? 0)
-      const e = Math.min(str.length, end ?? str.length)
+      // Find match
+      const findSpans = findMatchMap.get(pageNum)
+      if (findSpans?.has(str) && findTerm.trim()) {
+        const term  = findTerm.toLowerCase()
+        const lower = str.toLowerCase()
+        let result = ''
+        let i = 0
+        while (i < str.length) {
+          const idx = lower.indexOf(term, i)
+          if (idx === -1) { result += esc(str.slice(i)); break }
+          result += esc(str.slice(i, idx))
+          result += `<mark ${FIND_MARK}>${esc(str.slice(idx, idx + term.length))}</mark>`
+          i = idx + term.length
+        }
+        return result
+      }
 
-      // BUG FIX: if offsets are invalid (s >= e), do NOT fall back to full-span highlight.
-      // Returning str (unhighlighted) is correct — it exposes the capture bug rather than
-      // masking it with a spurious full-span highlight that confuses users.
-      if (s >= e) return str
-
-      const before = str.slice(0, s)
-      const hl     = str.slice(s, e)
-      const after  = str.slice(e)
-
-      // If the highlighted portion is only whitespace, nothing visible to show
-      if (!hl.trim()) return str
-
-      return `${esc(before)}<mark ${MARK}>${esc(hl)}</mark>${esc(after)}`
+      return str
     },
-    [spanMaps]
+    [spanMaps, findMatchMap, findTerm]
   )
+
+  // ─── Page jump ────────────────────────────────────────────────────────────────
+
+  function commitPageJump(val: string) {
+    const n = parseInt(val)
+    if (n >= 1 && n <= nPages) {
+      pageRefs.current[n - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+    setPageInput('')
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div
-      ref={containerRef}
-      style={{ flex: 1, minWidth: 0, minHeight: 0, overflowY: 'scroll', overflowX: 'hidden' }}
-    >
-      {missing  && <div style={MSG}>file not found — re-upload to view.</div>}
-      {!file && !missing && <div style={MSG}>loading...</div>}
-      {file && !missing && (
-        <Document
-          file={file}
-          onLoadSuccess={pdf => setNPages(pdf.numPages)}
-          loading={<div style={MSG}>rendering...</div>}
-          error={<div style={MSG}>could not render pdf.</div>}
-        >
-          {Array.from({ length: nPages }, (_, pi) => (
-            <div
-              key={pi}
-              ref={el => { pageRefs.current[pi] = el }}
-              style={{ padding: '12px 16px', boxSizing: 'border-box' }}
-            >
-              <div ref={pi === 0 ? attachSlot : undefined}>
-                {pW > 0 && (
-                  <Page
-                    pageNumber={pi + 1}
-                    width={pW}
-                    renderTextLayer
-                    renderAnnotationLayer={false}
-                    customTextRenderer={customTextRenderer}
-                  />
-                )}
-              </div>
-            </div>
-          ))}
-        </Document>
+    <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+      {/* Toolbar */}
+      {file && !missing && nPages > 0 && (
+        <div style={{
+          flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '0 12px', height: '32px', borderBottom: '1px solid #111',
+          background: '#080808',
+        }}>
+          {/* Find toggle */}
+          <button
+            onClick={() => { setShowFind(v => !v); setTimeout(() => findInputRef.current?.focus(), 30) }}
+            style={{
+              background: showFind ? '#1a1a1a' : 'none', border: 'none', padding: '3px 8px',
+              borderRadius: '3px', cursor: 'pointer', fontSize: '10px', color: showFind ? '#aaa' : '#555',
+              letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
+              transition: 'color 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#aaa')}
+            onMouseLeave={e => (e.currentTarget.style.color = showFind ? '#aaa' : '#555')}
+          >
+            find
+          </button>
+
+          <div style={{ flex: 1 }} />
+
+          {/* Page jump */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ fontSize: '10px', color: '#444', letterSpacing: '0.06em' }}>p.</span>
+            <input
+              value={pageInput}
+              onChange={e => setPageInput(e.target.value)}
+              onFocus={e => { setPageInput(String(currentPage)); e.target.select() }}
+              onBlur={e => commitPageJump(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { commitPageJump(pageInput); (e.target as HTMLInputElement).blur() }
+                if (e.key === 'Escape') { setPageInput(''); (e.target as HTMLInputElement).blur() }
+              }}
+              placeholder={String(currentPage)}
+              style={{
+                width: '28px', background: 'transparent', border: 'none', outline: 'none',
+                fontSize: '10px', color: '#777', fontFamily: 'inherit',
+                letterSpacing: '0.06em', textAlign: 'center', padding: 0,
+              }}
+            />
+            <span style={{ fontSize: '10px', color: '#333', letterSpacing: '0.06em' }}>/ {nPages}</span>
+          </div>
+        </div>
       )}
+
+      {/* Find bar */}
+      {showFind && (
+        <div style={{
+          flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '0 12px', height: '34px', borderBottom: '1px solid #111',
+          background: '#0a0a0a',
+        }}>
+          <input
+            ref={findInputRef}
+            value={findTerm}
+            onChange={e => setFindTerm(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                if (!findResults.length) return
+                setFindIdx(i => (i + 1) % findResults.length)
+              }
+              if (e.key === 'Escape') { setShowFind(false); setFindTerm('') }
+            }}
+            placeholder="search..."
+            style={{
+              flex: 1, background: '#111', border: '1px solid #1a1a1a', borderRadius: '3px',
+              padding: '4px 10px', fontSize: '12px', color: '#bbb', outline: 'none',
+              fontFamily: 'inherit', letterSpacing: '0.04em',
+            }}
+            onFocus={e => (e.currentTarget.style.borderColor = '#333')}
+            onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
+          />
+
+          {findTerm.trim() && (
+            <span style={{ fontSize: '10px', color: '#555', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+              {findResults.length === 0 ? 'no matches' : `${findIdx + 1} / ${findResults.length}`}
+            </span>
+          )}
+
+          {findResults.length > 1 && (
+            <>
+              <button onClick={() => setFindIdx(i => (i - 1 + findResults.length) % findResults.length)}
+                style={navBtn}>↑</button>
+              <button onClick={() => setFindIdx(i => (i + 1) % findResults.length)}
+                style={navBtn}>↓</button>
+            </>
+          )}
+
+          <button
+            onClick={() => { setShowFind(false); setFindTerm('') }}
+            style={{ ...navBtn, color: '#555' }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* PDF scroll area */}
+      <div
+        ref={containerRef}
+        style={{ flex: 1, minWidth: 0, minHeight: 0, overflowY: 'scroll', overflowX: 'hidden' }}
+      >
+        {missing  && <div style={MSG}>file not found — re-upload to view.</div>}
+        {!file && !missing && <div style={MSG}>loading...</div>}
+        {file && !missing && (
+          <Document
+            file={file}
+            onLoadSuccess={pdf => setNPages(pdf.numPages)}
+            loading={<div style={MSG}>rendering...</div>}
+            error={<div style={MSG}>could not render pdf.</div>}
+          >
+            {Array.from({ length: nPages }, (_, pi) => (
+              <div
+                key={pi}
+                ref={el => { pageRefs.current[pi] = el }}
+                style={{ padding: '12px 16px', boxSizing: 'border-box' }}
+              >
+                <div ref={pi === 0 ? attachSlot : undefined}>
+                  {pW > 0 && (
+                    <Page
+                      pageNumber={pi + 1}
+                      width={pW}
+                      renderTextLayer
+                      renderAnnotationLayer={false}
+                      customTextRenderer={customTextRenderer}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+          </Document>
+        )}
+      </div>
     </div>
   )
+}
+
+const navBtn: React.CSSProperties = {
+  background: 'none', border: 'none', padding: '2px 6px', cursor: 'pointer',
+  fontSize: '12px', color: '#777', fontFamily: 'inherit', outline: 'none',
+  borderRadius: '3px', transition: 'color 0.15s',
 }

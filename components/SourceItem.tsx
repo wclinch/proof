@@ -150,9 +150,9 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
           />
         ) : (
           <div style={{
-            fontSize: '13px', lineHeight: 1.4,
+            fontSize: '12px', lineHeight: 1.4,
             color: src.status === 'done' ? '#ccc' : '#777',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            wordBreak: 'break-word',
           }}>
             {displayName}
           </div>
