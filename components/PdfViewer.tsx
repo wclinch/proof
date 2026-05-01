@@ -262,6 +262,7 @@ export default function PdfViewer({
     }
 
     function handleMouseUp(e: MouseEvent) {
+      if (e.shiftKey) { processSelection(); return }
       const dx = e.clientX - downX
       const dy = e.clientY - downY
       if (Math.sqrt(dx * dx + dy * dy) < 6) return // click — handled by handleClick
