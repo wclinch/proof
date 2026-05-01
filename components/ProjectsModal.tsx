@@ -112,7 +112,7 @@ export default function ProjectsModal() {
                   </span>
                 )}
                 <span style={{ fontSize: '11px', color: '#333' }}>
-                  {p.sources.length} {p.sources.length === 1 ? 'source' : 'sources'}
+                  {p.sources.length} {p.sources.length === 1 ? 'pdf' : 'pdfs'}
                 </span>
               </div>
             ))}
