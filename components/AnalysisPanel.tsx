@@ -178,7 +178,7 @@ function HighlightsPanel({
         <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {[
             'Select text in the PDF — a save button appears above your selection.',
-            'Shift+click to extend a selection without dragging.',
+            'Drag to select, or double-click for a single word.',
             'Drag any highlight into the Synthesis panel on the right.',
           ].map((tip, i) => (
             <p key={i} style={{ margin: 0, fontSize: '11px', color: '#333', lineHeight: 1.6 }}>

@@ -260,63 +260,6 @@ export default function PdfViewer({
     return () => el.removeEventListener('mousedown', onMouseDown)
   }, [])
 
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    function onTripleMouseDown(e: MouseEvent) {
-      if (e.detail < 3) return
-      const caretRange = document.caretRangeFromPoint?.(e.clientX, e.clientY) ?? (() => {
-        const pos = (document as any).caretPositionFromPoint?.(e.clientX, e.clientY)
-        if (!pos) return null
-        const r = document.createRange(); r.setStart(pos.offsetNode, pos.offset); return r
-      })()
-      if (!caretRange) return
-
-      let pageRef: HTMLDivElement | null = null
-      pageRefs.current.forEach(ref => { if (ref?.contains(caretRange.startContainer)) pageRef = ref })
-      if (!pageRef) return
-
-      e.preventDefault()
-
-      const allSpans = Array.from(
-        (pageRef as HTMLDivElement).querySelectorAll('.textLayer span:not(.markedContent)')
-      ) as HTMLSpanElement[]
-      const sorted = allSpans
-        .map(s => ({ el: s, rect: s.getBoundingClientRect() }))
-        .filter(s => s.rect.height > 0)
-        .sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)
-
-      const clickedIdx = sorted.findIndex(s => s.el.contains(caretRange.startContainer))
-      if (clickedIdx === -1) return
-
-      const lineH = sorted[clickedIdx].rect.height
-      const gap   = lineH * 1.2
-
-      let startIdx = clickedIdx
-      while (startIdx > 0) {
-        if (sorted[startIdx].rect.top - sorted[startIdx - 1].rect.bottom > gap) break
-        startIdx--
-      }
-      let endIdx = clickedIdx
-      while (endIdx < sorted.length - 1) {
-        if (sorted[endIdx + 1].rect.top - sorted[endIdx].rect.bottom > gap) break
-        endIdx++
-      }
-
-      const range = document.createRange()
-      range.setStart(sorted[startIdx].el, 0)
-      range.setEnd(sorted[endIdx].el, sorted[endIdx].el.childNodes.length)
-
-      // Defer until after browser finishes its own triple-click mouseup handling,
-      // which would otherwise overwrite our selection back to one line.
-      requestAnimationFrame(() => {
-        const sel = window.getSelection()
-        if (sel) { sel.removeAllRanges(); sel.addRange(range) }
-      })
-    }
-    el.addEventListener('mousedown', onTripleMouseDown)
-    return () => el.removeEventListener('mousedown', onTripleMouseDown)
-  }, [])
 
   function commitPageJump(val: string) {
     const n = parseInt(val)
