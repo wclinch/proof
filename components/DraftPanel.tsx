@@ -12,12 +12,18 @@ export default function DraftPanel({ width }: { width: number }) {
   const [ctxMenu, setCtxMenu]       = useState<CtxMenu | null>(null)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [dropTarget, setDropTarget] = useState(false)
+  const [editMode, setEditMode]     = useState(
+    !!(activeProject?.draftTitle?.trim() || activeProject?.draft?.trim())
+  )
   const draftTitleRef = useRef<HTMLInputElement>(null)
   const textareaRef   = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    setLocalTitle(activeProject?.draftTitle ?? '')
-    setLocalDraft(activeProject?.draft ?? '')
+    const t = activeProject?.draftTitle ?? ''
+    const d = activeProject?.draft ?? ''
+    setLocalTitle(t)
+    setLocalDraft(d)
+    setEditMode(!!(t.trim() || d.trim()))
   }, [activeProject?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -31,7 +37,7 @@ export default function DraftPanel({ width }: { width: number }) {
     updateProject(activeId, { draftTitle: localTitle })
   }, [localTitle]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const hasDraft   = !!(activeProject?.draftCreated || localTitle || localDraft)
+  const hasDraft   = editMode
   const hasContent = !!(localTitle.trim() || localDraft.trim())
 
   useEffect(() => {
@@ -48,15 +54,15 @@ export default function DraftPanel({ width }: { width: number }) {
   const wordCount = localDraft.split(/\s+/).filter(Boolean).length
 
   function handleNewDraft() {
-    if (!activeId) return
-    updateProject(activeId, { draftCreated: true })
+    setEditMode(true)
     requestAnimationFrame(() => draftTitleRef.current?.focus())
   }
 
   function handleDiscard() {
     if (!activeId) return
     setLocalTitle(''); setLocalDraft('')
-    updateProject(activeId, { draftCreated: false, draft: '', draftTitle: '' })
+    setEditMode(false)
+    updateProject(activeId, { draft: '', draftTitle: '' })
   }
 
   function handleExport(fmt: 'txt' | 'md') {
@@ -88,10 +94,11 @@ export default function DraftPanel({ width }: { width: number }) {
 
     if (!activeId) return
 
-    // Auto-create draft if it doesn't exist
+    // Auto-enter edit mode if not already editing
     if (!hasDraft) {
-      updateProject(activeId, { draftCreated: true, draft: text })
+      setEditMode(true)
       setLocalDraft(text)
+      updateProject(activeId, { draft: text })
       return
     }
 
