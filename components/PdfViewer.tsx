@@ -260,14 +260,14 @@ export default function PdfViewer({
       const leftEdges = lines.map(l => Math.min(...l.spans.map(s => s.rect.left)))
       const sortedLefts = [...leftEdges].sort((a, b) => a - b)
       const marginLeft = sortedLefts[Math.floor(sortedLefts.length * 0.25)]
-      const INDENT_PX   = 18  // finding paragraph start (going up) — looser
-      const BREAK_PX    = 36  // detecting next paragraph (going down) — stricter to avoid short centered lines
-      const hasIndents  = leftEdges.some(le => le > marginLeft + INDENT_PX)
+      const INDENT_PX = 18
+      const hasIndents = leftEdges.some(le => le > marginLeft + INDENT_PX)
+      // isParaStart: used to find the clicked paragraph's own first line (going up)
+      // and to trigger backward cross-page detection
       const isParaStart = (li: number) => hasIndents && leftEdges[li] > marginLeft + INDENT_PX
-      const isParaBreak = (li: number) => hasIndents && leftEdges[li] > marginLeft + BREAK_PX
 
-      const MAX_UP   = 20  // plenty to reach any paragraph start
-      const MAX_DOWN = 60  // generous — detection stops it early anyway
+      const MAX_UP   = 20
+      const MAX_DOWN = 60
 
       let startLineIdx = clickedLineIdx
       let endLineIdx   = clickedLineIdx
@@ -278,9 +278,20 @@ export default function PdfViewer({
           if (isParaStart(startLineIdx)) break
         }
       }
+
+      // Use the detected paragraph's first line as the indent reference.
+      // Genuine paragraph starts elsewhere will have a similar left edge (~48px from margin).
+      // Short centered lines (last lines of sentences) have LARGER left edges because
+      // they're shorter — so they exceed this reference and won't trigger a false break.
+      const paraStartLeft = (hasIndents && leftEdges[startLineIdx] > marginLeft + INDENT_PX)
+        ? leftEdges[startLineIdx]
+        : marginLeft + 48  // fallback: assume standard 0.5-inch indent
+      const isNewParagraph = (le: number) =>
+        le > marginLeft + INDENT_PX && le <= paraStartLeft + 12
+
       while (endLineIdx < lines.length - 1 && endLineIdx - clickedLineIdx < MAX_DOWN) {
         if (lines[endLineIdx + 1].top - lines[endLineIdx].top > gapThreshold) break
-        if (isParaBreak(endLineIdx + 1)) break
+        if (isNewParagraph(leftEdges[endLineIdx + 1])) break
         endLineIdx++
       }
 
@@ -332,7 +343,8 @@ export default function PdfViewer({
               else prevLines.push({ spans: [sp], top: sp.rect.top })
             }
             const pLeftEdges   = prevLines.map(l => Math.min(...l.spans.map(s => s.rect.left)))
-            const pIsParaStart = (li: number) => pLeftEdges[li] > marginLeft + INDENT_PX
+            // Stop going back when we find the paragraph's indented first line
+            const pIsParaStart = (li: number) => isNewParagraph(pLeftEdges[li])
 
             // Walk backward from the last line of the prev page
             let prevStart = prevLines.length
@@ -383,14 +395,14 @@ export default function PdfViewer({
             }
             // Reuse page N's marginLeft for indent detection on page N+1 — both pages
             // share the same horizontal layout so the reference stays consistent.
-            const nLeftEdges  = nextLines.map(l => Math.min(...l.spans.map(s => s.rect.left)))
-            const nIsParaStart = (li: number) => nLeftEdges[li] > marginLeft + INDENT_PX
-            const nIsParaBreak = (li: number) => nLeftEdges[li] > marginLeft + BREAK_PX
+            const nLeftEdges = nextLines.map(l => Math.min(...l.spans.map(s => s.rect.left)))
 
             let nextEnd = -1
             for (let i = 0; i < Math.min(nextLines.length, 20); i++) {
-              if (i === 0 && nIsParaStart(0)) break
-              if (i > 0 && nIsParaBreak(i)) break
+              // i=0: any indent means the next page opens a new paragraph
+              if (i === 0 && nLeftEdges[0] > marginLeft + INDENT_PX) break
+              // i>0: use the same reference-based check as the main page
+              if (i > 0 && isNewParagraph(nLeftEdges[i])) break
               if (i > 0 && nextLines[i].top - nextLines[i - 1].top > gapThreshold) break
               nextEnd = i
             }
