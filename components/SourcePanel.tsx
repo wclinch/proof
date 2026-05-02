@@ -69,7 +69,7 @@ export default function SourcePanel({ width }: { width: number }) {
         }}
       >
         <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase', flex: 1 }}>
-          {dragOver ? 'drop to add' : 'drop PDF or click to upload'}
+          {dragOver ? 'drop to add →' : 'add a pdf'}
         </span>
       </div>
       <input ref={fileRef} type="file" accept=".pdf" multiple style={{ display: 'none' }}
@@ -106,8 +106,8 @@ export default function SourcePanel({ width }: { width: number }) {
         <div style={{ flex: 1, overflowY: 'auto', marginTop: '4px' }}>
           {sources.length === 0
             ? <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span style={{ fontSize: '11px', color: '#555', lineHeight: 1.6 }}>Drop a PDF to get started.</span>
-                <span style={{ fontSize: '11px', color: '#333', lineHeight: 1.6 }}>Right-click a source to rename or remove it.</span>
+                <span style={{ fontSize: '11px', color: '#555', lineHeight: 1.6 }}>Drop or click above to add a PDF.</span>
+                <span style={{ fontSize: '11px', color: '#333', lineHeight: 1.6 }}>Hover a source and click ··· to rename or remove it.</span>
               </div>
             : (() => {
                 const q = filter.trim().toLowerCase()

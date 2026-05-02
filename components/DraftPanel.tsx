@@ -17,6 +17,10 @@ export default function DraftPanel({ width }: { width: number }) {
   )
   const activeIdRef   = useRef(activeId)
   useEffect(() => { activeIdRef.current = activeId }, [activeId])
+  const localDraftRef = useRef(localDraft)
+  useEffect(() => { localDraftRef.current = localDraft }, [localDraft])
+  const editModeRef   = useRef(editMode)
+  useEffect(() => { editModeRef.current = editMode }, [editMode])
   const draftTitleRef = useRef<HTMLInputElement>(null)
   const textareaRef   = useRef<HTMLTextAreaElement>(null)
 
@@ -30,6 +34,34 @@ export default function DraftPanel({ width }: { width: number }) {
 
   const updateProjectRef = useRef(updateProject)
   useEffect(() => { updateProjectRef.current = updateProject }, [updateProject])
+
+  // Listen for clip → synthesis sends from HighlightCard
+  useEffect(() => {
+    function handler(e: Event) {
+      const text = (e as CustomEvent<string>).detail
+      if (!text || !activeIdRef.current) return
+      if (!editModeRef.current) {
+        setEditMode(true)
+        setLocalDraft(text)
+        updateProjectRef.current(activeIdRef.current, { draft: text })
+        return
+      }
+      const el = textareaRef.current
+      const prev = localDraftRef.current
+      const pos  = el?.selectionStart ?? prev.length
+      const pad  = prev && !prev.slice(0, pos).endsWith('\n') ? '\n' : ''
+      const next = prev.slice(0, pos) + pad + text + prev.slice(pos)
+      setLocalDraft(next)
+      updateProjectRef.current(activeIdRef.current, { draft: next })
+      requestAnimationFrame(() => {
+        if (!el) return
+        el.focus()
+        el.selectionStart = el.selectionEnd = pos + pad.length + text.length
+      })
+    }
+    window.addEventListener('proof-send-to-draft', handler)
+    return () => window.removeEventListener('proof-send-to-draft', handler)
+  }, [])
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -90,7 +122,8 @@ export default function DraftPanel({ width }: { width: number }) {
   }
 
   function handleHighlightDragOver(e: React.DragEvent) {
-    if (!e.dataTransfer.types.includes('application/x-proof-highlight')) return
+    const types = e.dataTransfer.types
+    if (!types.includes('application/x-proof-highlight') && !types.includes('text/plain')) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'copy'
     setDropTarget(true)
@@ -100,6 +133,7 @@ export default function DraftPanel({ width }: { width: number }) {
     e.preventDefault()
     setDropTarget(false)
     const text = e.dataTransfer.getData('application/x-proof-highlight')
+      || e.dataTransfer.getData('text/plain')
     if (!text) return
 
     if (!activeId) return
@@ -166,7 +200,7 @@ export default function DraftPanel({ width }: { width: number }) {
         padding: '0 20px', height: '40px', flexShrink: 0,
         borderBottom: '1px solid #1a1a1a',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        fontSize: '12px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase',
+        fontSize: '12px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase',
         background: dropTarget ? '#0f0f0f' : 'transparent', transition: 'background 0.15s',
       }}>
         <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -203,12 +237,12 @@ export default function DraftPanel({ width }: { width: number }) {
                 Synthesis
               </span>
               <span style={{ fontSize: '12px', color: '#333', lineHeight: 1.7, marginTop: '6px' }}>
-                Write from your research. Your highlights stay visible while you work.
+                Write from your clips. Stage what you need, drag it here, keep writing.
               </span>
             </div>
             {[
-              'Drag any highlight from the left directly into this panel.',
-              'Or click New to start a blank note.',
+              'Expand a clip, select what you need, then drag it here.',
+              'Or click New to start writing from scratch.',
               'Export as .txt or .md when done.',
             ].map((tip, i) => (
               <div key={i} style={{ display: 'flex', gap: '12px' }}>

@@ -30,8 +30,7 @@ export default async function Home() {
           </h1>
 
           <p style={{ fontSize: '15px', color: '#777', lineHeight: 1.8, margin: '0 0 40px', maxWidth: '480px' }}>
-            Drop a PDF. Click any paragraph to clip it. Write in the same window.
-            Jump back to any passage instantly. No tab switching.
+            Drop a PDF. Click any paragraph to clip it. Trim it down, drag exactly what you need into Synthesis. Jump back to any passage instantly. No tab switching.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -51,15 +50,16 @@ export default async function Home() {
 
         {/* How it works */}
         <section style={{ borderTop: '1px solid #111', maxWidth: '620px', width: '100%', margin: '0 auto', padding: '64px 24px' }}>
-          <div style={{ fontSize: '11px', color: '#777', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
+          <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
             How it works
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
               ['Drop a PDF', 'Your document loads instantly. No processing, no waiting.'],
-              ['Click to clip', 'Click any paragraph to clip it. It appears in the left panel, tied to its exact page. Click again to remove it.'],
-              ['Jump back anytime', 'Every clip has a jump button. Click it to go directly back to that passage. Full context, no searching.'],
-              ['Write from it', 'The synthesis editor is on the right. Drag any clip into it to start writing. Export as .txt or .md when done.'],
+              ['Click to clip', 'Click any paragraph to clip it. It appears in the Clips panel, tied to its exact page. Click again to remove it.'],
+              ['Stage and trim', 'Click a clip to expand it. Edit the text down to exactly what you need — or leave it whole.'],
+              ['Send to Synthesis', 'Select a sentence in the clip and drag it over. Or drag the whole clip. It lands in your draft at the cursor.'],
+              ['Jump back anytime', 'Hover a clip and click jump. Goes directly back to that passage in the PDF.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ display: 'flex', gap: '24px' }}>
                 <div style={{ width: '4px', flexShrink: 0, background: '#1a1a1a', borderRadius: '2px', alignSelf: 'stretch' }} />
@@ -75,7 +75,7 @@ export default async function Home() {
         {/* Pricing */}
         <section style={{ borderTop: '1px solid #111', maxWidth: '620px', width: '100%', margin: '0 auto', padding: '64px 24px' }}>
           <p style={{ fontSize: '13px', color: '#777', lineHeight: 1.75, margin: '0 0 28px' }}>
-            Free to use with no account. Sign in to sync your highlights and projects across devices — your PDFs stay on your machine either way.
+            Free to use with no account. Sign in to sync your clips and workspaces across devices — your PDFs stay on your machine either way.
           </p>
           <a href="/app" style={{ fontSize: '12px', color: '#777', letterSpacing: '0.08em', textDecoration: 'none', textTransform: 'uppercase' }}>
             Open Proof →

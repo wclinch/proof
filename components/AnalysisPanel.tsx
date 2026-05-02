@@ -45,12 +45,25 @@ function HighlightCard({
   onDelete: () => void
 }) {
   const [hov,        setHov]        = useState(false)
-  const [dragging,   setDragging]   = useState(false)
+  const [expanded,   setExpanded]   = useState(false)
   const [menu,       setMenu]       = useState<{ x: number; y: number } | null>(null)
   const [confirming, setConfirming] = useState(false)
-  const [expanded,   setExpanded]   = useState(false)
-  const PREVIEW = 120
-  const isLong = highlight.text.length > PREVIEW
+  const [localText,  setLocalText]  = useState(highlight.text)
+  const textareaRef  = useRef<HTMLTextAreaElement>(null)
+  const menuBtnRef   = useRef<HTMLButtonElement>(null)
+  const selRef       = useRef({ start: 0, end: 0 })
+  const COLLAPSED_H  = 60
+
+  useEffect(() => {
+    const ta = textareaRef.current
+    if (!ta) return
+    if (expanded) {
+      ta.style.height = 'auto'
+      ta.style.height = ta.scrollHeight + 'px'
+    } else {
+      ta.style.height = `${COLLAPSED_H}px`
+    }
+  }, [localText, expanded])
 
   useEffect(() => {
     if (!menu) return
@@ -59,97 +72,123 @@ function HighlightCard({
     return () => window.removeEventListener('click', close)
   }, [menu])
 
-  function handleContextMenu(e: React.MouseEvent) {
-    e.preventDefault()
-    const MENU_W = 140, MENU_H = 40
-    setMenu({
-      x: Math.min(e.clientX, window.innerWidth  - MENU_W - 4),
-      y: Math.min(e.clientY, window.innerHeight - MENU_H - 4),
-    })
+  function openMenu() {
+    if (!menuBtnRef.current) return
     setConfirming(false)
+    const rect = menuBtnRef.current.getBoundingClientRect()
+    setMenu({ x: rect.left, y: rect.bottom + 4 })
   }
 
   function handleRemove() {
-    if (confirming) {
-      onDelete()
-      setMenu(null)
-      setConfirming(false)
-    } else {
-      setConfirming(true)
-    }
+    if (confirming) { onDelete(); setMenu(null); setConfirming(false) }
+    else setConfirming(true)
+  }
+
+  // Clicking the card body (not interactive children) toggles expand
+  function handleCardClick(e: React.MouseEvent) {
+    const t = e.target as HTMLElement
+    if (t === textareaRef.current || t.closest('button') || t.closest('[data-drag]')) return
+    setExpanded(v => !v)
+  }
+
+  function buildDragPayload(e: React.DragEvent) {
+    const { start, end } = selRef.current
+    const selected = start !== end ? localText.slice(start, end).trim() : ''
+    const text = selected || localText
+    e.dataTransfer.effectAllowed = 'copy'
+    e.dataTransfer.setData('application/x-proof-highlight', text)
+    e.dataTransfer.setData('text/plain', text)
+    const ghost = document.createElement('div')
+    ghost.textContent = text.length > 60 ? text.slice(0, 60) + '…' : text
+    ghost.style.cssText = 'position:fixed;top:-999px;left:0;background:#1a1a1a;color:#aaa;padding:6px 10px;border-radius:3px;font-size:11px;font-family:inherit;max-width:220px;line-height:1.5;border:1px solid #333;'
+    document.body.appendChild(ghost)
+    e.dataTransfer.setDragImage(ghost, 12, 12)
+    setTimeout(() => document.body.removeChild(ghost), 0)
   }
 
   return (
     <>
       <div
-        draggable
-        onDragStart={e => {
-          setDragging(true)
-          e.dataTransfer.effectAllowed = 'copy'
-          e.dataTransfer.setData('application/x-proof-highlight', `"${highlight.text}" — p. ${highlight.page}`)
-          const ghost = document.createElement('div')
-          ghost.textContent = highlight.text.length > 80 ? highlight.text.slice(0, 80) + '…' : highlight.text
-          ghost.style.cssText = 'position:fixed;top:-999px;left:0;background:#1a1a1a;color:#aaa;padding:6px 10px;border-radius:3px;font-size:11px;font-family:inherit;max-width:220px;line-height:1.5;border:1px solid #333;'
-          document.body.appendChild(ghost)
-          e.dataTransfer.setDragImage(ghost, 12, 12)
-          setTimeout(() => document.body.removeChild(ghost), 0)
-        }}
-        onDragEnd={() => setDragging(false)}
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
-        onContextMenu={handleContextMenu}
+        onClick={handleCardClick}
         style={{
           padding: '10px 12px',
           background: hov ? '#111' : 'transparent',
-          transition: 'background 0.1s, opacity 0.1s',
+          transition: 'background 0.1s',
           display: 'flex', flexDirection: 'column', gap: '8px',
           borderBottom: '1px solid #0f0f0f',
-          cursor: 'grab',
-          opacity: dragging ? 0.4 : 1,
           position: 'relative',
+          cursor: expanded ? 'default' : 'pointer',
         }}
       >
+        {/* ··· menu button */}
         {hov && (
-          <span style={{
-            position: 'absolute', top: '8px', right: '10px',
-            fontSize: '9px', color: '#333', letterSpacing: '0.06em',
-            textTransform: 'uppercase', pointerEvents: 'none',
-          }}>
-            drag →
-          </span>
-        )}
-        <p
-          onClick={() => isLong && setExpanded(v => !v)}
-          style={{
-            margin: 0, fontSize: '11px', color: hov ? '#aaa' : '#666',
-            lineHeight: 1.6, transition: 'color 0.1s',
-            paddingRight: hov ? '40px' : '0',
-            cursor: isLong ? 'pointer' : 'default',
-          }}
-        >
-          {expanded ? highlight.text : (isLong ? highlight.text.slice(0, PREVIEW) + '…' : highlight.text)}
-        </p>
-        {isLong && (
-          <span
-            onClick={() => setExpanded(v => !v)}
-            style={{ fontSize: '9px', color: '#333', letterSpacing: '0.06em', cursor: 'pointer', userSelect: 'none' }}
-          >
-            {expanded ? 'collapse ↑' : 'expand ↓'}
-          </span>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '10px', color: '#333', letterSpacing: '0.06em' }}>p. {highlight.page}</span>
           <button
-            onClick={onJump}
+            ref={menuBtnRef}
+            onClick={e => { e.stopPropagation(); openMenu() }}
             style={{
-              background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-              fontSize: '10px', color: hov ? '#888' : '#444', fontFamily: 'inherit',
-              letterSpacing: '0.06em', textTransform: 'uppercase', outline: 'none',
-              transition: 'color 0.1s',
+              position: 'absolute', top: '7px', right: '8px',
+              background: 'none', border: 'none', cursor: 'pointer', outline: 'none',
+              fontSize: '13px', color: '#444', letterSpacing: '0.1em',
+              fontFamily: 'inherit', lineHeight: 1, padding: '0 2px',
             }}
-          >
-            jump →
-          </button>
+            onMouseEnter={e => (e.currentTarget.style.color = '#aaa')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+          >···</button>
+        )}
+
+        <textarea
+          ref={textareaRef}
+          value={localText}
+          onChange={e => setLocalText(e.target.value)}
+          onSelect={e => {
+            selRef.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd }
+          }}
+          onBlur={e => {
+            selRef.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd }
+          }}
+          onDragOver={e => e.stopPropagation()}
+          onDrop={e => { e.preventDefault(); e.stopPropagation() }}
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            background: 'transparent', border: 'none', outline: 'none',
+            resize: 'none', overflow: 'hidden',
+            fontSize: '11px', color: hov ? '#888' : '#666',
+            lineHeight: 1.6, fontFamily: 'inherit',
+            padding: 0, margin: 0,
+            // non-expanded: block mouse so card click toggles; expanded: editable
+            pointerEvents: expanded ? 'auto' : 'none',
+          }}
+        />
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '10px', color: '#2a2a2a', letterSpacing: '0.06em' }}>p. {highlight.page}</span>
+          {hov && expanded && (
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <button
+                onClick={e => { e.stopPropagation(); onJump() }}
+                style={{
+                  background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                  fontSize: '9px', color: '#444', fontFamily: 'inherit',
+                  letterSpacing: '0.06em', textTransform: 'uppercase', outline: 'none',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#aaa')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+              >jump</button>
+              <span
+                data-drag
+                draggable
+                onDragStart={buildDragPayload}
+                style={{
+                  fontSize: '9px', color: '#444', letterSpacing: '0.06em',
+                  textTransform: 'uppercase', cursor: 'grab', userSelect: 'none',
+                }}
+                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#aaa')}
+                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#444')}
+              >drag →</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -158,8 +197,8 @@ function HighlightCard({
           onClick={e => e.stopPropagation()}
           style={{
             position: 'fixed', left: menu.x, top: menu.y,
-            background: '#141414', border: '1px solid #2a2a2a',
-            borderRadius: '4px', zIndex: 200, minWidth: '140px',
+            background: '#0f0f0f', border: '1px solid #222',
+            zIndex: 200, minWidth: '120px',
             overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
           }}
         >
@@ -198,7 +237,7 @@ function HighlightsPanel({
     }}>
       <div style={{
         padding: '12px 12px 8px 12px', flexShrink: 0,
-        fontSize: '10px', color: '#444', letterSpacing: '0.12em', textTransform: 'uppercase',
+        fontSize: '10px', color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase',
       }}>
         Clips
       </div>
@@ -206,9 +245,10 @@ function HighlightsPanel({
       {highlights.length === 0 ? (
         <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {[
-            'Click any paragraph in the PDF to clip it.',
-            'Click a clipped paragraph again to remove it.',
-            'Drag any clip into the Synthesis panel to write from it.',
+            'Click any paragraph in the PDF to clip it here.',
+            'Edit the clip — trim it down to what you need.',
+            'Select a sentence (or leave it all), then drag → to Synthesis.',
+            'Click a clipped paragraph again in the PDF to remove the clip.',
           ].map((tip, i) => (
             <p key={i} style={{ margin: 0, fontSize: '11px', color: '#333', lineHeight: 1.6 }}>
               {tip}
@@ -279,25 +319,34 @@ export default function AnalysisPanel() {
     window.addEventListener('mouseup', onUp)
   }
 
-  const handleHighlight = useCallback((text: string, page: number, rects: HighlightRect[]) => {
+  const handleHighlight = useCallback((text: string, page: number, rects: HighlightRect[], spans: string[]) => {
     if (!selectedSource || !activeId) return
     if (rects.length === 0) return
     const current = selectedSource.highlights ?? []
 
-    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
-    const normText = norm(text)
+    // Toggle off any existing highlight whose vertical range overlaps the clicked range.
+    // Position-based matching is more reliable than text comparison because the
+    // detection can capture slightly different spans on repeated clicks.
+    const clickedTop = Math.min(...rects.map(r => r.y))
+    const clickedBot = Math.max(...rects.map(r => r.y + r.h))
 
     let removedSomething = false
     const updated = current.flatMap(h => {
-      if (h.page !== page) return [h]
-      if (norm(h.text) === normText) { removedSomething = true; return [] }
+      // Get all rects belonging to the clicked page (primary or continuation)
+      const pageRects = (h.rects ?? []).filter(r => (r.pg ?? h.page) === page)
+      if (!pageRects.length) return [h]
+      const hTop = Math.min(...pageRects.map(r => r.y))
+      const hBot = Math.max(...pageRects.map(r => r.y + r.h))
+      if (clickedTop < hBot - 0.005 && clickedBot > hTop + 0.005) {
+        removedSomething = true; return []
+      }
       return [h]
     })
 
     if (removedSomething) {
       patchSource(activeId, selectedSource.id, { highlights: updated })
     } else {
-      const h: Highlight = { id: uid(), text, page, rects, createdAt: Date.now() }
+      const h: Highlight = { id: uid(), text, page, rects, spans, createdAt: Date.now() }
       patchSource(activeId, selectedSource.id, { highlights: [...current, h] })
       capture('highlight_added')
     }
@@ -348,22 +397,22 @@ export default function AnalysisPanel() {
                 {
                   n: '1',
                   title: 'Drop a PDF',
-                  body: 'Add a source from the left panel. It loads instantly — no processing.',
+                  body: 'Add a source from the left panel. It loads instantly.',
                 },
                 {
                   n: '2',
-                  title: 'Click to clip a paragraph',
-                  body: 'Single click on any paragraph to clip it. Click again to remove it.',
+                  title: 'Click to clip',
+                  body: 'Click any paragraph to clip it here. Click it again in the PDF to remove it.',
                 },
                 {
                   n: '3',
-                  title: 'Jump back anytime',
-                  body: 'Every clip has a jump button that scrolls the PDF directly back to that passage.',
+                  title: 'Stage and trim',
+                  body: 'Click a clip to expand it. Edit it down to exactly what you need.',
                 },
                 {
                   n: '4',
-                  title: 'Write from your clips',
-                  body: 'Drag any clip into the Synthesis panel on the right. Export as .txt or .md when done.',
+                  title: 'Send to Synthesis',
+                  body: 'Select a sentence in the clip and drag it over — or drag the whole clip. It lands in your draft.',
                 },
               ].map(step => (
                 <div key={step.n} style={{ display: 'flex', gap: '16px' }}>

@@ -1,10 +1,11 @@
 type SourceStatus = 'queued' | 'done' | 'error'
 
 export interface HighlightRect {
-  x: number  // fraction of page width
-  y: number  // fraction of page height
-  w: number  // fraction of page width
-  h: number  // fraction of page height
+  x: number   // fraction of page width
+  y: number   // fraction of page height
+  w: number   // fraction of page width
+  h: number   // fraction of page height
+  pg?: number // page number (only set for rects on a page other than Highlight.page)
 }
 
 export interface Highlight {
@@ -12,6 +13,7 @@ export interface Highlight {
   text: string
   page: number
   rects: HighlightRect[]
+  spans?: string[]   // raw text of each captured span, for precise text-layer tinting
   createdAt: number
 }
 

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/TextLayer.css'
 import { getFile } from '@/lib/idb'
@@ -26,7 +26,7 @@ export default function PdfViewer({
   srcId: string
   highlights?: Highlight[]
   jumpTo?: { page: number; ts: number } | null
-  onHighlight?: (text: string, page: number, rects: HighlightRect[]) => void
+  onHighlight?: (text: string, page: number, rects: HighlightRect[], spans: string[]) => void
 }) {
   const [file,    setFile]    = useState<File | null>(null)
   const [nPages,  setNPages]  = useState(0)
@@ -38,9 +38,10 @@ export default function PdfViewer({
   const [textsReady, setTextsReady] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
 
-  const containerRef  = useRef<HTMLDivElement>(null)
-  const pageRefs      = useRef<(HTMLDivElement | null)[]>([])
-  const slotRoRef     = useRef<ResizeObserver | null>(null)
+  const containerRef    = useRef<HTMLDivElement>(null)
+  const pageRefs        = useRef<(HTMLDivElement | null)[]>([])
+  const innerPageRefs   = useRef<(HTMLDivElement | null)[]>([])
+  const slotRoRef       = useRef<ResizeObserver | null>(null)
   const findInputRef  = useRef<HTMLInputElement>(null)
   const pageTexts     = useRef<Map<number, string[]>>(new Map())
   const highlightsRef = useRef(highlights)
@@ -151,39 +152,22 @@ export default function PdfViewer({
 
   const customTextRenderer = useCallback(
     ({ str, pageIndex }: { str: string; pageIndex: number }) => {
-      const page = pageIndex + 1
-      const trimmed = str.trim()
-
-      const findSpans = findTerm.trim() ? findMatchMap.get(page) : null
-      const isFind = findSpans?.has(str) ?? false
-      // Subtle gold tint on spans that belong to a saved clip
-      const isClipped = trimmed.length >= 5 &&
-        highlights.some(h => h.page === page && h.text.toLowerCase().includes(trimmed.toLowerCase()))
-
-      if (!isClipped && !isFind) return str
-
-      let inner: string
-      if (isFind) {
-        const term = findTerm.toLowerCase()
-        const lower = str.toLowerCase()
-        let acc = '', i = 0
-        while (i < str.length) {
-          const idx = lower.indexOf(term, i)
-          if (idx === -1) { acc += esc(str.slice(i)); break }
-          acc += esc(str.slice(i, idx))
-          acc += `<mark ${FIND_MARK}>${esc(str.slice(idx, idx + term.length))}</mark>`
-          i = idx + term.length
-        }
-        inner = acc
-      } else {
-        inner = esc(str)
+      if (!findTerm.trim()) return str
+      const findSpans = findMatchMap.get(pageIndex + 1)
+      if (!findSpans?.has(str)) return str
+      const term = findTerm.toLowerCase()
+      const lower = str.toLowerCase()
+      let result = '', i = 0
+      while (i < str.length) {
+        const idx = lower.indexOf(term, i)
+        if (idx === -1) { result += esc(str.slice(i)); break }
+        result += esc(str.slice(i, idx))
+        result += `<mark ${FIND_MARK}>${esc(str.slice(idx, idx + term.length))}</mark>`
+        i = idx + term.length
       }
-
-      return isClipped
-        ? `<span style="background:rgba(200,160,0,0.18);border-radius:1px;">${inner}</span>`
-        : inner
+      return result
     },
-    [findMatchMap, findTerm, highlights]
+    [findMatchMap, findTerm]
   )
 
   // ─── Click-to-paragraph ───────────────────────────────────────────────────────
@@ -212,15 +196,18 @@ export default function PdfViewer({
       )
       if (!inLayer) return
 
-      // Find which page
+      // Find which page and its inner div (coords relative to the PDF canvas)
       let pageRef: HTMLDivElement | null = null
+      let innerRef: HTMLDivElement | null = null
       let page = 1
       pageRefs.current.forEach((ref, i) => {
-        if (ref?.contains(caretRange.startContainer)) { pageRef = ref; page = i + 1 }
+        if (ref?.contains(caretRange.startContainer)) {
+          pageRef = ref; innerRef = innerPageRefs.current[i]; page = i + 1
+        }
       })
-      if (!pageRef) return
+      if (!pageRef || !innerRef) return
 
-      // Get all spans sorted by reading order, filtering page numbers and junk
+      // Get all non-junk spans, sorted by reading order
       const allSpans = Array.from(
         (pageRef as HTMLDivElement).querySelectorAll('.textLayer span:not(.markedContent)')
       ) as HTMLSpanElement[]
@@ -228,8 +215,7 @@ export default function PdfViewer({
         .map(s => ({ el: s, rect: s.getBoundingClientRect() }))
         .filter(s => {
           const t = s.el.textContent?.trim() ?? ''
-          if (!t || s.rect.height === 0) return false
-          // Skip isolated page numbers (purely numeric, ≤ 3 chars)
+          if (!t || s.rect.height === 0 || s.rect.width === 0) return false
           if (/^\d+$/.test(t) && t.length <= 3) return false
           return true
         })
@@ -238,37 +224,185 @@ export default function PdfViewer({
       const clickedIdx = sorted.findIndex(s => s.el.contains(caretRange.startContainer))
       if (clickedIdx === -1) return
 
-      // Paragraph detection: use the clicked span's height as the line-height
-      // baseline. Break when the gap to the next span exceeds 1.8× that height.
-      // Hard-cap at 8 spans so we never grab a whole column.
-      const MAX_SPANS = 8
-      const threshold = sorted[clickedIdx].rect.height * 1.8
-
-      let startIdx = clickedIdx
-      while (startIdx > 0 && clickedIdx - startIdx < MAX_SPANS) {
-        if (sorted[startIdx].rect.top - sorted[startIdx - 1].rect.top > threshold) break
-        startIdx--
-      }
-      let endIdx = clickedIdx
-      while (endIdx < sorted.length - 1 && endIdx - clickedIdx < MAX_SPANS) {
-        if (sorted[endIdx + 1].rect.top - sorted[endIdx].rect.top > threshold) break
-        endIdx++
+      // Group spans into visual lines (±4px tolerance)
+      type Line = { spans: typeof sorted; top: number }
+      const lines: Line[] = []
+      for (const sp of sorted) {
+        const last = lines[lines.length - 1]
+        if (last && Math.abs(sp.rect.top - last.top) <= 4) {
+          last.spans.push(sp)
+        } else {
+          lines.push({ spans: [sp], top: sp.rect.top })
+        }
       }
 
-      const pageRect = (pageRef as HTMLDivElement).getBoundingClientRect()
-      const para = sorted.slice(startIdx, endIdx + 1)
+      const clickedLineIdx = lines.findIndex(l =>
+        l.spans.some(s => s.el.contains(caretRange.startContainer))
+      )
+      if (clickedLineIdx === -1) return
 
-      const text = para.map(s => s.el.textContent?.trim()).filter(Boolean).join(' ')
-      if (!text || text.length < 3) return
+      // Median line spacing in ±5 window → threshold for spacing-based paragraph break
+      const lineSpacings: number[] = []
+      const winStart = Math.max(1, clickedLineIdx - 5)
+      const winEnd   = Math.min(lines.length - 1, clickedLineIdx + 5)
+      for (let i = winStart; i <= winEnd; i++) {
+        const gap = lines[i].top - lines[i - 1].top
+        if (gap > 2 && gap < 100) lineSpacings.push(gap)
+      }
+      lineSpacings.sort((a, b) => a - b)
+      const median = lineSpacings.length > 0
+        ? lineSpacings[Math.floor(lineSpacings.length / 2)]
+        : sorted[clickedIdx].rect.height * 1.3
+      const gapThreshold = Math.min(median * 1.4, 60)
 
-      const rects: HighlightRect[] = para.map(s => ({
-        x: (s.rect.left - pageRect.left) / pageRect.width,
-        y: (s.rect.top  - pageRect.top)  / pageRect.height,
-        w: s.rect.width  / pageRect.width,
-        h: s.rect.height / pageRect.height,
-      }))
+      // Indentation-based paragraph detection (for papers with first-line indent)
+      // 25th-percentile left edge = typical body margin; indented lines sit further right
+      const leftEdges = lines.map(l => Math.min(...l.spans.map(s => s.rect.left)))
+      const sortedLefts = [...leftEdges].sort((a, b) => a - b)
+      const marginLeft = sortedLefts[Math.floor(sortedLefts.length * 0.25)]
+      const INDENT_PX = 18
+      const hasIndents = leftEdges.some(le => le > marginLeft + INDENT_PX)
+      const isParaStart = (li: number) => hasIndents && leftEdges[li] > marginLeft + INDENT_PX
 
-      onHighlight?.(text, page, rects)
+      const MAX_UP   = 20  // plenty to reach any paragraph start
+      const MAX_DOWN = 60  // generous — detection stops it early anyway
+
+      let startLineIdx = clickedLineIdx
+      let endLineIdx   = clickedLineIdx
+      if (!isParaStart(clickedLineIdx)) {
+        while (startLineIdx > 0 && clickedLineIdx - startLineIdx < MAX_UP) {
+          if (lines[startLineIdx].top - lines[startLineIdx - 1].top > gapThreshold) break
+          startLineIdx--
+          if (isParaStart(startLineIdx)) break
+        }
+      }
+      while (endLineIdx < lines.length - 1 && endLineIdx - clickedLineIdx < MAX_DOWN) {
+        if (lines[endLineIdx + 1].top - lines[endLineIdx].top > gapThreshold) break
+        if (isParaStart(endLineIdx + 1)) break
+        endLineIdx++
+      }
+
+      // One rect per line; coordinates relative to the inner div (no padding offset)
+      const paraLines = lines.slice(startLineIdx, endLineIdx + 1)
+      let combinedText  = paraLines.flatMap(l => l.spans).map(s => s.el.textContent?.trim()).filter(Boolean).join(' ')
+      if (!combinedText || combinedText.length < 3) return
+
+      let combinedSpans = paraLines.flatMap(l => l.spans).map(s => s.el.textContent ?? '').filter(s => s.trim())
+      const innerRect   = (innerRef as HTMLDivElement).getBoundingClientRect()
+      function lineRect(line: Line, iRect: DOMRect, pgNum?: number): HighlightRect {
+        const ls  = line.spans
+        const lft = Math.min(...ls.map(s => s.rect.left))
+        const rgt = Math.max(...ls.map(s => s.rect.left + s.rect.width))
+        const tp  = Math.min(...ls.map(s => s.rect.top))
+        const bt  = Math.max(...ls.map(s => s.rect.top + s.rect.height))
+        return {
+          x: (lft - iRect.left) / iRect.width,
+          y: (tp  - iRect.top)  / iRect.height,
+          w: (rgt - lft)        / iRect.width,
+          h: (bt  - tp)         / iRect.height,
+          ...(pgNum !== undefined ? { pg: pgNum } : {}),
+        }
+      }
+      let combinedRects: HighlightRect[] = paraLines.map(l => lineRect(l, innerRect))
+
+      // If we hit the first line on this page and it has no indent, the paragraph
+      // may have started on the previous page — look backward and prepend those lines.
+      if (startLineIdx === 0 && !isParaStart(0) && page > 1) {
+        const prevPageEl  = pageRefs.current[page - 2]
+        const prevInnerEl = innerPageRefs.current[page - 2]
+        if (prevPageEl && prevInnerEl) {
+          const prevSpanEls = Array.from(
+            prevPageEl.querySelectorAll('.textLayer span:not(.markedContent)')
+          ) as HTMLSpanElement[]
+          const prevSorted = prevSpanEls
+            .map(s => ({ el: s, rect: s.getBoundingClientRect() }))
+            .filter(s => {
+              const t = s.el.textContent?.trim() ?? ''
+              return t && s.rect.height > 0 && s.rect.width > 0 && !(/^\d+$/.test(t) && t.length <= 3)
+            })
+            .sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)
+
+          if (prevSorted.length > 0) {
+            const prevLines: Line[] = []
+            for (const sp of prevSorted) {
+              const last = prevLines[prevLines.length - 1]
+              if (last && Math.abs(sp.rect.top - last.top) <= 4) last.spans.push(sp)
+              else prevLines.push({ spans: [sp], top: sp.rect.top })
+            }
+            const pLeftEdges   = prevLines.map(l => Math.min(...l.spans.map(s => s.rect.left)))
+            const pIsParaStart = (li: number) => pLeftEdges[li] > marginLeft + INDENT_PX
+
+            // Walk backward from the last line of the prev page
+            let prevStart = prevLines.length
+            for (let i = prevLines.length - 1; i >= Math.max(0, prevLines.length - 30); i--) {
+              if (i < prevLines.length - 1) {
+                const gap = prevLines[i + 1].top - prevLines[i].top
+                if (gap > gapThreshold) break
+              }
+              prevStart = i
+              if (pIsParaStart(i)) break  // include this indented first line and stop
+            }
+
+            if (prevStart < prevLines.length) {
+              const prevParaLines = prevLines.slice(prevStart)
+              const prevInnerRect = prevInnerEl.getBoundingClientRect()
+              const prevText      = prevParaLines.flatMap(l => l.spans).map(s => s.el.textContent?.trim()).filter(Boolean).join(' ')
+              combinedText  = prevText + ' ' + combinedText
+              combinedSpans = [...prevParaLines.flatMap(l => l.spans).map(s => s.el.textContent ?? '').filter(s => s.trim()), ...combinedSpans]
+              combinedRects = [...prevParaLines.map(l => lineRect(l, prevInnerRect, page - 1)), ...combinedRects]
+            }
+          }
+        }
+      }
+
+      // If we consumed the last line on this page, check whether the paragraph
+      // continues at the top of the next page (no indent = continuation).
+      if (endLineIdx === lines.length - 1) {
+        const nextInnerEl = innerPageRefs.current[page]   // page is 1-indexed → next page index
+        const nextPageEl  = pageRefs.current[page]
+        if (nextPageEl && nextInnerEl) {
+          const nextSpanEls = Array.from(
+            nextPageEl.querySelectorAll('.textLayer span:not(.markedContent)')
+          ) as HTMLSpanElement[]
+          const nextSorted = nextSpanEls
+            .map(s => ({ el: s, rect: s.getBoundingClientRect() }))
+            .filter(s => {
+              const t = s.el.textContent?.trim() ?? ''
+              return t && s.rect.height > 0 && s.rect.width > 0 && !(/^\d+$/.test(t) && t.length <= 3)
+            })
+            .sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)
+
+          if (nextSorted.length > 0) {
+            const nextLines: Line[] = []
+            for (const sp of nextSorted) {
+              const last = nextLines[nextLines.length - 1]
+              if (last && Math.abs(sp.rect.top - last.top) <= 4) last.spans.push(sp)
+              else nextLines.push({ spans: [sp], top: sp.rect.top })
+            }
+            // Reuse page N's marginLeft for indent detection on page N+1 — both pages
+            // share the same horizontal layout so the reference stays consistent.
+            const nLeftEdges  = nextLines.map(l => Math.min(...l.spans.map(s => s.rect.left)))
+            const nIsParaStart = (li: number) => nLeftEdges[li] > marginLeft + INDENT_PX
+
+            let nextEnd = -1
+            for (let i = 0; i < Math.min(nextLines.length, 20); i++) {
+              if (nIsParaStart(i)) break          // new paragraph (works for i=0 and i>0)
+              if (i > 0 && nextLines[i].top - nextLines[i - 1].top > gapThreshold) break
+              nextEnd = i
+            }
+
+            if (nextEnd >= 0) {
+              const nextParaLines  = nextLines.slice(0, nextEnd + 1)
+              const nextInnerRect  = nextInnerEl.getBoundingClientRect()
+              combinedText  += ' ' + nextParaLines.flatMap(l => l.spans).map(s => s.el.textContent?.trim()).filter(Boolean).join(' ')
+              combinedSpans  = [...combinedSpans, ...nextParaLines.flatMap(l => l.spans).map(s => s.el.textContent ?? '').filter(s => s.trim())]
+              combinedRects  = [...combinedRects, ...nextParaLines.map(l => lineRect(l, nextInnerRect, page + 1))]
+            }
+          }
+        }
+      }
+
+      onHighlight?.(combinedText, page, combinedRects, combinedSpans)
     }
 
     el.addEventListener('click', handleClick)
@@ -314,7 +448,7 @@ export default function PdfViewer({
             placeholder="search..." style={{ flex: 1, background: '#111', border: '1px solid #1a1a1a', borderRadius: '3px', padding: '4px 10px', fontSize: '12px', color: '#bbb', outline: 'none', fontFamily: 'inherit', letterSpacing: '0.04em' }}
             onFocus={e => (e.currentTarget.style.borderColor = '#333')} onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
           />
-          {findTerm.trim() && <span style={{ fontSize: '10px', color: '#555', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{findResults.length === 0 ? 'no matches' : `${findIdx + 1} / ${findResults.length}`}</span>}
+          {findTerm.trim() && <span style={{ fontSize: '10px', color: '#555', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{findResults.length === 0 ? 'no results' : `${findIdx + 1} / ${findResults.length}`}</span>}
           {findResults.length > 1 && <><button onClick={() => setFindIdx(i => (i - 1 + findResults.length) % findResults.length)} style={navBtn}>↑</button><button onClick={() => setFindIdx(i => (i + 1) % findResults.length)} style={navBtn}>↓</button></>}
           <button onClick={() => { setShowFind(false); setFindTerm('') }} style={{ ...navBtn, color: '#555' }}>×</button>
         </div>
@@ -327,29 +461,46 @@ export default function PdfViewer({
           <Document file={file} onLoadSuccess={pdf => setNPages(pdf.numPages)} loading={<div style={MSG}>rendering...</div>} error={<div style={MSG}>could not render pdf.</div>}>
             {Array.from({ length: nPages }, (_, pi) => (
               <div key={pi} ref={el => { pageRefs.current[pi] = el }} style={{ padding: '12px 16px', boxSizing: 'border-box', position: 'relative' }}>
-                <div ref={pi === 0 ? attachSlot : undefined}>
-                  {pW > 0 && <Page pageNumber={pi + 1} width={pW} renderTextLayer renderAnnotationLayer={false} customTextRenderer={customTextRenderer} />}
-                </div>
-                {/* Left margin bar marks which paragraphs are clipped */}
-                {highlights.filter(h => h.page === pi + 1).map(h => {
-                  const rs = h.rects ?? []
+                {/* Left margin bars — positioned in the outer (padded) div */}
+                {highlights.map(h => {
+                  const pageNum = pi + 1
+                  const rs = (h.rects ?? []).filter(r => (r.pg ?? h.page) === pageNum)
                   if (!rs.length) return null
-                  const top    = Math.min(...rs.map(r => r.y))
-                  const bottom = Math.max(...rs.map(r => r.y + r.h))
+                  const topFrac    = Math.max(0, Math.min(...rs.map(r => r.y)))
+                  const bottomFrac = Math.min(1, Math.max(...rs.map(r => r.y + r.h)))
                   return (
                     <div key={h.id} style={{
-                      position: 'absolute',
-                      left: '5px',
-                      top:    `${top    * 100}%`,
-                      bottom: `${(1 - bottom) * 100}%`,
-                      minHeight: '6px',
-                      width: '3px',
-                      background: 'rgba(220,170,0,0.9)',
-                      borderRadius: '2px',
-                      pointerEvents: 'none',
+                      position: 'absolute', left: '5px', width: '3px',
+                      top: `${topFrac * 100}%`, bottom: `${(1 - bottomFrac) * 100}%`,
+                      minHeight: '6px', background: 'rgba(220,170,0,0.9)',
+                      borderRadius: '2px', pointerEvents: 'none',
                     }} />
                   )
                 })}
+                {/* Inner div = exact PDF canvas area; overlays use same coord origin as stored rects */}
+                <div
+                  ref={el => { innerPageRefs.current[pi] = el; if (pi === 0) attachSlot(el) }}
+                  style={{ position: 'relative' }}
+                >
+                  {pW > 0 && <Page pageNumber={pi + 1} width={pW} renderTextLayer renderAnnotationLayer={false} customTextRenderer={customTextRenderer} />}
+                  {/* Gold tint: one overlay per line-rect, top+bottom anchors (height:% collapses on auto parents) */}
+                  {highlights.map(h =>
+                    (h.rects ?? [])
+                      .filter(r => (r.pg ?? h.page) === pi + 1)
+                      .map((r, ri) => (
+                        <div key={`${h.id}-${ri}`} style={{
+                          position: 'absolute',
+                          left:   `${Math.max(0, r.x) * 100}%`,
+                          width:  `${r.w * 100}%`,
+                          top:    `${Math.max(0, r.y) * 100}%`,
+                          bottom: `${Math.max(0, 1 - r.y - r.h) * 100}%`,
+                          background: 'rgba(200,160,0,0.15)',
+                          borderRadius: '1px',
+                          pointerEvents: 'none',
+                        }} />
+                      ))
+                  )}
+                </div>
               </div>
             ))}
           </Document>

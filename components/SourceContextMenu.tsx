@@ -50,8 +50,8 @@ export default function SourceContextMenu() {
       onClick={e => e.stopPropagation()}
       style={{
         position: 'fixed', left: contextMenu.x, top: contextMenu.y,
-        background: '#141414', border: '1px solid #2a2a2a',
-        borderRadius: '4px', zIndex: 200, minWidth: '140px',
+        background: '#0f0f0f', border: '1px solid #222',
+        zIndex: 200, minWidth: '140px',
         overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
       }}
     >
