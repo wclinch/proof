@@ -260,9 +260,11 @@ export default function PdfViewer({
       const leftEdges = lines.map(l => Math.min(...l.spans.map(s => s.rect.left)))
       const sortedLefts = [...leftEdges].sort((a, b) => a - b)
       const marginLeft = sortedLefts[Math.floor(sortedLefts.length * 0.25)]
-      const INDENT_PX = 18
-      const hasIndents = leftEdges.some(le => le > marginLeft + INDENT_PX)
+      const INDENT_PX   = 18  // finding paragraph start (going up) — looser
+      const BREAK_PX    = 36  // detecting next paragraph (going down) — stricter to avoid short centered lines
+      const hasIndents  = leftEdges.some(le => le > marginLeft + INDENT_PX)
       const isParaStart = (li: number) => hasIndents && leftEdges[li] > marginLeft + INDENT_PX
+      const isParaBreak = (li: number) => hasIndents && leftEdges[li] > marginLeft + BREAK_PX
 
       const MAX_UP   = 20  // plenty to reach any paragraph start
       const MAX_DOWN = 60  // generous — detection stops it early anyway
@@ -278,7 +280,7 @@ export default function PdfViewer({
       }
       while (endLineIdx < lines.length - 1 && endLineIdx - clickedLineIdx < MAX_DOWN) {
         if (lines[endLineIdx + 1].top - lines[endLineIdx].top > gapThreshold) break
-        if (isParaStart(endLineIdx + 1)) break
+        if (isParaBreak(endLineIdx + 1)) break
         endLineIdx++
       }
 
@@ -383,10 +385,12 @@ export default function PdfViewer({
             // share the same horizontal layout so the reference stays consistent.
             const nLeftEdges  = nextLines.map(l => Math.min(...l.spans.map(s => s.rect.left)))
             const nIsParaStart = (li: number) => nLeftEdges[li] > marginLeft + INDENT_PX
+            const nIsParaBreak = (li: number) => nLeftEdges[li] > marginLeft + BREAK_PX
 
             let nextEnd = -1
             for (let i = 0; i < Math.min(nextLines.length, 20); i++) {
-              if (nIsParaStart(i)) break          // new paragraph (works for i=0 and i>0)
+              if (i === 0 && nIsParaStart(0)) break
+              if (i > 0 && nIsParaBreak(i)) break
               if (i > 0 && nextLines[i].top - nextLines[i - 1].top > gapThreshold) break
               nextEnd = i
             }
