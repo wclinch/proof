@@ -260,11 +260,28 @@ export default function PdfViewer({
       const leftEdges = lines.map(l => Math.min(...l.spans.map(s => s.rect.left)))
       const sortedLefts = [...leftEdges].sort((a, b) => a - b)
       const marginLeft = sortedLefts[Math.floor(sortedLefts.length * 0.25)]
-      const INDENT_PX = 18
+      const INDENT_PX  = 18
       const hasIndents = leftEdges.some(le => le > marginLeft + INDENT_PX)
-      // isParaStart: used to find the clicked paragraph's own first line (going up)
-      // and to trigger backward cross-page detection
+      // isParaStart: detects an indented first line — used for going up and cross-page triggers
       const isParaStart = (li: number) => hasIndents && leftEdges[li] > marginLeft + INDENT_PX
+
+      // A new paragraph boundary is detected when BOTH:
+      // 1. The current line ends a sentence (period / ! / ?)
+      // 2. The next line is indented (its leftEdge > marginLeft + INDENT_PX)
+      // This avoids false breaks on short centered continuation lines which look indented
+      // but are never preceded by a sentence-ending line within the same paragraph.
+      function lineEndsSentence(line: Line): boolean {
+        for (let i = line.spans.length - 1; i >= 0; i--) {
+          const t = (line.spans[i].el.textContent ?? '').trimEnd()
+          if (t) return /[.!?]["'»]?$/.test(t)
+        }
+        return false
+      }
+      function isParaBoundary(curLine: Line, nextLine: Line): boolean {
+        if (!lineEndsSentence(curLine)) return false
+        const nextLeft = Math.min(...nextLine.spans.map(s => s.rect.left))
+        return nextLeft > marginLeft + INDENT_PX
+      }
 
       const MAX_UP   = 20
       const MAX_DOWN = 60
@@ -278,20 +295,9 @@ export default function PdfViewer({
           if (isParaStart(startLineIdx)) break
         }
       }
-
-      // Use the detected paragraph's first line as the indent reference.
-      // Genuine paragraph starts elsewhere will have a similar left edge (~48px from margin).
-      // Short centered lines (last lines of sentences) have LARGER left edges because
-      // they're shorter — so they exceed this reference and won't trigger a false break.
-      const paraStartLeft = (hasIndents && leftEdges[startLineIdx] > marginLeft + INDENT_PX)
-        ? leftEdges[startLineIdx]
-        : marginLeft + 48  // fallback: assume standard 0.5-inch indent
-      const isNewParagraph = (le: number) =>
-        le > marginLeft + INDENT_PX && le <= paraStartLeft + 12
-
       while (endLineIdx < lines.length - 1 && endLineIdx - clickedLineIdx < MAX_DOWN) {
         if (lines[endLineIdx + 1].top - lines[endLineIdx].top > gapThreshold) break
-        if (isNewParagraph(leftEdges[endLineIdx + 1])) break
+        if (isParaBoundary(lines[endLineIdx], lines[endLineIdx + 1])) break
         endLineIdx++
       }
 
@@ -342,9 +348,14 @@ export default function PdfViewer({
               if (last && Math.abs(sp.rect.top - last.top) <= 4) last.spans.push(sp)
               else prevLines.push({ spans: [sp], top: sp.rect.top })
             }
-            const pLeftEdges   = prevLines.map(l => Math.min(...l.spans.map(s => s.rect.left)))
-            // Stop going back when we find the paragraph's indented first line
-            const pIsParaStart = (li: number) => isNewParagraph(pLeftEdges[li])
+            const pLeftEdges = prevLines.map(l => Math.min(...l.spans.map(s => s.rect.left)))
+            // Stop at the paragraph's indented first line:
+            // it's indented AND the line above it ends a sentence (confirming it's a new paragraph start)
+            const pIsParaStart = (li: number) => {
+              if (pLeftEdges[li] <= marginLeft + INDENT_PX) return false
+              if (li === 0) return true
+              return lineEndsSentence(prevLines[li - 1])
+            }
 
             // Walk backward from the last line of the prev page
             let prevStart = prevLines.length
@@ -399,10 +410,10 @@ export default function PdfViewer({
 
             let nextEnd = -1
             for (let i = 0; i < Math.min(nextLines.length, 20); i++) {
-              // i=0: any indent means the next page opens a new paragraph
+              // i=0: any indent on the first line of the next page = new paragraph there
               if (i === 0 && nLeftEdges[0] > marginLeft + INDENT_PX) break
-              // i>0: use the same reference-based check as the main page
-              if (i > 0 && isNewParagraph(nLeftEdges[i])) break
+              // i>0: new paragraph when current line ends a sentence AND next line is indented
+              if (i > 0 && isParaBoundary(nextLines[i - 1], nextLines[i])) break
               if (i > 0 && nextLines[i].top - nextLines[i - 1].top > gapThreshold) break
               nextEnd = i
             }
