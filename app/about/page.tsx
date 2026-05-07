@@ -30,7 +30,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            A research workspace that keeps you inside your source documents while you write. Drop a PDF, click any paragraph to clip it, stage and trim the clip, drag exactly what you need into Synthesis. No tab switching.
+            A reading and writing workspace. Drop a PDF, read it as clean structured text, clip the sentences you need, and write your draft — all in one place. No switching tabs, no copy-pasting, no losing your place.
           </p>
         </div>
 
@@ -38,44 +38,40 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How to use it</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>1. Add a source</span> — drop a PDF or click to upload. It loads immediately.
+              <span style={{ color: '#999' }}>1. Add a document</span> — drop a PDF into the left panel. It's extracted and ready to read in seconds.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>2. Click to clip</span> — click any paragraph in the PDF to clip it. It appears in the Clips panel on the left, tied to its page. Click the same paragraph again to remove it.
+              <span style={{ color: '#999' }}>2. Read</span> — your document opens as clean readable text in the center. Scroll through at your own pace.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>3. Stage and trim</span> — click a clip to expand it. Edit the text down to just what you need, or leave it as-is.
+              <span style={{ color: '#999' }}>3. Clip sentences</span> — click any sentence to clip it along with its surrounding context. It appears in the Clips panel on the left. Click a clipped sentence to remove it, or click beside a clip to expand it.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>4. Send to Synthesis</span> — select a sentence in the clip, then hover and click <span style={{ color: '#999' }}>drag →</span> to send just that selection. Or drag the whole clip without selecting anything.
+              <span style={{ color: '#999' }}>4. Build your draft</span> — click <span style={{ color: '#999' }}>Insert</span> on any clip to add it to your draft at the cursor. Write freely around it.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>5. Jump back</span> — hover a clip and click <span style={{ color: '#999' }}>jump</span> to scroll the PDF back to that passage.
+              <span style={{ color: '#999' }}>5. Save your draft</span> — when you're done, click <span style={{ color: '#999' }}>···</span> in the Draft panel to save as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span>.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>6. Remove a clip</span> — hover a clip and click <span style={{ color: '#999' }}>···</span> to remove it. Or click the same paragraph again in the PDF.
-            </p>
-            <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>7. Write and export</span> — the Synthesis panel is on the right. Write freely or drop clips into it. Click <span style={{ color: '#999' }}>···</span> to export as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span>.
-            </p>
-            <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>8. Projects</span> — click Projects in the top bar to manage multiple workspaces. Sign in to sync clips and projects across devices.
+              <span style={{ color: '#999' }}>6. Workspaces</span> — click your project name at the top to manage multiple workspaces. Sign in to sync across devices.
             </p>
           </div>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Shortcuts</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Interactions</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {[
-              { keys: ['Click'], desc: 'Click any paragraph in the PDF to clip it. Click again to remove.' },
-              { keys: ['Cmd+F', 'Ctrl+F'], desc: 'Open the in-PDF find bar' },
-              { keys: ['Enter'], desc: 'Next find result (when find bar is open)' },
-              { keys: ['Esc'], desc: 'Close find bar' },
-              { keys: ['···'], desc: 'Hover any clip or source to reveal the options menu' },
+              { keys: ['Click sentence'],       desc: 'Clip it with its surrounding context' },
+              { keys: ['Click clipped'],        desc: 'Remove only that sentence from the clip' },
+              { keys: ['Click beside clip'],    desc: 'Expand the clip by one sentence' },
+              { keys: ['Insert (on clip)'],     desc: 'Add the clip to your draft at the cursor' },
+              { keys: ['···  (on clip)'],       desc: 'Remove the clip' },
+              { keys: ['Tab (in draft)'],       desc: 'Indent by four spaces' },
+              { keys: ['Cmd+Enter'],            desc: 'Start a new draft when the draft panel is empty' },
             ].map((row, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                <div style={{ display: 'flex', gap: '4px', flexShrink: 0, minWidth: '130px' }}>
+                <div style={{ display: 'flex', gap: '4px', flexShrink: 0, minWidth: '160px' }}>
                   {row.keys.map((k, j) => <Kbd key={j}>{k}</Kbd>)}
                 </div>
                 <span style={{ fontSize: '13px', color: '#777', lineHeight: 1.5 }}>{row.desc}</span>
@@ -87,21 +83,21 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Layout</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Three panels. Left: source list. Center: Clips staging area (left half) + PDF viewer with find bar and page jump (right half). Right: Synthesis editor. Drag the divider between center and right to resize. The Clips panel is also resizable.
+            Three columns. Left: document list. Center: clips panel (left half) + document reader (right half) — the divider between them is draggable. Right: draft editor. The divider between center and right is also draggable.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Compatibility</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Document support</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Works best with standard PDFs — black text on white background, generated from a word processor or typesetting tool. Clipping is not supported on scanned documents, image-only PDFs, or documents with non-standard text layers.
+            Works with standard text-based PDFs. Text is extracted once when you add the file. Scanned documents and image-only PDFs are not supported.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Saving your work</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Free to use with no account. PDFs are always stored locally in your browser. Sign in to sync your clips and projects across devices — PDF files still stay on your machine and need to be re-opened on each device.
+            Free to use with no account. Your documents are stored locally in your browser. Sign in to sync your clips and workspaces across devices — documents stay on your machine and need to be re-added on each device.
           </p>
         </div>
 

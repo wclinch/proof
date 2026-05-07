@@ -7,6 +7,23 @@ type CtxMenu = { x: number; y: number }
 export default function DraftPanel({ width }: { width: number }) {
   const { activeProject, activeId, updateProject } = useApp()
 
+  // Step 4 onboarding: brief confirmation after first Insert
+  const [ob4, setOb4] = useState<'idle' | 'in' | 'out'>('idle')
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('proof-ob') === 'd') return
+    function onInsert() {
+      setOb4('in')
+      const t1 = setTimeout(() => setOb4('out'), 3200)
+      const t2 = setTimeout(() => {
+        setOb4('idle')
+        if (typeof window !== 'undefined') localStorage.setItem('proof-ob', 'd')
+      }, 4000)
+      return () => { clearTimeout(t1); clearTimeout(t2) }
+    }
+    window.addEventListener('proof-send-to-draft', onInsert, { once: true })
+    return () => window.removeEventListener('proof-send-to-draft', onInsert)
+  }, [])
+
   const [localTitle, setLocalTitle] = useState(activeProject?.draftTitle ?? '')
   const [localDraft, setLocalDraft] = useState(activeProject?.draft ?? '')
   const [ctxMenu, setCtxMenu]       = useState<CtxMenu | null>(null)
@@ -35,28 +52,55 @@ export default function DraftPanel({ width }: { width: number }) {
   const updateProjectRef = useRef(updateProject)
   useEffect(() => { updateProjectRef.current = updateProject }, [updateProject])
 
-  // Listen for clip → synthesis sends from HighlightCard
+  // Focus management: when edit mode first opens via an insertion we want
+  // the cursor placed at the end of the inserted text automatically.
+  const [pendingFocus, setPendingFocus] = useState(false)
+  useEffect(() => {
+    if (!pendingFocus || !editMode || !textareaRef.current) return
+    const el = textareaRef.current
+    el.focus()
+    el.selectionStart = el.selectionEnd = el.value.length
+    setPendingFocus(false)
+  }, [pendingFocus, editMode])
+
+  // Listen for insert events dispatched by ClipCard
   useEffect(() => {
     function handler(e: Event) {
       const text = (e as CustomEvent<string>).detail
       if (!text || !activeIdRef.current) return
+
+      // First-ever insert: enter edit mode and focus textarea after render
       if (!editModeRef.current) {
         setEditMode(true)
         setLocalDraft(text)
         updateProjectRef.current(activeIdRef.current, { draft: text })
+        setPendingFocus(true)
         return
       }
-      const el = textareaRef.current
+
+      const el   = textareaRef.current
       const prev = localDraftRef.current
       const pos  = el?.selectionStart ?? prev.length
-      const pad  = prev && !prev.slice(0, pos).endsWith('\n') ? '\n' : ''
-      const next = prev.slice(0, pos) + pad + text + prev.slice(pos)
+      const before = prev.slice(0, pos)
+      const after  = prev.slice(pos)
+
+      // Ensure the clip lands as its own paragraph — clean double-newline on each side
+      const prePad  = !before         ? ''
+        : before.endsWith('\n\n')     ? ''
+        : before.endsWith('\n')       ? '\n'
+        : '\n\n'
+      const postPad = !after          ? ''
+        : after.startsWith('\n\n')    ? ''
+        : after.startsWith('\n')      ? '\n'
+        : '\n\n'
+
+      const next = before + prePad + text + postPad + after
       setLocalDraft(next)
       updateProjectRef.current(activeIdRef.current, { draft: next })
       requestAnimationFrame(() => {
         if (!el) return
         el.focus()
-        el.selectionStart = el.selectionEnd = pos + pad.length + text.length
+        el.selectionStart = el.selectionEnd = pos + prePad.length + text.length
       })
     }
     window.addEventListener('proof-send-to-draft', handler)
@@ -147,17 +191,17 @@ export default function DraftPanel({ width }: { width: number }) {
     }
 
     const el = textareaRef.current
-    const pos = el ? (el.selectionStart ?? localDraft.length) : localDraft.length
+    const pos    = el ? (el.selectionStart ?? localDraft.length) : localDraft.length
     const before = localDraft.slice(0, pos)
     const after  = localDraft.slice(pos)
-    const pad    = before && !before.endsWith('\n') ? '\n' : ''
-    const insert = pad + text
-    const next   = before + insert + after
+    const prePad  = !before ? '' : before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n'
+    const postPad = !after  ? '' : after.startsWith('\n\n') ? '' : after.startsWith('\n') ? '\n' : '\n\n'
+    const next   = before + prePad + text + postPad + after
     setLocalDraft(next)
     requestAnimationFrame(() => {
       if (!el) return
       el.focus()
-      el.selectionStart = el.selectionEnd = pos + insert.length
+      el.selectionStart = el.selectionEnd = pos + prePad.length + text.length
     })
   }
 
@@ -204,7 +248,7 @@ export default function DraftPanel({ width }: { width: number }) {
         background: dropTarget ? '#0f0f0f' : 'transparent', transition: 'background 0.15s',
       }}>
         <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {dropTarget ? 'drop to insert →' : 'Synthesis'}
+          {dropTarget ? 'Drop to insert' : 'Draft'}
         </span>
         {hasContent && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0, marginLeft: '8px' }}>
@@ -228,58 +272,61 @@ export default function DraftPanel({ width }: { width: number }) {
         )}
       </div>
 
+      {/* Step 4 onboarding message */}
+      {ob4 !== 'idle' && (
+        <div style={{
+          padding: '0 20px',
+          height: '30px',
+          display: 'flex',
+          alignItems: 'center',
+          flexShrink: 0,
+          borderBottom: '1px solid #1a1a1a',
+          fontSize: '11px',
+          color: '#444',
+          letterSpacing: '0.05em',
+          opacity: ob4 === 'out' ? 0 : 1,
+          transition: 'opacity 0.7s',
+        }}>
+          Your draft grows as you read.
+        </div>
+      )}
+
       {/* Body */}
       {!hasDraft ? (
-        <div style={{ flex: 1, padding: '32px 28px', overflowY: 'auto' }}>
-          <div style={{ maxWidth: '280px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                Synthesis
-              </span>
-              <span style={{ fontSize: '12px', color: '#333', lineHeight: 1.7, marginTop: '6px' }}>
-                Write from your clips. Stage what you need, drag it here, keep writing.
-              </span>
-            </div>
-            {[
-              'Expand a clip, select what you need, then drag it here.',
-              'Or click New to start writing from scratch.',
-              'Export as .txt or .md when done.',
-            ].map((tip, i) => (
-              <div key={i} style={{ display: 'flex', gap: '12px' }}>
-                <span style={{ fontSize: '11px', color: '#2a2a2a', flexShrink: 0, marginTop: '2px' }}>{i + 1}.</span>
-                <span style={{ fontSize: '12px', color: '#333', lineHeight: 1.7 }}>{tip}</span>
-              </div>
-            ))}
-            <button
-              onClick={handleNewDraft}
-              style={{
-                alignSelf: 'flex-start',
-                background: 'none', border: '1px solid #1a1a1a', borderRadius: '4px',
-                padding: '7px 18px', cursor: 'pointer', fontSize: '11px', color: '#444',
-                letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'inherit',
-                outline: 'none', transition: 'border-color 0.15s, color 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
-            >
-              New →
-            </button>
-          </div>
+        <div style={{ flex: 1, padding: '40px 28px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <span style={{ fontSize: '12px', color: '#2a2a2a', lineHeight: 1.7 }}>
+            Insert a clip from the left, or start writing.
+          </span>
+          <button
+            onClick={handleNewDraft}
+            style={{
+              alignSelf: 'flex-start',
+              background: 'none', border: '1px solid #1a1a1a', borderRadius: '4px',
+              padding: '7px 18px', cursor: 'pointer', fontSize: '11px', color: '#444',
+              letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'inherit',
+              outline: 'none', transition: 'border-color 0.15s, color 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#777' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
+          >
+            New draft
+          </button>
         </div>
       ) : (
         <>
           {/* Title */}
-          <div style={{ padding: '20px 28px 0', flexShrink: 0, borderBottom: '1px solid #1a1a1a' }}>
+          <div style={{ padding: '24px 28px 0', flexShrink: 0, borderBottom: '1px solid #1a1a1a' }}>
             <input
               ref={draftTitleRef}
               value={localTitle}
               onChange={e => setLocalTitle(e.target.value)}
-              placeholder="UNTITLED"
+              placeholder="Untitled"
               className="draft-title"
               style={{
                 width: '100%', background: 'transparent', border: 'none', outline: 'none',
-                fontSize: '18px', fontWeight: 500, color: '#aaa',
-                fontFamily: 'inherit', padding: '0 0 16px 0', boxSizing: 'border-box',
+                fontSize: '17px', fontWeight: 500, color: '#ccc',
+                fontFamily: 'inherit', padding: '0 0 18px 0', boxSizing: 'border-box',
+                letterSpacing: '-0.01em',
               }}
             />
           </div>
@@ -291,11 +338,11 @@ export default function DraftPanel({ width }: { width: number }) {
             value={localDraft}
             onChange={e => setLocalDraft(e.target.value)}
             onKeyDown={handleTab}
-            placeholder="START WRITING..."
+            placeholder="Start writing..."
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
-              color: '#999',
-              fontSize: '14px', lineHeight: 1.9, padding: '20px 28px',
+              color: '#ccc',
+              fontSize: '14px', lineHeight: 2.0, padding: '22px 28px',
               resize: 'none', fontFamily: 'inherit', overflowY: 'auto',
               WebkitTextFillColor: 'inherit', opacity: 1,
             }}
@@ -324,7 +371,7 @@ export default function DraftPanel({ width }: { width: number }) {
                   onMouseEnter={e => (e.currentTarget.style.background = '#1a1a1a')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                 >
-                  Export .txt
+                  Save as .txt
                 </button>
                 <button
                   onClick={() => { handleExport('md'); setCtxMenu(null) }}
@@ -332,7 +379,7 @@ export default function DraftPanel({ width }: { width: number }) {
                   onMouseEnter={e => (e.currentTarget.style.background = '#1a1a1a')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                 >
-                  Export .md
+                  Save as .md
                 </button>
                 <div style={{ height: '1px', background: '#1a1a1a' }} />
               </>
@@ -346,7 +393,7 @@ export default function DraftPanel({ width }: { width: number }) {
               onMouseEnter={e => (e.currentTarget.style.background = '#1a1a1a')}
               onMouseLeave={e => (e.currentTarget.style.background = 'none')}
             >
-              {confirmDiscard ? 'Confirm?' : 'Discard'}
+              {confirmDiscard ? 'Clear draft?' : 'Clear draft'}
             </button>
           </div>
         </>

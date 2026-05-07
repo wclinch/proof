@@ -1,29 +1,34 @@
-type SourceStatus = 'queued' | 'done' | 'error'
-
-export interface HighlightRect {
-  x: number   // fraction of page width
-  y: number   // fraction of page height
-  w: number   // fraction of page width
-  h: number   // fraction of page height
-  pg?: number // page number (only set for rects on a page other than Highlight.page)
+export interface Sentence {
+  i: number
+  text: string
 }
 
-export interface Highlight {
+export interface Block {
+  sentences: Sentence[]
+}
+
+export interface DocContent {
+  blocks: Block[]
+  // Sentence index (sentence.i) where each PDF page starts (0-indexed pages).
+  // pageBreaks[0] = 0 (page 1 starts at sentence 0), pageBreaks[1] = first sentence of page 2, etc.
+  pageBreaks: number[]
+}
+
+export interface Clip {
   id: string
-  text: string
-  page: number
-  rects: HighlightRect[]
-  spans?: string[]   // raw text of each captured span, for precise text-layer tinting
+  sentenceIds: number[]  // sentence.i values in window order
+  centreIdx: number      // sentence.i of the clicked sentence
   createdAt: number
 }
 
 export interface QueuedSource {
   id: string
   raw: string
-  status: SourceStatus
+  status: 'queued' | 'extracting' | 'done' | 'error'
   error: string | null
   label?: string
-  highlights?: Highlight[]
+  content?: DocContent
+  clips: Clip[]
 }
 
 export interface Project {

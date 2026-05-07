@@ -69,7 +69,7 @@ export default function SourcePanel({ width }: { width: number }) {
         }}
       >
         <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase', flex: 1 }}>
-          {dragOver ? 'drop to add →' : 'add a pdf'}
+          {dragOver ? 'Drop to add' : 'Add document'}
         </span>
       </div>
       <input ref={fileRef} type="file" accept=".pdf" multiple style={{ display: 'none' }}
@@ -106,8 +106,8 @@ export default function SourcePanel({ width }: { width: number }) {
         <div style={{ flex: 1, overflowY: 'auto', marginTop: '4px' }}>
           {sources.length === 0
             ? <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span style={{ fontSize: '11px', color: '#555', lineHeight: 1.6 }}>Drop or click above to add a PDF.</span>
-                <span style={{ fontSize: '11px', color: '#333', lineHeight: 1.6 }}>Hover a source and click ··· to rename or remove it.</span>
+                <span style={{ fontSize: '11px', color: '#555', lineHeight: 1.6 }}>Drop a PDF or click above to browse.</span>
+                <span style={{ fontSize: '11px', color: '#333', lineHeight: 1.6 }}>Right-click a document to rename or remove it.</span>
               </div>
             : (() => {
                 const q = filter.trim().toLowerCase()
@@ -115,7 +115,7 @@ export default function SourcePanel({ width }: { width: number }) {
                   ? sources.filter(s => (s.label || s.raw).toLowerCase().includes(q))
                   : sources
                 return visible.length === 0
-                  ? <div style={{ padding: '20px 14px', fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>no match.</div>
+                  ? <div style={{ padding: '20px 14px', fontSize: '11px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>No results</div>
                   : visible.map(src => <SourceItem key={src.id} src={src} />)
               })()
           }
@@ -135,7 +135,7 @@ export default function SourcePanel({ width }: { width: number }) {
           onMouseEnter={e => (e.currentTarget.style.color = '#777')}
           onMouseLeave={e => (e.currentTarget.style.color = '#444')}
         >
-          sign in to sync across devices →
+          Sign in to sync across devices
         </a>
       )}
     </div>

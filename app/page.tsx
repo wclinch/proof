@@ -26,11 +26,11 @@ export default async function Home() {
           </div>
 
           <h1 style={{ fontSize: '32px', fontWeight: 500, color: '#bbb', lineHeight: 1.25, margin: '0 0 20px', letterSpacing: '-0.01em' }}>
-            Read. Clip. Write.<br />Never leave.
+            Read. Clip. Write.<br />All in one place.
           </h1>
 
           <p style={{ fontSize: '15px', color: '#777', lineHeight: 1.8, margin: '0 0 40px', maxWidth: '480px' }}>
-            Drop a PDF. Click any paragraph to clip it. Trim it down, drag exactly what you need into Synthesis. Jump back to any passage instantly. No tab switching.
+            Add a document, read it as clean structured text, clip the sentences you need, and write your draft — without leaving the page. Built for focused research and writing.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -43,7 +43,7 @@ export default async function Home() {
               Open Proof →
             </a>
             <span style={{ fontSize: '12px', color: '#666', letterSpacing: '0.04em' }}>
-              Free to use. Sign in to save across devices.
+              Free to use. Sign in to sync across devices.
             </span>
           </div>
         </section>
@@ -55,11 +55,11 @@ export default async function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
-              ['Drop a PDF', 'Your document loads instantly. No processing, no waiting.'],
-              ['Click to clip', 'Click any paragraph to clip it. It appears in the Clips panel, tied to its exact page. Click again to remove it.'],
-              ['Stage and trim', 'Click a clip to expand it. Edit the text down to exactly what you need — or leave it whole.'],
-              ['Send to Synthesis', 'Select a sentence in the clip and drag it over. Or drag the whole clip. It lands in your draft at the cursor.'],
-              ['Jump back anytime', 'Hover a clip and click jump. Goes directly back to that passage in the PDF.'],
+              ['Add a document', 'Drop a PDF into the document panel. It\'s extracted and ready to read in seconds — no waiting, no upload.'],
+              ['Read', 'Your document opens as clean, readable text. Scroll through it without the clutter of a PDF viewer.'],
+              ['Clip sentences', 'Click any sentence to clip it along with its surrounding context. Refine the clip from there — remove individual sentences or expand by one.'],
+              ['Build your draft', 'Click Insert on any clip to place it in your draft at the cursor. Write freely around your clips.'],
+              ['Save', 'When you\'re ready, export your draft as .txt or .md from the Draft menu.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ display: 'flex', gap: '24px' }}>
                 <div style={{ width: '4px', flexShrink: 0, background: '#1a1a1a', borderRadius: '2px', alignSelf: 'stretch' }} />
@@ -72,10 +72,10 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Pricing */}
+        {/* Footer CTA */}
         <section style={{ borderTop: '1px solid #111', maxWidth: '620px', width: '100%', margin: '0 auto', padding: '64px 24px' }}>
           <p style={{ fontSize: '13px', color: '#777', lineHeight: 1.75, margin: '0 0 28px' }}>
-            Free to use with no account. Sign in to sync your clips and workspaces across devices — your PDFs stay on your machine either way.
+            Free to use with no account. Sign in to sync your clips and workspaces across devices — your documents stay on your machine either way.
           </p>
           <a href="/app" style={{ fontSize: '12px', color: '#777', letterSpacing: '0.08em', textDecoration: 'none', textTransform: 'uppercase' }}>
             Open Proof →

@@ -1,18 +1,19 @@
 'use client'
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
-import type { Project, QueuedSource } from '@/lib/types'
+import type { Project, QueuedSource, Clip } from '@/lib/types'
 import {
   ACTIVE_KEY, SELECTED_KEY,
-  uid, newProject,
+  uid, newProject, newSource,
   loadProjects, saveProjects,
 } from '@/lib/storage'
 import { loadProjectsCloud, saveProjectsCloud } from '@/lib/sync'
 import { storeFile, deleteFile, getFile } from '@/lib/idb'
+import { extractContent } from '@/lib/extract'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
 import { capture, identify, reset } from '@/lib/posthog'
 
-interface ContextMenu    { srcId: string;  x: number; y: number }
+interface ContextMenu     { srcId: string; x: number; y: number }
 interface ProjContextMenu { projId: string; x: number; y: number }
 
 interface AppState {
@@ -32,7 +33,7 @@ interface AppState {
   // auth
   user: User | null
   cloudSyncing: boolean
-  // setters exposed for local use in components
+  // setters
   setShowProjects: (v: boolean | ((prev: boolean) => boolean)) => void
   setSelectedId: (id: string | null) => void
   setSelectedIds: (ids: Set<string>) => void
@@ -43,6 +44,8 @@ interface AppState {
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
   updateProject: (id: string, patch: Partial<Project>) => void
   patchSource: (projId: string, srcId: string, patch: Partial<QueuedSource>) => void
+  addClip: (srcId: string, clip: Clip) => void
+  removeClip: (srcId: string, clipId: string) => void
   uploadFiles: (files: FileList | File[]) => Promise<void>
   retrySource: (srcId: string) => Promise<void>
   removeSource: (srcId: string) => void
@@ -64,7 +67,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [showProjects, setShowProjects] = useState(false)
   const [contextMenu, setContextMenu]     = useState<ContextMenu | null>(null)
   const [projContextMenu, setProjContextMenu] = useState<ProjContextMenu | null>(null)
-
   const [user, setUser] = useState<User | null>(null)
 
   const userIdRef      = useRef<string | null>(null)
@@ -72,20 +74,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const cloudReady     = useRef(false)
   const [cloudSyncing, setCloudSyncing] = useState(false)
 
-  // Escape closes all modals and menus
+  // activeId ref for use in async callbacks
+  const activeIdRef = useRef(activeId)
+  useEffect(() => { activeIdRef.current = activeId }, [activeId])
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setShowProjects(false)
-        setProjContextMenu(null)
-        setContextMenu(null)
+        setShowProjects(false); setProjContextMenu(null); setContextMenu(null)
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  // Outside click dismisses source context menu
   useEffect(() => {
     if (!contextMenu) return
     const handler = () => setContextMenu(null)
@@ -93,7 +95,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('click', handler)
   }, [contextMenu])
 
-  // Outside click dismisses project context menu
   useEffect(() => {
     if (!projContextMenu) return
     const handler = () => setProjContextMenu(null)
@@ -101,18 +102,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('click', handler)
   }, [projContextMenu])
 
-  // Reset multi-selection when switching projects
-  useEffect(() => {
-    setSelectedIds(new Set())
-    setAnchorId(null)
-  }, [activeId])
+  useEffect(() => { setSelectedIds(new Set()); setAnchorId(null) }, [activeId])
+  useEffect(() => { setProjContextMenu(null) }, [showProjects])
 
-  // Reset project context menu when projects modal opens/closes
-  useEffect(() => {
-    setProjContextMenu(null)
-  }, [showProjects])
-
-  // Auth listener
   useEffect(() => {
     const sb = getSupabaseBrowser()
     sb.auth.getSession().then(({ data: { session } }) => {
@@ -130,7 +122,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Hydrate from localStorage once on mount
   useEffect(() => {
     const saved = loadProjects()
     if (saved.length) {
@@ -150,10 +141,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setMounted(true)
   }, [])
 
-  // Keep userIdRef current so the debounced save can read it without stale closure
   useEffect(() => { userIdRef.current = user?.id ?? null }, [user])
 
-  // Load from cloud when signed in, replacing local state
   useEffect(() => {
     if (!mounted || !user) { cloudReady.current = false; return }
     cloudReady.current = false
@@ -172,10 +161,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }).catch(() => { cloudReady.current = true })
   }, [mounted, user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Always persist to localStorage (fast cache / fallback for signed-out users)
   useEffect(() => { if (projects.length) saveProjects(projects) }, [projects])
 
-  // Debounced cloud save — only fires when signed in and after initial cloud load
   useEffect(() => {
     if (!cloudReady.current || !userIdRef.current || !projects.length) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
@@ -214,31 +201,54 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ))
   }
 
+  function addClip(srcId: string, clip: Clip) {
+    const projId = activeIdRef.current
+    if (!projId) return
+    setProjects(ps => ps.map(p =>
+      p.id !== projId ? p : {
+        ...p,
+        sources: p.sources.map(s =>
+          s.id !== srcId ? s : { ...s, clips: [...s.clips, clip] }
+        ),
+      }
+    ))
+  }
+
+  function removeClip(srcId: string, clipId: string) {
+    const projId = activeIdRef.current
+    if (!projId) return
+    setProjects(ps => ps.map(p =>
+      p.id !== projId ? p : {
+        ...p,
+        sources: p.sources.map(s =>
+          s.id !== srcId ? s : { ...s, clips: s.clips.filter(c => c.id !== clipId) }
+        ),
+      }
+    ))
+  }
+
   // ─── Actions ────────────────────────────────────────────────────────────────
 
-  const MAX_BATCH = 10
+  const MAX_BATCH   = 10
   const MAX_FILE_MB = 20
 
   async function uploadFiles(files: FileList | File[]) {
-    if (!activeId) return
-    let list = Array.from(files).filter(f =>
-      f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
-    ).slice(0, MAX_BATCH)
-    // Deduplicate: skip files already in the current project
+    const projId = activeIdRef.current
+    if (!projId) return
+
+    let list = Array.from(files)
+      .filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'))
+      .slice(0, MAX_BATCH)
     list = list.filter(f => !sources.some(s => s.label === f.name))
     if (!list.length) return
 
-    const newSources: QueuedSource[] = list.map(f => ({
-      id: uid(), raw: `file:${f.name}`, status: 'queued',
-      error: null, label: f.name,
-    }))
+    const newSources = list.map(f => newSource(`file:${f.name}`, f.name))
 
-    updateProject(activeId, { sources: [...sources, ...newSources] })
+    updateProject(projId, { sources: [...sources, ...newSources] })
     setSelectedId(newSources[0].id)
     setSelectedIds(new Set([newSources[0].id]))
     setAnchorId(newSources[0].id)
 
-    const projId = activeId
     for (let i = 0; i < list.length; i++) {
       const file = list[i]
       const src  = newSources[i]
@@ -249,27 +259,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       try {
+        patchSource(projId, src.id, { status: 'extracting' })
         await storeFile(src.id, file)
-        patchSource(projId, src.id, { status: 'done' })
+        const content = await extractContent(file)
+        patchSource(projId, src.id, { status: 'done', content })
         capture('upload_complete')
-      } catch {
-        patchSource(projId, src.id, { status: 'error', error: 'Failed to store file — try again.' })
+      } catch (err) {
+        patchSource(projId, src.id, {
+          status: 'error',
+          error: err instanceof Error ? err.message : 'Failed to process file — try again.',
+        })
       }
     }
   }
 
   async function retrySource(srcId: string) {
-    if (!activeId) return
+    const projId = activeIdRef.current
+    if (!projId) return
     const file = await getFile(srcId)
     if (!file) {
-      patchSource(activeId, srcId, { status: 'error', error: 'File not found — re-upload to retry.' })
+      patchSource(projId, srcId, { status: 'error', error: 'File not found — re-upload to retry.' })
       return
     }
     try {
-      await storeFile(srcId, file)
-      patchSource(activeId, srcId, { status: 'done', error: null })
-    } catch {
-      patchSource(activeId, srcId, { status: 'error', error: 'Failed to store file — try again.' })
+      patchSource(projId, srcId, { status: 'extracting' })
+      const content = await extractContent(file)
+      patchSource(projId, srcId, { status: 'done', content, error: null })
+    } catch (err) {
+      patchSource(projId, srcId, {
+        status: 'error',
+        error: err instanceof Error ? err.message : 'Failed to process file — try again.',
+      })
     }
   }
 
@@ -335,6 +355,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setShowProjects, setSelectedId, setSelectedIds, setAnchorId,
     setContextMenu, setProjContextMenu,
     setProjects, updateProject, patchSource,
+    addClip, removeClip,
     uploadFiles, retrySource,
     removeSource, removeSelected,
     createProject, switchProject, deleteProject,

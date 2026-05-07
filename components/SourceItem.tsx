@@ -4,10 +4,10 @@ import { useApp } from '@/context/AppContext'
 import type { QueuedSource } from '@/lib/types'
 
 const DOT: Record<string, string> = {
-  done:    '#444',
-  error:   '#777',
-  loading: '#777',
-  queued:  '#333',
+  done:       '#444',
+  error:      '#777',
+  extracting: '#555',
+  queued:     '#333',
 }
 
 // SourceContextMenu dispatches this event to trigger inline renaming
@@ -112,9 +112,10 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
               if (e.key === 'Escape') setEditing(false)
             }}
             style={{
-              background: 'transparent', border: 'none', borderBottom: '1px solid #333',
-              outline: 'none', width: '100%', fontSize: '12px', color: '#ccc',
-              fontFamily: 'inherit', padding: '1px 0', boxSizing: 'border-box',
+              background: 'transparent', border: 'none', outline: 'none',
+              width: '100%', fontSize: '12px', color: '#ccc',
+              fontFamily: 'inherit', padding: 0, margin: 0,
+              lineHeight: 1.4, wordBreak: 'break-word', boxSizing: 'border-box',
             }}
           />
         ) : (

@@ -75,8 +75,8 @@ export default function SourceContextMenu() {
         onMouseLeave={e => (e.currentTarget.style.background = 'none')}
       >
         {confirmDeleteSrcId === src.id
-          ? 'Confirm?'
-          : `Remove${isMulti ? ` ${selectedIds.size} sources` : ''}`}
+          ? 'Remove?'
+          : `Remove${isMulti ? ` ${selectedIds.size} documents` : ''}`}
       </button>
     </div>
   )
