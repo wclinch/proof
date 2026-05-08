@@ -111,6 +111,10 @@ export default function ExtractionComposer({
                 e.dataTransfer.setData('application/x-proof-highlight', s.text)
                 e.dataTransfer.setData('text/plain', s.text)
                 e.dataTransfer.setData('application/x-proof-sentence-id', String(s.i))
+                e.dataTransfer.setData('application/x-proof-meta', JSON.stringify({
+                  pageLabel:   s.page ? `p. ${s.page}` : '',
+                  sourceLabel: sourceLabel,
+                }))
                 e.dataTransfer.effectAllowed = 'copy'
               }}
               onDragEnd={() => {

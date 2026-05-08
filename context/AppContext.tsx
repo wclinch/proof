@@ -1,14 +1,14 @@
 'use client'
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
-import type { Project, QueuedSource, Clip } from '@/lib/types'
+import type { Project, QueuedSource, Clip, Fragment } from '@/lib/types'
 import {
   ACTIVE_KEY, SELECTED_KEY,
   uid, newProject, newSource,
   loadProjects, saveProjects,
 } from '@/lib/storage'
 import { loadProjectsCloud, saveProjectsCloud } from '@/lib/sync'
-import { storeFile, deleteFile, getFile } from '@/lib/idb'
+import { storeFile, deleteFile, getFile, storeContent, getContent, deleteContent } from '@/lib/idb'
 import { extractContent } from '@/lib/extract'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
 import { capture, identify, reset } from '@/lib/posthog'
@@ -46,6 +46,14 @@ interface AppState {
   patchSource: (projId: string, srcId: string, patch: Partial<QueuedSource>) => void
   addClip: (srcId: string, clip: Clip) => void
   removeClip: (srcId: string, clipId: string) => void
+  updateClip: (srcId: string, clipId: string, patch: Partial<Clip>) => void
+  reorderClips: (srcId: string, fromId: string, afterId: string | null) => void
+  addFragment: (fragment: Fragment) => void
+  insertFragment: (fragment: Fragment, afterId: string | null) => void
+  removeFragment: (fragmentId: string) => void
+  updateFragment: (fragmentId: string, patch: Partial<Fragment>) => void
+  moveFragment: (id: string, afterId: string | null) => void
+  clearFragments: () => void
   uploadFiles: (files: FileList | File[]) => Promise<void>
   retrySource: (srcId: string) => Promise<void>
   removeSource: (srcId: string) => void
@@ -73,6 +81,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const saveTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cloudReady     = useRef(false)
   const [cloudSyncing, setCloudSyncing] = useState(false)
+  const projectsRef    = useRef<Project[]>([])
 
   // activeId ref for use in async callbacks
   const activeIdRef = useRef(activeId)
@@ -125,14 +134,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = loadProjects()
     if (saved.length) {
-      setProjects(saved)
-      const savedActive = localStorage.getItem(ACTIVE_KEY)
-      const match = saved.find(p => p.id === savedActive) ?? saved[0]
+      // Reset sources stuck mid-extraction (page was closed during extraction)
+      const fixed = saved.map(proj => ({
+        ...proj,
+        sources: proj.sources.map(src =>
+          src.status === 'extracting' ? { ...src, status: 'queued' as const } : src
+        ),
+      }))
+      setProjects(fixed)
+
+      const savedActive   = localStorage.getItem(ACTIVE_KEY)
+      const match         = fixed.find(p => p.id === savedActive) ?? fixed[0]
       setActiveId(match.id)
       const savedSelected = localStorage.getItem(SELECTED_KEY)
       if (savedSelected && match.sources.find(s => s.id === savedSelected)) {
         setSelectedId(savedSelected)
       }
+
+      // Content is always stripped from localStorage — recover from IDB on
+      // every load. Falls back to re-extracting from the stored file if needed.
+      ;(async () => {
+        for (const proj of fixed) {
+          for (const src of proj.sources) {
+            if (src.status !== 'done') continue
+            try {
+              let content = await getContent(src.id) as import('@/lib/types').DocContent | null
+              if (!content) {
+                const file = await getFile(src.id)
+                if (file) {
+                  content = await extractContent(file)
+                  storeContent(src.id, content).catch(() => {})
+                }
+              }
+              if (content) {
+                patchSource(proj.id, src.id, { content })
+              } else {
+                // File gone — let user re-upload
+                patchSource(proj.id, src.id, { status: 'queued' as const, error: null })
+              }
+            } catch {
+              patchSource(proj.id, src.id, { status: 'queued' as const, error: null })
+            }
+          }
+        }
+      })()
     } else {
       const p = newProject(1)
       setProjects([p])
@@ -161,7 +206,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }).catch(() => { cloudReady.current = true })
   }, [mounted, user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { if (projects.length) saveProjects(projects) }, [projects])
+  useEffect(() => {
+    projectsRef.current = projects
+    if (projects.length) saveProjects(projects)
+  }, [projects])
+
+  // Force-save before the page unloads — covers hard reload and tab close
+  // where the async effect might not have fired yet.
+  useEffect(() => {
+    function onBeforeUnload() {
+      if (projectsRef.current.length) saveProjects(projectsRef.current)
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [])
 
   useEffect(() => {
     if (!cloudReady.current || !userIdRef.current || !projects.length) return
@@ -214,6 +272,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ))
   }
 
+  function updateClip(srcId: string, clipId: string, patch: Partial<Clip>) {
+    const projId = activeIdRef.current
+    if (!projId) return
+    setProjects(ps => ps.map(p =>
+      p.id !== projId ? p : {
+        ...p,
+        sources: p.sources.map(s =>
+          s.id !== srcId ? s : { ...s, clips: s.clips.map(c => c.id !== clipId ? c : { ...c, ...patch }) }
+        ),
+      }
+    ))
+  }
+
+  function reorderClips(srcId: string, fromId: string, afterId: string | null) {
+    const projId = activeIdRef.current
+    if (!projId) return
+    setProjects(ps => ps.map(p => {
+      if (p.id !== projId) return p
+      return {
+        ...p,
+        sources: p.sources.map(s => {
+          if (s.id !== srcId) return s
+          const clips  = s.clips
+          const idx    = clips.findIndex(c => c.id === fromId)
+          if (idx === -1) return s
+          const moved  = clips[idx]
+          const rest   = clips.filter(c => c.id !== fromId)
+          if (afterId === null) return { ...s, clips: [moved, ...rest] }
+          const afterIdx = rest.findIndex(c => c.id === afterId)
+          if (afterIdx === -1) return { ...s, clips: [...rest, moved] }
+          const result = [...rest]
+          result.splice(afterIdx + 1, 0, moved)
+          return { ...s, clips: result }
+        }),
+      }
+    }))
+  }
+
   function removeClip(srcId: string, clipId: string) {
     const projId = activeIdRef.current
     if (!projId) return
@@ -225,6 +321,73 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ),
       }
     ))
+  }
+
+  function addFragment(fragment: Fragment) {
+    const projId = activeIdRef.current
+    if (!projId) return
+    setProjects(ps => ps.map(p =>
+      p.id !== projId ? p : { ...p, fragments: [...(p.fragments ?? []), fragment] }
+    ))
+  }
+
+  function insertFragment(fragment: Fragment, afterId: string | null) {
+    const projId = activeIdRef.current
+    if (!projId) return
+    setProjects(ps => ps.map(p => {
+      if (p.id !== projId) return p
+      const frags = p.fragments ?? []
+      if (afterId === null) return { ...p, fragments: [fragment, ...frags] }
+      const idx = frags.findIndex(f => f.id === afterId)
+      if (idx === -1) return { ...p, fragments: [...frags, fragment] }
+      const result = [...frags]
+      result.splice(idx + 1, 0, fragment)
+      return { ...p, fragments: result }
+    }))
+  }
+
+  function removeFragment(fragmentId: string) {
+    const projId = activeIdRef.current
+    if (!projId) return
+    setProjects(ps => ps.map(p =>
+      p.id !== projId ? p : { ...p, fragments: (p.fragments ?? []).filter(f => f.id !== fragmentId) }
+    ))
+  }
+
+  function updateFragment(fragmentId: string, patch: Partial<Fragment>) {
+    const projId = activeIdRef.current
+    if (!projId) return
+    setProjects(ps => ps.map(p =>
+      p.id !== projId ? p : {
+        ...p,
+        fragments: (p.fragments ?? []).map(f => f.id !== fragmentId ? f : { ...f, ...patch }),
+      }
+    ))
+  }
+
+  function moveFragment(id: string, afterId: string | null) {
+    const projId = activeIdRef.current
+    if (!projId) return
+    setProjects(ps => ps.map(p => {
+      if (p.id !== projId) return p
+      const frags = p.fragments ?? []
+      const idx = frags.findIndex(f => f.id === id)
+      if (idx === -1) return p
+      const moved = frags[idx]
+      const rest  = frags.filter(f => f.id !== id)
+      if (afterId === null) return { ...p, fragments: [moved, ...rest] }
+      const afterIdx = rest.findIndex(f => f.id === afterId)
+      if (afterIdx === -1) return { ...p, fragments: [...rest, moved] }
+      const result = [...rest]
+      result.splice(afterIdx + 1, 0, moved)
+      return { ...p, fragments: result }
+    }))
+  }
+
+  function clearFragments() {
+    const projId = activeIdRef.current
+    if (!projId) return
+    setProjects(ps => ps.map(p => p.id !== projId ? p : { ...p, fragments: [] }))
   }
 
   // ─── Actions ────────────────────────────────────────────────────────────────
@@ -262,6 +425,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         patchSource(projId, src.id, { status: 'extracting' })
         await storeFile(src.id, file)
         const content = await extractContent(file)
+        await storeContent(src.id, content).catch(() => {})
         patchSource(projId, src.id, { status: 'done', content })
         capture('upload_complete')
       } catch (err) {
@@ -284,6 +448,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       patchSource(projId, srcId, { status: 'extracting' })
       const content = await extractContent(file)
+      await storeContent(srcId, content).catch(() => {})
       patchSource(projId, srcId, { status: 'done', content, error: null })
     } catch (err) {
       patchSource(projId, srcId, {
@@ -301,6 +466,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSelectedIds(new Set())
     setAnchorId(null)
     deleteFile(srcId).catch(() => {})
+    deleteContent(srcId).catch(() => {})
   }
 
   function removeSelected() {
@@ -311,7 +477,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ? selectedId
       : (updated[0]?.id ?? null)
     setSelectedId(nextSelected)
-    selectedIds.forEach(id => deleteFile(id).catch(() => {}))
+    selectedIds.forEach(id => { deleteFile(id).catch(() => {}); deleteContent(id).catch(() => {}) })
     setSelectedIds(new Set())
     setAnchorId(null)
   }
@@ -355,7 +521,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setShowProjects, setSelectedId, setSelectedIds, setAnchorId,
     setContextMenu, setProjContextMenu,
     setProjects, updateProject, patchSource,
-    addClip, removeClip,
+    addClip, removeClip, updateClip, reorderClips,
+    addFragment, insertFragment, removeFragment, updateFragment, moveFragment, clearFragments,
     uploadFiles, retrySource,
     removeSource, removeSelected,
     createProject, switchProject, deleteProject,

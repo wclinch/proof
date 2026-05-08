@@ -1,108 +1,168 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { Clip, DocContent } from '@/lib/types'
 
-function resolveSentences(clip: Clip, content: DocContent): string[] {
+function resolveClip(clip: Clip, content: DocContent) {
   const idSet = new Set(clip.sentenceIds)
-  const out: string[] = []
+  const texts: string[] = []
+  const pages = new Set<number>()
   for (const block of content.blocks) {
     for (const s of block.sentences) {
-      if (idSet.has(s.i)) out.push(s.text)
+      if (!idSet.has(s.i)) continue
+      texts.push(s.text)
+      if (s.page) pages.add(s.page)
     }
   }
-  return out
+  const sorted = Array.from(pages).sort((a, b) => a - b)
+  const pageLabel = sorted.length === 0 ? ''
+    : sorted.length === 1 ? `p. ${sorted[0]}`
+    : `p. ${sorted[0]}–${sorted[sorted.length - 1]}`
+  return { resolvedText: texts.join(' '), pageLabel }
 }
 
 export default function ClipCard({
-  clip,
-  content,
-  onDelete,
-  onInsert,
+  clip, content, sourceLabel, onDelete, onInsert, onUpdate, onDragStart, onDragEnd, isDragging,
 }: {
   clip: Clip
   content: DocContent
+  sourceLabel?: string
   onDelete: () => void
-  onInsert: (text: string) => void
+  onInsert: (text: string, meta?: { pageLabel?: string; sourceLabel?: string }) => void
+  onUpdate: (editedText: string) => void
+  onDragStart: (e: React.DragEvent) => void
+  onDragEnd: () => void
+  isDragging: boolean
 }) {
-  const [hov, setHov] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const selRef = useRef({ start: 0, end: 0 })
-  const taRef  = useRef<HTMLTextAreaElement>(null)
+  const { resolvedText, pageLabel } = resolveClip(clip, content)
+  const displayText = clip.editedText ?? resolvedText
 
-  const sentences = resolveSentences(clip, content)
-  const fullText  = sentences.join(' ')
+  const [hov, setHov]             = useState(false)
+  const [expanded, setExpanded]   = useState(false)
+  const [editing, setEditing]     = useState(false)
+  const [val, setVal]             = useState(displayText)
+  const [menu, setMenu]           = useState<{ x: number; y: number } | null>(null)
+  const [confirmDel, setConfirmDel] = useState(false)
+  const taRef                     = useRef<HTMLTextAreaElement>(null)
 
-  function handleInsert() {
-    const { start, end } = selRef.current
-    const selected = start !== end ? fullText.slice(start, end).trim() : ''
-    onInsert(selected || fullText)
+  useEffect(() => {
+    if (editing && taRef.current) {
+      const el = taRef.current
+      el.style.height = 'auto'
+      el.style.height = el.scrollHeight + 'px'
+      el.focus()
+      el.selectionStart = el.selectionEnd = el.value.length
+    }
+  }, [editing])
+
+  function commitEdit() {
+    const trimmed = val.trim()
+    if (trimmed && trimmed !== resolvedText) onUpdate(trimmed)
+    else if (!trimmed) onUpdate(resolvedText) // revert if cleared
+    setEditing(false)
   }
 
   return (
-    <div
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => { setHov(false); setConfirmDelete(false) }}
-      style={{
-        padding: '10px 12px',
-        background: hov ? '#111' : 'transparent',
-        borderBottom: '1px solid #0f0f0f',
-        display: 'flex', flexDirection: 'column', gap: '8px',
-        transition: 'background 0.1s',
-      }}
-    >
-      <textarea
-        ref={taRef}
-        readOnly
-        value={fullText}
-        onSelect={e => {
-          selRef.current = {
-            start: e.currentTarget.selectionStart,
-            end:   e.currentTarget.selectionEnd,
-          }
+    <>
+      <div
+        draggable
+        onDragStart={e => {
+          // Set all types so this can drop on Draft (creates fragment) or
+          // within Saved (reorders clip)
+          e.dataTransfer.setData('application/x-proof-highlight', displayText)
+          e.dataTransfer.setData('text/plain', displayText)
+          e.dataTransfer.setData('application/x-proof-meta', JSON.stringify({ pageLabel, sourceLabel }))
+          e.dataTransfer.setData('application/x-proof-clip-id', clip.id)
+          e.dataTransfer.effectAllowed = 'copy'
+          onDragStart(e)
         }}
+        onDragEnd={onDragEnd}
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => setHov(false)}
+        onContextMenu={e => { e.preventDefault(); setConfirmDel(false); setMenu({ x: e.clientX, y: e.clientY }) }}
         style={{
-          width: '100%', boxSizing: 'border-box',
-          background: 'transparent', border: 'none', outline: 'none',
-          resize: 'none', overflow: 'hidden',
-          fontSize: '11px', color: hov ? '#888' : '#666',
-          lineHeight: 1.6, fontFamily: 'inherit',
-          padding: 0, margin: 0,
-          height: `${sentences.length * 1.6 * 11 * 1.5}px`,
+          padding: '10px 12px',
+          borderBottom: '1px solid #0f0f0f',
+          opacity: isDragging ? 0.25 : 1,
+          transition: 'background 0.1s, opacity 0.1s',
+          background: hov ? '#111' : 'transparent',
+          cursor: 'grab',
         }}
-      />
+      >
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {/* Editable text */}
+          {editing ? (
+            <textarea
+              ref={taRef}
+              value={val}
+              onChange={e => {
+                setVal(e.target.value)
+                const el = e.currentTarget
+                el.style.height = 'auto'
+                el.style.height = el.scrollHeight + 'px'
+              }}
+              onBlur={commitEdit}
+              onKeyDown={e => {
+                if (e.key === 'Escape') { setVal(displayText); setEditing(false) }
+              }}
+              style={{
+                width: '100%', background: 'transparent', border: 'none', outline: 'none',
+                resize: 'none', overflow: 'hidden',
+                fontSize: '11px', lineHeight: 1.65, color: '#bbb',
+                fontFamily: 'inherit', padding: 0,
+              }}
+            />
+          ) : (
+            <div
+              onClick={() => { setVal(displayText); setEditing(true) }}
+              style={{
+                fontSize: '11px', lineHeight: 1.65, color: hov ? '#bbb' : '#999',
+                cursor: 'text',
+                overflow: expanded ? 'visible' : 'hidden',
+                display: expanded ? 'block' : '-webkit-box',
+                WebkitLineClamp: expanded ? undefined : 3,
+                WebkitBoxOrient: expanded ? undefined : 'vertical' as const,
+              } as React.CSSProperties}
+            >
+              {displayText}
+            </div>
+          )}
 
-      {hov && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button
-            onClick={handleInsert}
-            style={{
-              background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-              fontSize: '9px', color: '#444', fontFamily: 'inherit',
-              letterSpacing: '0.06em', textTransform: 'uppercase', outline: 'none',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#aaa')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#444')}
-          >
-            Insert
-          </button>
-          <button
-            onClick={() => {
-              if (confirmDelete) onDelete()
-              else setConfirmDelete(true)
-            }}
-            style={{
-              background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-              fontSize: '9px', fontFamily: 'inherit', outline: 'none',
-              letterSpacing: '0.06em', textTransform: 'uppercase',
-              color: confirmDelete ? '#e55' : '#333',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.color = confirmDelete ? '#f77' : '#c55')}
-            onMouseLeave={e => (e.currentTarget.style.color = confirmDelete ? '#e55' : '#333')}
-          >
-            {confirmDelete ? 'Remove?' : 'Remove'}
-          </button>
+          {/* Source footer */}
+          {(pageLabel || sourceLabel) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', color: '#555', letterSpacing: '0.06em' }}>
+              {pageLabel && <span>{pageLabel}</span>}
+              {pageLabel && sourceLabel && <span style={{ color: '#333' }}>·</span>}
+              {sourceLabel && <span style={{ wordBreak: 'break-word', minWidth: 0, flex: 1 }}>{sourceLabel}</span>}
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Right-click context menu */}
+      {menu && (
+        <>
+          <div onClick={() => { setMenu(null); setConfirmDel(false) }}
+            style={{ position: 'fixed', inset: 0, zIndex: 298 }} />
+          <div style={{
+            position: 'fixed', left: menu.x, top: menu.y, zIndex: 299,
+            background: '#0f0f0f', border: '1px solid #222',
+            minWidth: '140px', overflow: 'hidden',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+          }}>
+            <button
+              onClick={() => { if (confirmDel) { onDelete(); setMenu(null) } else setConfirmDel(true) }}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left',
+                background: 'none', border: 'none', padding: '9px 14px',
+                cursor: 'pointer', fontSize: '12px',
+                color: confirmDel ? '#e55' : '#c55', fontFamily: 'inherit',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#1a1a1a')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >{confirmDel ? 'Remove?' : 'Remove'}</button>
+          </div>
+        </>
       )}
-    </div>
+    </>
   )
 }

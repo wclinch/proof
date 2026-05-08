@@ -1,13 +1,15 @@
-const DB_NAME = 'proof-files'
-const PDF_STORE = 'pdfs'
-const VERSION  = 2
+const DB_NAME       = 'proof-files'
+const PDF_STORE     = 'pdfs'
+const CONTENT_STORE = 'contents'
+const VERSION       = 3
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, VERSION)
     req.onupgradeneeded = () => {
       const db = req.result
-      if (!db.objectStoreNames.contains(PDF_STORE)) db.createObjectStore(PDF_STORE)
+      if (!db.objectStoreNames.contains(PDF_STORE))     db.createObjectStore(PDF_STORE)
+      if (!db.objectStoreNames.contains(CONTENT_STORE)) db.createObjectStore(CONTENT_STORE)
     }
     req.onsuccess = () => resolve(req.result)
     req.onerror   = () => reject(req.error)
@@ -36,6 +38,33 @@ export async function deleteFile(id: string): Promise<void> {
   const db = await openDb()
   return new Promise((resolve, reject) => {
     const req = db.transaction(PDF_STORE, 'readwrite').objectStore(PDF_STORE).delete(id)
+    req.onsuccess = () => resolve()
+    req.onerror   = () => reject(req.error)
+  })
+}
+
+export async function storeContent(id: string, content: unknown): Promise<void> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const req = db.transaction(CONTENT_STORE, 'readwrite').objectStore(CONTENT_STORE).put(content, id)
+    req.onsuccess = () => resolve()
+    req.onerror   = () => reject(req.error)
+  })
+}
+
+export async function getContent(id: string): Promise<unknown | null> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const req = db.transaction(CONTENT_STORE, 'readonly').objectStore(CONTENT_STORE).get(id)
+    req.onsuccess = () => resolve(req.result ?? null)
+    req.onerror   = () => reject(req.error)
+  })
+}
+
+export async function deleteContent(id: string): Promise<void> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const req = db.transaction(CONTENT_STORE, 'readwrite').objectStore(CONTENT_STORE).delete(id)
     req.onsuccess = () => resolve()
     req.onerror   = () => reject(req.error)
   })

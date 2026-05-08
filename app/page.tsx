@@ -26,22 +26,15 @@ export default async function Home() {
           </div>
 
           <h1 style={{ fontSize: '32px', fontWeight: 500, color: '#bbb', lineHeight: 1.25, margin: '0 0 20px', letterSpacing: '-0.01em' }}>
-            Read. Clip. Write.<br />All in one place.
+            Read. Extract. Write.<br />All in one place.
           </h1>
 
           <p style={{ fontSize: '15px', color: '#777', lineHeight: 1.8, margin: '0 0 40px', maxWidth: '480px' }}>
-            Add a document, read it as clean structured text, clip the sentences you need, and write your draft — without leaving the page. Built for focused research and writing.
+            Add a PDF, read it as clean text, drag sentences into your draft or save them for later — without switching tabs or losing your place.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-            <a href="/app" style={{
-              display: 'inline-block',
-              background: '#0f0f0f', border: '1px solid #333', borderRadius: '4px',
-              padding: '10px 24px', fontSize: '12px', color: '#bbb', textDecoration: 'none',
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-            }}>
-              Open Proof →
-            </a>
+            <a href="/app" className="cta-link">Open Proof →</a>
             <span style={{ fontSize: '12px', color: '#666', letterSpacing: '0.04em' }}>
               Free to use. Sign in to sync across devices.
             </span>
@@ -55,11 +48,10 @@ export default async function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
-              ['Add a document', 'Drop a PDF into the document panel. It\'s extracted and ready to read in seconds — no waiting, no upload.'],
-              ['Read', 'Your document opens as clean, readable text. Scroll through it without the clutter of a PDF viewer.'],
-              ['Clip sentences', 'Click any sentence to clip it along with its surrounding context. Refine the clip from there — remove individual sentences or expand by one.'],
-              ['Build your draft', 'Click Insert on any clip to place it in your draft at the cursor. Write freely around your clips.'],
-              ['Save', 'When you\'re ready, export your draft as .txt or .md from the Draft menu.'],
+              ['Add a document', 'Drop a PDF into the left panel. It\'s extracted and ready to read in seconds — no upload, no waiting.'],
+              ['Read', 'Your document opens as clean readable text in the center. Sentence boundaries are detected so you can work with individual ideas.'],
+              ['Extract', 'Click any sentence to open the extraction composer. It shows that sentence and its surrounding context. Drag individual sentences to the right to insert into your draft, or to the left to save for later.'],
+              ['Write', 'Your draft grows as you read. Drag clips in, write around them, reorder freely. Export as .txt or .md when done.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ display: 'flex', gap: '24px' }}>
                 <div style={{ width: '4px', flexShrink: 0, background: '#1a1a1a', borderRadius: '2px', alignSelf: 'stretch' }} />
@@ -77,9 +69,7 @@ export default async function Home() {
           <p style={{ fontSize: '13px', color: '#777', lineHeight: 1.75, margin: '0 0 28px' }}>
             Free to use with no account. Sign in to sync your clips and workspaces across devices — your documents stay on your machine either way.
           </p>
-          <a href="/app" style={{ fontSize: '12px', color: '#777', letterSpacing: '0.08em', textDecoration: 'none', textTransform: 'uppercase' }}>
-            Open Proof →
-          </a>
+          <a href="/app" className="text-cta">Open Proof →</a>
         </section>
 
       </main>
@@ -87,8 +77,8 @@ export default async function Home() {
       <footer style={{ borderTop: '1px solid #111', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '620px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.06em' }}>Proof</span>
         <div style={{ display: 'flex', gap: '20px' }}>
-          <a href="/about"   style={{ fontSize: '11px', color: '#666', textDecoration: 'none', letterSpacing: '0.06em' }}>About</a>
-          <a href="/privacy" style={{ fontSize: '11px', color: '#666', textDecoration: 'none', letterSpacing: '0.06em' }}>Privacy</a>
+          <a href="/about"   className="footer-link">About</a>
+          <a href="/privacy" className="footer-link">Privacy</a>
         </div>
       </footer>
     </div>

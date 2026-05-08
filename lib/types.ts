@@ -1,6 +1,8 @@
 export interface Sentence {
   i: number
   text: string
+  // 1-indexed PDF page this sentence came from; undefined on pre-v2 stored data
+  page?: number
 }
 
 export interface Block {
@@ -16,8 +18,20 @@ export interface DocContent {
 
 export interface Clip {
   id: string
-  sentenceIds: number[]  // sentence.i values in window order
-  centreIdx: number      // sentence.i of the clicked sentence
+  sentenceIds: number[]
+  centreIdx: number
+  editedText?: string    // user-edited override; if set, shown instead of resolved text
+  createdAt: number
+}
+
+export interface Fragment {
+  id: string
+  type: 'extract' | 'note' | 'section'
+  text: string
+  prose?: string
+  pageLabel?: string
+  sourceLabel?: string
+  sourceType?: 'pdf' | 'url' | 'article'
   createdAt: number
 }
 
@@ -35,6 +49,7 @@ export interface Project {
   id: string
   name: string
   sources: QueuedSource[]
-  draft: string
-  draftTitle: string
+  draft: string       // legacy — migrated to fragments on first load
+  draftTitle: string  // legacy
+  fragments: Fragment[]
 }

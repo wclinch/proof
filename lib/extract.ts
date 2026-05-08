@@ -1,21 +1,67 @@
 import type { DocContent, Block, Sentence } from './types'
 import { splitSentences } from './sentences'
 
-// ── Text block builder (unchanged) ───────────────────────────────────────────
+// ── Text block builder ────────────────────────────────────────────────────────
+// Splits fullText by blank lines, tracking the START CHARACTER POSITION of each
+// block within fullText. This lets us binary-search pageCharStarts to assign an
+// accurate PDF page number to every sentence without coordinate approximations.
 
-function textToBlocks(text: string): Block[] {
-  const rawBlocks = text
-    .split(/\n{2,}/)
-    .map(b => b.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
-    .filter(b => b.length > 15)
-
+function textToBlocks(text: string, pageCharStarts?: number[]): Block[] {
   const blocks: Block[] = []
   let globalIdx = 0
-  for (const raw of rawBlocks) {
-    const rawSents = splitSentences(raw)
-    if (!rawSents.length) continue
-    blocks.push({ sentences: rawSents.map(rs => ({ i: globalIdx++, text: rs.text })) })
+
+  // Walk the text, splitting on two-or-more newlines and recording each
+  // block's exact start offset within `text`.
+  const sep = /\n{2,}/g
+  let lastEnd = 0
+  const raw: Array<{ content: string; start: number }> = []
+  let m: RegExpExecArray | null
+  while ((m = sep.exec(text)) !== null) {
+    raw.push({ content: text.slice(lastEnd, m.index), start: lastEnd })
+    lastEnd = m.index + m[0].length
   }
+  raw.push({ content: text.slice(lastEnd), start: lastEnd })
+
+  for (const { content, start: blockStart } of raw) {
+    const normalized = content.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()
+    if (normalized.length <= 15) continue
+
+    const rawSents = splitSentences(normalized)
+    if (!rawSents.length) continue
+
+    const sentences: Sentence[] = rawSents.map(rs => {
+      // Absolute char position of this sentence in fullText
+      const absPos = blockStart + rs.start
+      let page: number | undefined
+      if (pageCharStarts) {
+        page = 1
+        for (let p = 1; p < pageCharStarts.length; p++) {
+          if (pageCharStarts[p] <= absPos) page = p + 1
+          else break
+        }
+      }
+      return { i: globalIdx++, text: rs.text, page }
+    })
+
+    blocks.push({ sentences })
+  }
+
+  // Merge cross-block sentence fragments that span page boundaries.
+  // If block[i]'s last sentence has no terminal punctuation and block[i+1]'s
+  // first sentence starts lowercase, they're halves of one sentence — join them.
+  for (let i = blocks.length - 2; i >= 0; i--) {
+    const curr = blocks[i]
+    const next = blocks[i + 1]
+    if (!curr.sentences.length || !next.sentences.length) continue
+    const last  = curr.sentences[curr.sentences.length - 1]
+    const first = next.sentences[0]
+    if (!SENT_END_RE.test(last.text) && /^[a-z"'"“‘]/.test(first.text)) {
+      last.text = last.text.trimEnd() + ' ' + first.text.trimStart()
+      next.sentences.shift()
+      if (!next.sentences.length) blocks.splice(i + 1, 1)
+    }
+  }
+
   return blocks
 }
 
@@ -23,25 +69,20 @@ function textToBlocks(text: string): Block[] {
 
 type Item = { str: string; transform: number[] }
 
-// A visual text line: all items within 2pt of the same y baseline, sorted left→right.
 interface Line {
-  y:      number   // baseline y
-  xStart: number   // x of leftmost item (used for indentation detection)
-  text:   string   // concatenated item strings
+  y:      number
+  xStart: number
+  text:   string
 }
 
 // ── Phase 1: items → lines ────────────────────────────────────────────────────
-// Group adjacent items onto the same visual line (within 2pt y-distance).
 
 function itemsToLines(items: Item[]): Line[] {
   if (!items.length) return []
-
-  // Sort top-to-bottom (higher y = higher on page in PDF coords), left-to-right within a line
   const sorted = [...items].sort((a, b) => {
     const dy = b.transform[5] - a.transform[5]
     return Math.abs(dy) > 2 ? dy : a.transform[4] - b.transform[4]
   })
-
   const lines: Line[] = []
   for (const item of sorted) {
     const last = lines[lines.length - 1]
@@ -55,7 +96,6 @@ function itemsToLines(items: Item[]): Line[] {
 }
 
 // ── Phase 2: compute document-wide line spacing ───────────────────────────────
-// Use histogram mode of line-to-line y-gaps (ignores same-line and extreme jumps).
 
 function modalLineSpacing(allPageLines: Line[][]): number {
   const bins = new Map<number, number>()
@@ -63,7 +103,7 @@ function modalLineSpacing(allPageLines: Line[][]): number {
     for (let i = 1; i < lines.length; i++) {
       const g = Math.abs(lines[i].y - lines[i - 1].y)
       if (g > 2 && g < 80) {
-        const bin = Math.round(g / 2) * 2   // 2pt bins
+        const bin = Math.round(g / 2) * 2
         bins.set(bin, (bins.get(bin) ?? 0) + 1)
       }
     }
@@ -75,16 +115,8 @@ function modalLineSpacing(allPageLines: Line[][]): number {
 }
 
 // ── Phase 3: lines → paragraphs ───────────────────────────────────────────────
-// Merge consecutive lines into paragraphs. Two signals can create a paragraph break:
-//   A. Hard break  — y-gap between lines > paraThreshold (explicit blank space in layout)
-//   B. Soft break  — next line starts noticeably more-indented than the previous line's
-//                    start AND the accumulated paragraph already ends with terminal
-//                    punctuation (we are at a real sentence boundary).
-//
-// Mid-sentence line wraps never trigger a break because they cannot satisfy B
-// (no terminal punctuation at the cut point) and are well within threshold for A.
 
-const SENT_END_RE = /[.!?]["'”']?\s*$/
+const SENT_END_RE = /[.!?]["'"']?\s*$/
 
 function linesToParagraphs(lines: Line[], paraThreshold: number): string[] {
   if (!lines.length) return []
@@ -98,13 +130,7 @@ function linesToParagraphs(lines: Line[], paraThreshold: number): string[] {
     const gap  = Math.abs(line.y - lines[i - 1].y)
     const prev = para.trimEnd()
 
-    // A. Hard gap
     const hardBreak = gap > paraThreshold
-
-    // B. Indented line-start after a completed sentence
-    //    xStart significantly further right than where the previous line began.
-    //    Guard: accumulated paragraph must end with terminal punctuation (.!?)
-    //    so we never split inside a sentence.
     const softBreak = !prev.endsWith('-')
       && line.xStart > prevXStart + 10
       && SENT_END_RE.test(prev)
@@ -113,7 +139,6 @@ function linesToParagraphs(lines: Line[], paraThreshold: number): string[] {
       if (prev.length > 15) out.push(prev)
       para = line.text
     } else if (prev.endsWith('-')) {
-      // Hyphenated line-wrap: join without the hyphen
       para = prev.slice(0, -1) + line.text.trimStart()
     } else {
       para = prev + ' ' + line.text.trimStart()
@@ -136,7 +161,7 @@ export async function extractContent(file: File): Promise<DocContent> {
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
 
-  // ── Fetch all pages ──────────────────────────────────────────────────────────
+  // Pass 1: fetch items
   const allPageItems: Item[][] = []
   for (let p = 1; p <= pdf.numPages; p++) {
     const page    = await pdf.getPage(p)
@@ -144,30 +169,29 @@ export async function extractContent(file: File): Promise<DocContent> {
     allPageItems.push((content.items as Item[]).filter(i => i.str))
   }
 
-  // ── Build lines, compute global line spacing ─────────────────────────────────
+  // Build lines, compute global line spacing
   const allPageLines = allPageItems.map(itemsToLines)
   const lineSpacing  = modalLineSpacing(allPageLines)
-  const paraThreshold = lineSpacing * 1.8   // gap must be ≥ 1.8× line step to be a paragraph break
+  const paraThreshold = lineSpacing * 1.8
 
-  // ── Build per-page text segments ─────────────────────────────────────────────
+  // Pass 2: per-page text segments
   const pageSegments: string[] = []
 
   for (let pi = 0; pi < allPageLines.length; pi++) {
     const lines = allPageLines[pi]
     if (!lines.length) { pageSegments.push(''); continue }
 
-    // Filter header/footer artifacts:
-    //   • Any line that is isolated (nearest neighbour gap > paraThreshold) AND is short
-    //     AND is on a body page (pi > 0) — catches running headers and most footers.
-    //   • Standalone page numbers (pure digits/Roman numerals) anywhere.
     const filtered = lines.filter((line, idx) => {
       const prevGap  = idx > 0               ? Math.abs(line.y - lines[idx - 1].y) : Infinity
       const nextGap  = idx < lines.length - 1 ? Math.abs(line.y - lines[idx + 1].y) : Infinity
       const isolated = Math.min(prevGap, nextGap) > paraThreshold
       const short    = line.text.trim().length < 80
 
-      if (pi > 0 && isolated && short) return false                         // running header / footer
-      if (isolated && /^\s*[\divxlcdm]{1,5}\s*$/i.test(line.text)) return false  // page number
+      if (pi > 0 && isolated && short) return false
+      if (isolated && /^\s*[\divxlcdm]{1,5}\s*$/i.test(line.text)) return false
+      // Strip a standalone page number at the very top of body pages even when
+      // it's not isolated (close to the first text line, causing it to merge).
+      if (pi > 0 && idx <= 1 && /^\s*\d{1,4}\s*$/.test(line.text)) return false
       return true
     })
 
@@ -175,8 +199,6 @@ export async function extractContent(file: File): Promise<DocContent> {
 
     const paragraphs = linesToParagraphs(filtered, paraThreshold)
 
-    // Post-filter: drop leading/trailing paragraphs on body pages that look like
-    // leftover headers/footers (short, no terminal punctuation).
     if (pi > 0) {
       while (paragraphs.length > 1) {
         const first = paragraphs[0].trim()
@@ -193,28 +215,35 @@ export async function extractContent(file: File): Promise<DocContent> {
     pageSegments.push(paragraphs.join('\n\n'))
   }
 
-  // ── Join pages, recording each page's start offset in fullText ──────────────
-  // We track character positions BEFORE adding each segment so we can later
-  // map page boundaries to sentence indices via character proportion.
+  // Join pages, recording each page's start offset in fullText.
+  // Strip leading page-number artifacts from each segment ("2 How Individual..."
+  // → "How Individual...") before joining so they don't land mid-sentence.
   const pageCharStarts: number[] = []
   let fullText = ''
+
   for (const seg of pageSegments) {
-    const s = seg.trim()
-    pageCharStarts.push(fullText.length)   // char offset where this page starts
-    if (!s) continue
-    fullText = fullText ? fullText.trimEnd() + ' ' + s : s
+    let s = seg.trim()
+    if (!s) {
+      pageCharStarts.push(fullText.length)
+      continue
+    }
+    // Strip a standalone page number at the very start of the segment
+    // (e.g. "2 How Individual..." → "How Individual...").
+    // Only when followed by an uppercase letter to avoid stripping "3 items...".
+    s = s.replace(/^\d{1,3} (?=[a-zA-Z])/, '')
+
+    pageCharStarts.push(fullText.length)
+    fullText = fullText ? fullText.trimEnd() + '\n\n' + s : s
   }
 
-  const blocks = textToBlocks(fullText)
-  const totalSents = blocks.reduce((n, b) => n + b.sentences.length, 0)
-  const totalChars = fullText.length
+  // Build blocks with accurate per-sentence page numbers derived from
+  // character positions — no approximation needed.
+  const blocks = textToBlocks(fullText, pageCharStarts)
 
-  // Convert each page's char offset to an approximate sentence index.
-  // Assumes sentences are roughly uniform in length — good enough for dividers.
-  const pageBreaks = pageCharStarts.map(charPos =>
-    totalChars > 0
-      ? Math.min(totalSents - 1, Math.floor((charPos / totalChars) * totalSents))
-      : 0
+  // pageBreaks kept for backward compat (ClipCard etc. may check it)
+  const totalSents = blocks.reduce((n, b) => n + b.sentences.length, 0)
+  const pageBreaks = pageCharStarts.map(c =>
+    fullText.length > 0 ? Math.min(totalSents - 1, Math.floor((c / fullText.length) * totalSents)) : 0
   )
 
   return { blocks, pageBreaks }

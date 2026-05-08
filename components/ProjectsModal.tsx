@@ -67,50 +67,16 @@ export default function ProjectsModal() {
           position: 'fixed',
           top: '44px',
           left: '0',
-          width: '260px',
-          background: '#111',
-          border: '1px solid #222',
-          borderTop: 'none',
-          boxShadow: '4px 8px 24px rgba(0,0,0,0.6)',
+          width: '200px',
+          background: '#0c0c0c',
+          borderRight: '1px solid #1a1a1a',
+          borderBottom: '1px solid #1a1a1a',
           zIndex: 200,
-          display: 'flex',
-          flexDirection: 'column',
-          maxHeight: 'calc(100vh - 44px)',
           overflow: 'hidden',
         }}
       >
-        {/* Header */}
-        <div style={{
-          padding: '12px 16px',
-          borderBottom: '1px solid #1a1a1a',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, justifyContent: 'space-between' }}>
-            <button
-              onClick={createProject}
-              style={{
-                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                fontSize: '10px', color: '#555', letterSpacing: '0.08em',
-                textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#aaa')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#555')}
-            >New</button>
-            <button
-              onClick={() => setShowProjects(false)}
-              style={{
-                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                fontSize: '14px', color: '#333', fontFamily: 'inherit', outline: 'none',
-                lineHeight: 1,
-              }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#333')}
-            >×</button>
-          </div>
-        </div>
-
-        {/* Project list */}
-        <div style={{ overflowY: 'auto', flex: 1 }}>
+        {/* Project list — no header, just the list */}
+        <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 88px)' }}>
           {projects.map(p => {
             const isActive = p.id === activeId
             return (
@@ -118,15 +84,14 @@ export default function ProjectsModal() {
                 key={p.id}
                 onClick={() => { if (editingProjId !== p.id) { switchProject(p.id); setShowProjects(false) } }}
                 style={{
-                  padding: '10px 16px',
+                  padding: '9px 16px',
                   display: 'flex', alignItems: 'center', gap: '8px',
                   background: isActive ? '#111' : 'transparent',
-                  borderLeft: `2px solid ${isActive ? '#2a2a2a' : 'transparent'}`,
+                  borderLeft: `2px solid ${isActive ? '#333' : 'transparent'}`,
                   cursor: 'pointer',
-                  position: 'relative',
                   transition: 'background 0.1s',
                 }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#0e0e0e' }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#0d0d0d' }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
               >
                 {editingProjId === p.id ? (
@@ -151,30 +116,44 @@ export default function ProjectsModal() {
                 ) : (
                   <span style={{
                     flex: 1, fontSize: '12px',
-                    color: isActive ? '#aaa' : '#555',
-                    letterSpacing: '0.03em',
+                    color: isActive ? '#ccc' : '#888',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {p.name}
                   </span>
                 )}
-                <span style={{ fontSize: '10px', color: '#2a2a2a', letterSpacing: '0.04em', flexShrink: 0 }}>
-                  {p.sources.length} {p.sources.length === 1 ? 'pdf' : 'pdfs'}
-                </span>
                 <button
                   ref={el => { menuBtnRefs.current[p.id] = el }}
                   onClick={e => { e.stopPropagation(); openMenu(p.id) }}
                   style={{
                     background: 'none', border: 'none', cursor: 'pointer', outline: 'none',
-                    fontSize: '13px', color: '#333', letterSpacing: '0.1em',
+                    fontSize: '13px', color: '#555', letterSpacing: '0.1em',
                     fontFamily: 'inherit', lineHeight: 1, padding: '0 2px', flexShrink: 0,
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#aaa')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#555')}
                 >···</button>
               </div>
             )
           })}
+        </div>
+
+        {/* New workspace */}
+        <div style={{ borderTop: '1px solid #1a1a1a' }}>
+          <button
+            onClick={createProject}
+            style={{
+              display: 'block', width: '100%', textAlign: 'left',
+              background: 'none', border: 'none', padding: '9px 16px',
+              cursor: 'pointer', fontSize: '11px', color: '#444',
+              fontFamily: 'inherit', outline: 'none',
+              transition: 'color 0.1s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+          >
+            + New workspace
+          </button>
         </div>
       </div>
 
@@ -207,7 +186,7 @@ export default function ProjectsModal() {
             </button>
             <div style={{ height: '1px', background: '#1a1a1a' }} />
             {projects.length === 1 ? (
-              <div style={{ padding: '9px 14px', fontSize: '11px', color: '#2a2a2a', letterSpacing: '0.06em', userSelect: 'none' }}>
+              <div style={{ padding: '9px 14px', fontSize: '11px', color: '#555', userSelect: 'none' }}>
                 Can't delete only project
               </div>
             ) : (

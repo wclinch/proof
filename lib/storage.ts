@@ -15,6 +15,7 @@ export function newProject(n: number): Project {
     sources: [],
     draft: '',
     draftTitle: '',
+    fragments: [],
   }
 }
 
@@ -32,7 +33,13 @@ export function loadProjects(): Project[] {
 
 export function saveProjects(ps: Project[]) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ps))
+    // Strip extracted content — stored separately in IndexedDB to keep
+    // localStorage small and prevent quota failures on large PDFs.
+    const stripped = ps.map(p => ({
+      ...p,
+      sources: p.sources.map(s => ({ ...s, content: undefined })),
+    }))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stripped))
   } catch {
     window.dispatchEvent(new CustomEvent('proof-storage-warning', {
       detail: 'Storage full — changes may not be saved.',

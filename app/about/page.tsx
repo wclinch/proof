@@ -30,7 +30,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            A reading and writing workspace. Drop a PDF, read it as clean structured text, clip the sentences you need, and write your draft — all in one place. No switching tabs, no copy-pasting, no losing your place.
+            A reading and writing workspace. Drop a PDF, read it as clean structured text, drag sentences into your draft or save them for later — all in one place. No switching tabs, no copy-pasting, no losing your place.
           </p>
         </div>
 
@@ -44,16 +44,13 @@ export default function About() {
               <span style={{ color: '#999' }}>2. Read</span> — your document opens as clean readable text in the center. Scroll through at your own pace.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>3. Clip sentences</span> — click any sentence to clip it along with its surrounding context. It appears in the Clips panel on the left. Click a clipped sentence to remove it, or click beside a clip to expand it.
+              <span style={{ color: '#999' }}>3. Extract</span> — click any sentence to open the extraction composer. It shows that sentence and its surrounding context. Drag individual sentences to the right to insert into your draft, or to the left to save for later.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>4. Build your draft</span> — click <span style={{ color: '#999' }}>Insert</span> on any clip to add it to your draft at the cursor. Write freely around it.
+              <span style={{ color: '#999' }}>4. Write</span> — your draft grows as you read. Write freely around what you've inserted. Export as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span> from the Draft menu when done.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>5. Save your draft</span> — when you're done, click <span style={{ color: '#999' }}>···</span> in the Draft panel to save as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span>.
-            </p>
-            <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>6. Workspaces</span> — click your project name at the top to manage multiple workspaces. Sign in to sync across devices.
+              <span style={{ color: '#999' }}>5. Workspaces</span> — click your project name at the top to manage multiple workspaces. Sign in to sync across devices.
             </p>
           </div>
         </div>
@@ -62,13 +59,13 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Interactions</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {[
-              { keys: ['Click sentence'],       desc: 'Clip it with its surrounding context' },
-              { keys: ['Click clipped'],        desc: 'Remove only that sentence from the clip' },
-              { keys: ['Click beside clip'],    desc: 'Expand the clip by one sentence' },
-              { keys: ['Insert (on clip)'],     desc: 'Add the clip to your draft at the cursor' },
-              { keys: ['···  (on clip)'],       desc: 'Remove the clip' },
-              { keys: ['Tab (in draft)'],       desc: 'Indent by four spaces' },
-              { keys: ['Cmd+Enter'],            desc: 'Start a new draft when the draft panel is empty' },
+              { keys: ['Click sentence'],          desc: 'Open the extraction composer for that sentence' },
+              { keys: ['Drag sentence → right'],   desc: 'Insert into draft at cursor position' },
+              { keys: ['Drag sentence → left'],    desc: 'Save to the Saved panel' },
+              { keys: ['Click saved sentence'],    desc: 'Remove it from saved' },
+              { keys: ['Grip (composer)'],         desc: 'Drag to reposition the composer' },
+              { keys: ['Esc'],                     desc: 'Dismiss the composer' },
+              { keys: ['Tab (in draft)'],          desc: 'Indent by four spaces' },
             ].map((row, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
                 <div style={{ display: 'flex', gap: '4px', flexShrink: 0, minWidth: '160px' }}>
@@ -104,7 +101,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Contact</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            <a href="mailto:proof_official@protonmail.com" style={{ color: '#999', textDecoration: 'none' }}>proof_official@protonmail.com</a>
+            <a href="mailto:proof_official@protonmail.com" className="inline-link">proof_official@protonmail.com</a>
           </p>
         </div>
 

@@ -1,13 +1,13 @@
 'use client'
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useApp } from '@/context/AppContext'
 import { getSentenceWindow } from '@/lib/sentences'
 import { uid } from '@/lib/storage'
 import type { Clip, Sentence } from '@/lib/types'
 import ClipCard from './ClipCard'
+import ExtractionComposer from './ExtractionComposer'
 
 // ─── Onboarding helpers ──────────────────────────────────────────────────────
-// proof-ob: null → 'c' (clipped) → 'd' (done / dismissed)
 
 function obGet() {
   if (typeof window === 'undefined') return 'd'
@@ -15,6 +15,15 @@ function obGet() {
 }
 function obSet(v: string) {
   if (typeof window !== 'undefined') localStorage.setItem('proof-ob', v)
+}
+
+// ─── Transient extraction state ───────────────────────────────────────────────
+
+interface Transient {
+  sentences: Sentence[]
+  centreId:  number
+  rect:      DOMRect
+  sourceId:  string
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -26,13 +35,13 @@ export default function ReaderPanel({
   clipsWidth: number
   onClipsDragStart: (e: React.MouseEvent) => void
 }) {
-  const { selectedSource, activeId, addClip, removeClip, retrySource } = useApp()
+  const { selectedSource, activeId, addClip, removeClip, updateClip, reorderClips, retrySource } = useApp()
 
-  // Onboarding state — one flag covers the whole flow
-  const [obPhase, setObPhase] = useState<string>(obGet)
-  const isDone = obPhase === 'd'
+  const [obPhase, setObPhase]       = useState<string>(obGet)
+  const isDone                      = obPhase === 'd'
+  const [draggingClipId, setDraggingClipId] = useState<string | null>(null)
+  const [dropOverClipId, setDropOverClipId] = useState<string | null>(null)
 
-  // Advance to 'clipped' when the first clip is created (if not already past it)
   useEffect(() => {
     if (isDone || obPhase === 'c') return
     const hasClip = selectedSource?.clips && selectedSource.clips.length > 0
@@ -41,77 +50,88 @@ export default function ReaderPanel({
 
   function dismissOb() { obSet('d'); setObPhase('d') }
 
-  const handleSentenceClick = useCallback((sentence: Sentence) => {
+  // ── Transient composer state ────────────────────────────────────────────────
+  const [transient, setTransient]             = useState<Transient | null>(null)
+  const [savedDropTarget, setSavedDropTarget] = useState(false)
+  const composerDraggingRef                   = useRef(false)
+
+  // Dismiss composer when source changes
+  useEffect(() => { setTransient(null) }, [selectedSource?.id])
+
+  const handleSentenceClick = useCallback((sentence: Sentence, rect: DOMRect) => {
+    if (composerDraggingRef.current) return
     if (!selectedSource || !activeId) return
     const content = selectedSource.content
     if (!content) return
 
-    const srcId = selectedSource.id
+    const srcId        = selectedSource.id
     const currentClips = selectedSource.clips
 
-    // ── Case 1: sentence is inside an existing clip ──────────────────────────
-    // Remove only that sentence; keep the rest of the clip intact.
+    // Clicking a sentence already in a saved clip removes it
     const containing = currentClips.find(c => c.sentenceIds.includes(sentence.i))
     if (containing) {
       if (containing.sentenceIds.length <= 1) {
-        // Last sentence in clip → remove entire clip
         removeClip(srcId, containing.id)
       } else {
         const newIds = containing.sentenceIds.filter(id => id !== sentence.i)
-        // Preserve original centreIdx if it still exists; otherwise pick midpoint
         const newCentre = newIds.includes(containing.centreIdx)
           ? containing.centreIdx
           : newIds[Math.floor(newIds.length / 2)]
         removeClip(srcId, containing.id)
-        addClip(srcId, { id: uid(), sentenceIds: newIds, centreIdx: newCentre, createdAt: containing.createdAt })
+        addClip(srcId, {
+          id: uid(), sentenceIds: newIds,
+          centreIdx: newCentre, createdAt: containing.createdAt,
+        })
       }
       return
     }
 
-    // ── Case 2: sentence is immediately adjacent to an existing clip ─────────
-    // Extend that clip by one sentence rather than creating a new one.
-    const adjacent = currentClips.find(c => {
-      const lo = Math.min(...c.sentenceIds)
-      const hi = Math.max(...c.sentenceIds)
-      return sentence.i === lo - 1 || sentence.i === hi + 1
-    })
-    if (adjacent) {
-      const newIds = [...adjacent.sentenceIds, sentence.i].sort((a, b) => a - b)
-      removeClip(srcId, adjacent.id)
-      addClip(srcId, { id: uid(), sentenceIds: newIds, centreIdx: adjacent.centreIdx, createdAt: adjacent.createdAt })
-      return
-    }
-
-    // ── Case 3: unclipped, non-adjacent → auto-create 3-sentence window ──────
-    const allSentences: Sentence[] = []
-    for (const block of content.blocks) {
-      for (const s of block.sentences) allSentences.push(s)
-    }
+    // Any other sentence opens the extraction composer
+    const allSentences: Sentence[] = content.blocks.flatMap(b => b.sentences)
     const clickedPos = allSentences.findIndex(s => s.i === sentence.i)
     if (clickedPos === -1) return
 
     const { s, e } = getSentenceWindow(allSentences.length, clickedPos)
     const windowSents = allSentences.slice(s, e + 1)
-    addClip(srcId, {
-      id: uid(),
-      sentenceIds: windowSents.map(s => s.i),
-      centreIdx: sentence.i,
-      createdAt: Date.now(),
-    })
+
+    setTransient({ sentences: windowSents, centreId: sentence.i, rect, sourceId: srcId })
   }, [selectedSource, activeId, addClip, removeClip])
 
-  function handleInsert(text: string) {
-    window.dispatchEvent(new CustomEvent('proof-send-to-draft', { detail: text }))
+  function handleInsert(text: string, meta?: { pageLabel?: string; sourceLabel?: string }) {
+    window.dispatchEvent(new CustomEvent('proof-send-to-draft', { detail: { text, ...meta } }))
   }
 
-  const clips = selectedSource?.clips ?? []
+  function handleSavedDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setSavedDropTarget(false)
+    if (!selectedSource || !activeId || !content) return
+    const sentIdStr = e.dataTransfer.getData('application/x-proof-sentence-id')
+    if (!sentIdStr) return
+    const sentId = parseInt(sentIdStr)
+    const allSents = content.blocks.flatMap(b => b.sentences)
+    const sent = allSents.find(s => s.i === sentId)
+    if (!sent) return
+    addClip(selectedSource.id, { id: uid(), sentenceIds: [sentId], centreIdx: sentId, createdAt: Date.now() })
+    if (obPhase === '') { obSet('c'); setObPhase('c') }
+  }
+
+  function handleSavedDragOver(e: React.DragEvent) {
+    const types = Array.from(e.dataTransfer.types)
+    if (!types.includes('application/x-proof-sentence-id')) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+    setSavedDropTarget(true)
+  }
+
+  const clips   = selectedSource?.clips ?? []
   const content = selectedSource?.content
 
-  // Build the set of sentence IDs that are in any clip (for highlight)
   const clippedIds = new Set<number>()
   for (const clip of clips) {
     for (const id of clip.sentenceIds) clippedIds.add(id)
   }
+
+  const transientIds = new Set(transient?.sentences.map(s => s.i) ?? [])
 
   return (
     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
@@ -119,42 +139,69 @@ export default function ReaderPanel({
       {/* ── Clips sidebar ── */}
       {selectedSource?.status === 'done' && (
         <>
-          <div style={{
-            width: clipsWidth, flexShrink: 0,
-            display: 'flex', flexDirection: 'column',
-            borderRight: '1px solid #1a1a1a', overflow: 'hidden',
-          }}>
+          <div
+            onDragOver={handleSavedDragOver}
+            onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setSavedDropTarget(false) }}
+            onDrop={handleSavedDrop}
+            style={{
+              width: clipsWidth, flexShrink: 0,
+              display: 'flex', flexDirection: 'column',
+              borderRight: '1px solid #1a1a1a', overflow: 'hidden',
+              background: savedDropTarget ? '#0d0d0d' : 'transparent',
+              transition: 'background 0.1s',
+            }}
+          >
             <div style={{
               padding: '0 12px', height: '40px', flexShrink: 0,
               display: 'flex', alignItems: 'center',
               borderBottom: '1px solid #1a1a1a',
-              fontSize: '10px', color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase',
+              fontSize: '10px', color: savedDropTarget ? '#aaa' : '#888',
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+              transition: 'color 0.1s',
             }}>
-              Clips
+              {savedDropTarget ? 'Drop to save' : 'Saved'}
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+            <div
+              style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+              onDragOver={e => { if (Array.from(e.dataTransfer.types).includes('application/x-proof-clip-id')) e.preventDefault() }}
+              onDragLeave={() => setDropOverClipId(null)}
+              onDrop={e => {
+                const clipId = e.dataTransfer.getData('application/x-proof-clip-id')
+                if (!clipId || !selectedSource) return
+                e.preventDefault()
+                reorderClips(selectedSource.id, clipId, dropOverClipId)
+                setDraggingClipId(null)
+                setDropOverClipId(null)
+              }}
+            >
               {clips.length === 0 ? (
                 <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#444', lineHeight: 1.6 }}>
-                    Click any sentence to clip it.
-                  </p>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#2a2a2a', lineHeight: 1.6 }}>
-                    Each clip captures the sentence plus its context. You can trim or extend it from there.
+                  <p style={{ margin: 0, fontSize: '11px', color: '#777', lineHeight: 1.6 }}>
+                    Click a sentence, then drag it here to save.
                   </p>
                 </div>
               ) : (
                 <>
                   {clips.map(clip => content ? (
-                    <ClipCard
+                    <div
                       key={clip.id}
-                      clip={clip}
-                      content={content}
-                      onDelete={() => removeClip(selectedSource!.id, clip.id)}
-                      onInsert={handleInsert}
-                    />
+                      onDragEnter={() => { if (draggingClipId && draggingClipId !== clip.id) setDropOverClipId(clip.id) }}
+                      style={{ borderTop: dropOverClipId === clip.id ? '1px solid #444' : '1px solid transparent' }}
+                    >
+                      <ClipCard
+                        clip={clip}
+                        content={content}
+                        sourceLabel={selectedSource!.label ?? selectedSource!.raw}
+                        onDelete={() => removeClip(selectedSource!.id, clip.id)}
+                        onInsert={(text, meta) => handleInsert(text, meta)}
+                        onUpdate={editedText => updateClip(selectedSource!.id, clip.id, { editedText })}
+                        isDragging={draggingClipId === clip.id}
+                        onDragStart={e => { setDraggingClipId(clip.id) }}
+                        onDragEnd={() => { setDraggingClipId(null); setDropOverClipId(null) }}
+                      />
+                    </div>
                   ) : null)}
-                  {/* Step 3 onboarding hint — shown until first insert */}
                   {obPhase !== 'd' && obPhase !== '' && (
                     <ObHint onDismiss={dismissOb} style={{ margin: '4px 0 0', borderTop: '1px solid #111' }}>
                       Hover a clip, then click Insert to add it to your draft.
@@ -187,6 +234,10 @@ export default function ReaderPanel({
 
         {selectedSource?.status === 'extracting' && (
           <StatusMsg>Reading document...</StatusMsg>
+        )}
+
+        {selectedSource?.status === 'done' && !content && (
+          <StatusMsg>Loading...</StatusMsg>
         )}
 
         {selectedSource?.status === 'error' && (
@@ -225,25 +276,58 @@ export default function ReaderPanel({
               boxShadow: '0 2px 24px rgba(0,0,0,0.4)',
               alignSelf: 'flex-start',
             }}>
-              {chunkSentences(content.blocks.flatMap(b => b.sentences), 4).map((group, gi) => (
-                <div key={gi} style={{ marginBottom: '2.4em' }}>
-                  {group.map(sentence => {
-                    const isClipped = clippedIds.has(sentence.i)
-                    const isCentre  = clips.some(c => c.centreIdx === sentence.i)
-                    return (
-                      <SentenceSpan
-                        key={sentence.i}
-                        text={sentence.text}
-                        isClipped={isClipped}
-                        isCentre={isCentre}
-                        onClick={() => handleSentenceClick(sentence)}
-                      />
-                    )
-                  })}
-                </div>
-              ))}
+              {(() => {
+                const allSents = content.blocks.flatMap(b => b.sentences)
+                const groups   = buildPageGroups(allSents, 4)
+                const hasPages = allSents.some(s => s.page && s.page >= 1)
 
-              {/* Step 2 onboarding hint — shown when source is loaded but no clips yet */}
+                return groups.flatMap(({ page, sents, showMarker }, gi) => {
+                  const nodes = []
+
+                  if (hasPages && showMarker && page >= 1) {
+                    nodes.push(
+                      <div key={`pm-${gi}`} style={{
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        margin: gi === 0 ? '-36px 0 28px' : '0.8em 0 1.8em',
+                        userSelect: 'none', pointerEvents: 'none',
+                      }}>
+                        <div style={{ flex: 1, height: '1px', background: '#dedad4' }} />
+                        <span style={{
+                          fontSize: '9px', color: '#b8b3ab',
+                          letterSpacing: '0.1em', fontFamily: 'inherit',
+                        }}>
+                          p. {page}
+                        </span>
+                      </div>
+                    )
+                  }
+
+                  nodes.push(
+                    <div key={gi} style={{ marginBottom: '2.4em' }}>
+                      {sents.map(sentence => {
+                        const isClipped         = clippedIds.has(sentence.i)
+                        const isCentre          = clips.some(c => c.centreIdx === sentence.i)
+                        const isTransient       = transientIds.has(sentence.i)
+                        const isTransientCentre = transient?.centreId === sentence.i
+                        return (
+                          <SentenceSpan
+                            key={sentence.i}
+                            text={sentence.text}
+                            isClipped={isClipped}
+                            isCentre={isCentre}
+                            isTransient={isTransient}
+                            isTransientCentre={isTransientCentre}
+                            onClick={(rect) => handleSentenceClick(sentence, rect)}
+                          />
+                        )
+                      })}
+                    </div>
+                  )
+
+                  return nodes
+                })
+              })()}
+
               {clips.length === 0 && !isDone && (
                 <div style={{
                   marginTop: '1em',
@@ -256,7 +340,7 @@ export default function ReaderPanel({
                     fontFamily: 'Georgia, "Times New Roman", serif',
                     fontStyle: 'italic',
                   }}>
-                    Click any sentence to create a clip.
+                    Click any sentence to extract it.
                   </span>
                   <button
                     onClick={dismissOb}
@@ -276,19 +360,45 @@ export default function ReaderPanel({
           </div>
         )}
       </div>
+
+      {/* ── Extraction composer (transient) ── */}
+      {transient && selectedSource && (
+        <ExtractionComposer
+          sentences={transient.sentences}
+          centreId={transient.centreId}
+          sourceLabel={selectedSource.label ?? selectedSource.raw}
+          anchorRect={transient.rect}
+          onDismiss={() => setTransient(null)}
+          onDragStateChange={dragging => { composerDraggingRef.current = dragging }}
+        />
+      )}
     </div>
   )
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function chunkSentences<T>(items: T[], size: number): T[][] {
-  const out: T[][] = []
-  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
-  return out
+function buildPageGroups(
+  sentences: Sentence[],
+  chunkSize: number,
+): Array<{ page: number; sents: Sentence[]; showMarker: boolean }> {
+  const byPage: Array<{ page: number; sents: Sentence[] }> = []
+  for (const s of sentences) {
+    const pg   = s.page ?? 0
+    const last = byPage[byPage.length - 1]
+    if (last && last.page === pg) last.sents.push(s)
+    else byPage.push({ page: pg, sents: [s] })
+  }
+
+  const result: Array<{ page: number; sents: Sentence[]; showMarker: boolean }> = []
+  for (const { page, sents } of byPage) {
+    for (let i = 0; i < sents.length; i += chunkSize) {
+      result.push({ page, sents: sents.slice(i, i + chunkSize), showMarker: i === 0 })
+    }
+  }
+  return result
 }
 
-// Subtle onboarding hint used in the clips panel
 function ObHint({ children, onDismiss, style }: {
   children: React.ReactNode
   onDismiss: () => void
@@ -319,23 +429,26 @@ function ObHint({ children, onDismiss, style }: {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function SentenceSpan({
-  text, isClipped, isCentre, onClick,
+  text, isClipped, isCentre, isTransient, isTransientCentre, onClick,
 }: {
   text: string
   isClipped: boolean
   isCentre: boolean
-  onClick: () => void
+  isTransient: boolean
+  isTransientCentre: boolean
+  onClick: (rect: DOMRect) => void
 }) {
   const [hov, setHov] = useState(false)
 
-  const bg = isClipped
-    ? isCentre ? 'rgba(210,150,0,0.38)' : 'rgba(210,150,0,0.18)'
-    : hov      ? 'rgba(0,0,0,0.07)' : 'transparent'
+  const bg = isTransientCentre ? 'rgba(210,150,0,0.34)'
+    : isTransient       ? 'rgba(210,150,0,0.12)'
+    : isClipped         ? 'rgba(210,150,0,0.20)'
+    : hov               ? 'rgba(0,0,0,0.07)'     : 'transparent'
 
   return (
     <>
       <span
-        onClick={onClick}
+        onClick={e => onClick(e.currentTarget.getBoundingClientRect())}
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
         style={{
@@ -362,7 +475,7 @@ function StatusMsg({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: '11px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase',
+      fontSize: '11px', color: '#777', letterSpacing: '0.1em', textTransform: 'uppercase',
     }}>
       {children}
     </div>
@@ -374,22 +487,22 @@ function EmptyState() {
     <div style={{ flex: 1, padding: '32px 28px', overflowY: 'auto' }}>
       <div style={{ maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '11px', color: '#888', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
             Get started
           </span>
         </div>
         {[
           { n: '1', title: 'Add a document', body: 'Drop a PDF into the left panel. It\'s ready to read in seconds.' },
-          { n: '2', title: 'Clip sentences', body: 'Click any sentence to clip it with its surrounding context.' },
-          { n: '3', title: 'Build your draft', body: 'Insert clips into your draft at the cursor and keep writing.' },
+          { n: '2', title: 'Extract sentences', body: 'Click any sentence to open the extraction composer.' },
+          { n: '3', title: 'Build your draft', body: 'Insert directly into your draft, or save for later.' },
         ].map(step => (
           <div key={step.n} style={{ display: 'flex', gap: '16px' }}>
-            <span style={{ fontSize: '11px', color: '#2a2a2a', flexShrink: 0, letterSpacing: '0.06em', marginTop: '2px' }}>
+            <span style={{ fontSize: '11px', color: '#666', flexShrink: 0, letterSpacing: '0.06em', marginTop: '2px' }}>
               {step.n}.
             </span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '13px', color: '#555', fontWeight: 500 }}>{step.title}</span>
-              <span style={{ fontSize: '12px', color: '#333', lineHeight: 1.7 }}>{step.body}</span>
+              <span style={{ fontSize: '13px', color: '#999', fontWeight: 500 }}>{step.title}</span>
+              <span style={{ fontSize: '12px', color: '#666', lineHeight: 1.7 }}>{step.body}</span>
             </div>
           </div>
         ))}

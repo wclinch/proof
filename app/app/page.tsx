@@ -4,7 +4,6 @@ import ProjectBar        from '@/components/ProjectBar'
 import SourcePanel       from '@/components/SourcePanel'
 import ReaderPanel       from '@/components/ReaderPanel'
 import DraftPanel        from '@/components/DraftPanel'
-import ProjectsModal     from '@/components/ProjectsModal'
 import SourceContextMenu from '@/components/SourceContextMenu'
 import { useApp }        from '@/context/AppContext'
 import { useState, useRef, useEffect, useCallback } from 'react'
@@ -184,8 +183,7 @@ function Layout() {
         <DraftPanel width={draft.width} />
 
       </div>
-      <ProjectsModal />
-      <SourceContextMenu />
+<SourceContextMenu />
     </div>
   )
 }
