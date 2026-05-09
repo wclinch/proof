@@ -3,9 +3,16 @@ import { useState, useRef, useEffect } from 'react'
 import { useApp } from '@/context/AppContext'
 import SourceItem from './SourceItem'
 
+const TYPE_CHIPS = [
+  { type: 'pdf',   label: 'PDF',   color: '#5c7eb8' },
+  { type: 'image', label: 'Image', color: '#5c9e6e' },
+  { type: 'note',  label: 'Note',  color: '#b8935c' },
+  { type: 'url',   label: 'URL',   color: '#5ca8a0' },
+]
+
 export default function SourcePanel({ width }: { width: number | string }) {
   const {
-    sources, uploadFiles, moveSource,
+    sources, uploadFiles, moveSource, createNote, addUrl,
     showProjects, setShowProjects,
     projects, activeId, activeProject,
     createProject, switchProject, updateProject, deleteProject,
@@ -40,8 +47,13 @@ export default function SourcePanel({ width }: { width: number | string }) {
   const [toggleHover, setToggleHover] = useState(false)
   const [dragOver, setDragOver]       = useState(false)
   const [addHover, setAddHover]       = useState(false)
+  const [noteHover, setNoteHover]     = useState(false)
+  const [addingUrl, setAddingUrl]     = useState(false)
+  const [urlInput, setUrlInput]       = useState('')
+  const urlInputRef = useRef<HTMLInputElement>(null)
   const [filterInput, setFilterInput] = useState('')
   const [filter, setFilter]           = useState('')
+  const [filterType, setFilterType]   = useState<string | null>(null)
   const [dupMsg, setDupMsg]           = useState(false)
   const [draggingId, setDraggingId]   = useState<string | null>(null)
   const [liveOrder, setLiveOrder]     = useState<string[] | null>(null)
@@ -118,9 +130,11 @@ export default function SourcePanel({ width }: { width: number | string }) {
   const orderedSources = liveOrder
     ? liveOrder.map(id => sources.find(s => s.id === id)).filter(Boolean) as typeof sources
     : sources
-  const visible = q
-    ? orderedSources.filter(s => (s.label || s.raw).toLowerCase().includes(q))
-    : orderedSources
+  const visible = orderedSources.filter(s => {
+    if (filterType && s.fileType !== filterType) return false
+    if (q && !(s.label || s.raw).toLowerCase().includes(q)) return false
+    return true
+  })
 
   const ROW_STYLE: React.CSSProperties = {
     display: 'block', width: '100%', textAlign: 'left',
@@ -300,6 +314,39 @@ export default function SourcePanel({ width }: { width: number | string }) {
       <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif" multiple style={{ display: 'none' }}
         onChange={e => { if (e.target.files?.length) { handleUpload(e.target.files); e.target.value = '' } }}
       />
+      <NoteBtn onClick={createNote} />
+      {addingUrl ? (
+        <div style={{
+          margin: '6px 10px 0', padding: '9px 14px',
+          background: '#0d0d0d', border: '1px solid #333', borderRadius: '4px',
+          display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0,
+        }}>
+          <input
+            ref={urlInputRef}
+            autoFocus
+            value={urlInput}
+            onChange={e => setUrlInput(e.target.value)}
+            placeholder="Paste a URL..."
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                const raw = urlInput.trim()
+                if (!raw) { setAddingUrl(false); setUrlInput(''); return }
+                const url = raw.startsWith('http') ? raw : `https://${raw}`
+                addUrl(url)
+                setAddingUrl(false); setUrlInput('')
+              }
+              if (e.key === 'Escape') { setAddingUrl(false); setUrlInput('') }
+            }}
+            onBlur={() => { if (!urlInput.trim()) { setAddingUrl(false); setUrlInput('') } }}
+            style={{
+              flex: 1, background: 'transparent', border: 'none', outline: 'none',
+              fontSize: '11px', color: '#bbb', fontFamily: 'inherit', letterSpacing: '0.02em',
+            }}
+          />
+        </div>
+      ) : (
+        <UrlBtn onClick={() => { setAddingUrl(true); setTimeout(() => urlInputRef.current?.focus(), 0) }} />
+      )}
       {dupMsg && (
         <div style={{ margin: '6px 10px 0', fontSize: '11px', color: '#666', letterSpacing: '0.02em', padding: '0 2px' }}>
           Already added.
@@ -308,16 +355,37 @@ export default function SourcePanel({ width }: { width: number | string }) {
 
       {/* Source list */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '8px', borderTop: '1px solid #1a1a1a' }}>
-        {sources.length > 1 && (
-          <div style={{ ...shell, cursor: 'text', padding: '9px 14px' }} onClick={() => filterRef.current?.focus()}>
-            <input
-              ref={filterRef} className="sp-input"
-              value={filterInput} onChange={e => setFilterInput(e.target.value)}
-              placeholder="Filter..."
-              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '12px', fontFamily: 'inherit', letterSpacing: '0.02em', color: '#555' }}
-            />
-          </div>
-        )}
+        <div style={{ ...shell, cursor: 'text', padding: '9px 14px' }} onClick={() => filterRef.current?.focus()}>
+          <input
+            ref={filterRef} className="sp-input"
+            value={filterInput} onChange={e => setFilterInput(e.target.value)}
+            placeholder="Filter..."
+            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '12px', fontFamily: 'inherit', letterSpacing: '0.02em', color: '#555' }}
+          />
+          {filterInput && (
+            <button onClick={e => { e.stopPropagation(); setFilterInput(''); setFilter('') }}
+              style={{ background: 'none', border: 'none', padding: '0 0 0 6px', cursor: 'pointer', color: '#444', fontSize: '13px', lineHeight: 1, display: 'flex', alignItems: 'center' }}
+            >×</button>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '5px', padding: '6px 10px 0', flexWrap: 'wrap' }}>
+          {TYPE_CHIPS.map(({ type, label, color }) => {
+            const active = filterType === type
+            return (
+              <button key={type} onClick={() => setFilterType(active ? null : type)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  padding: '3px 8px', border: `1px solid ${active ? color : '#1e1e1e'}`,
+                  borderRadius: '3px', background: active ? `${color}18` : 'transparent',
+                  cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s',
+                }}
+              >
+                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+                <span style={{ fontSize: '10px', color: active ? color : '#444', letterSpacing: '0.04em' }}>{label}</span>
+              </button>
+            )
+          })}
+        </div>
 
         <div
           ref={listRef}
@@ -344,6 +412,46 @@ export default function SourcePanel({ width }: { width: number | string }) {
         </div>
       </div>
 
+    </div>
+  )
+}
+
+function UrlBtn({ onClick }: { onClick: () => void }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        margin: '6px 10px 0', padding: '11px 14px',
+        background: hov ? '#111' : '#0d0d0d',
+        border: `1px solid ${hov ? '#252525' : '#1a1a1a'}`,
+        borderRadius: '4px', display: 'flex', alignItems: 'center',
+        cursor: 'pointer', transition: 'background 0.15s, border-color 0.15s', flexShrink: 0,
+      }}
+    >
+      <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.04em', flex: 1 }}>Add URL</span>
+    </div>
+  )
+}
+
+function NoteBtn({ onClick }: { onClick: () => void }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        margin: '6px 10px 0', padding: '11px 14px',
+        background: hov ? '#111' : '#0d0d0d',
+        border: `1px solid ${hov ? '#252525' : '#1a1a1a'}`,
+        borderRadius: '4px', display: 'flex', alignItems: 'center',
+        cursor: 'pointer', transition: 'background 0.15s, border-color 0.15s', flexShrink: 0,
+      }}
+    >
+      <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.04em', flex: 1 }}>New note</span>
     </div>
   )
 }

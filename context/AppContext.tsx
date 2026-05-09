@@ -4,7 +4,7 @@ import type { User } from '@supabase/supabase-js'
 import type { Project, QueuedSource, Clip, Fragment } from '@/lib/types'
 import {
   ACTIVE_KEY, SELECTED_KEY, SELECTED_IMAGE_KEY,
-  uid, newProject, newSource,
+  uid, newProject, newSource, newNote, newUrlSource,
   loadProjects, saveProjects,
 } from '@/lib/storage'
 import { loadProjectsCloud, saveProjectsCloud } from '@/lib/sync'
@@ -62,6 +62,8 @@ interface AppState {
   retrySource: (srcId: string) => Promise<void>
   removeSource: (srcId: string) => void
   removeSelected: () => void
+  createNote: () => void
+  addUrl: (url: string) => Promise<void>
   createProject: () => void
   switchProject: (id: string) => void
   deleteProject: (id: string) => void
@@ -166,7 +168,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         for (const proj of fixed) {
           for (const src of proj.sources) {
             if (src.status !== 'done') continue
-            if (src.fileType === 'image') continue  // images have no content, load directly from IDB
+            if (src.fileType === 'image') continue  // images load directly from IDB
+            if (src.fileType === 'note')  continue  // notes store content inline
+            if (src.fileType === 'url')   continue  // urls need no local content
             try {
               let content = await getContent(src.id) as import('@/lib/types').DocContent | null
               if (!content) {
@@ -524,6 +528,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAnchorId(null)
   }
 
+  function createNote() {
+    const projId = activeIdRef.current
+    if (!projId) return
+    const note = newNote()
+    updateProject(projId, { sources: [...sources, note] })
+    setSelectedImageId(note.id)
+  }
+
+  async function addUrl(url: string) {
+    const projId = activeIdRef.current
+    if (!projId) return
+    const src = newUrlSource(url)
+    updateProject(projId, { sources: [...sources, src] })
+    setSelectedImageId(src.id)
+    // Fetch title in background and update label
+    try {
+      const res = await fetch(`/api/url-meta?url=${encodeURIComponent(url)}`)
+      const { title } = await res.json()
+      if (title) patchSource(projId, src.id, { label: title })
+    } catch {}
+  }
+
   function createProject() {
     const p = newProject(projects.length + 1)
     setProjects(ps => [...ps, p])
@@ -565,7 +591,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addFragment, insertFragment, removeFragment, updateFragment, moveFragment, clearFragments,
     uploadFiles, retrySource,
     removeSource, removeSelected,
-    createProject, switchProject, deleteProject,
+    createNote, addUrl, createProject, switchProject, deleteProject,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

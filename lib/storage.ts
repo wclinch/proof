@@ -24,6 +24,18 @@ export function newSource(raw: string, label?: string): import('./types').Queued
   return { id: uid(), raw, status: 'queued', error: null, label, clips: [] }
 }
 
+export function newNote(): import('./types').QueuedSource {
+  return { id: uid(), raw: 'note', label: 'Note', status: 'done', error: null, fileType: 'note', noteContent: '', clips: [] }
+}
+
+export function newUrlSource(url: string, title?: string): import('./types').QueuedSource {
+  let label = title ?? ''
+  if (!label) {
+    try { label = new URL(url).hostname.replace(/^www\./, '') } catch { label = url }
+  }
+  return { id: uid(), raw: url, url, label, status: 'done', error: null, fileType: 'url', clips: [] }
+}
+
 export function loadProjects(): Project[] {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') ?? []

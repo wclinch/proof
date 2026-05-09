@@ -4,6 +4,7 @@ import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/TextLayer.css'
 import { useApp } from '@/context/AppContext'
 import { getFile } from '@/lib/idb'
+import type { QueuedSource } from '@/lib/types'
 
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
@@ -146,6 +147,71 @@ function Header({
   )
 }
 
+// ─── URL viewer ───────────────────────────────────────────────────────────────
+
+function UrlViewer({ source }: { source: QueuedSource }) {
+  const [blocked, setBlocked] = useState(false)
+  const url = source.url ?? source.raw
+
+  return (
+    <div style={{ flex: 1, overflow: 'hidden', background: '#080808', display: 'flex', flexDirection: 'column' }}>
+      {blocked ? (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '24px' }}>
+          <span style={{ fontSize: '12px', color: '#555', letterSpacing: '0.02em' }}>This site can't be embedded.</span>
+          <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: '#5ca8a0', textDecoration: 'none', letterSpacing: '0.02em' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#7dc4bc')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#5ca8a0')}
+          >Open in browser →</a>
+        </div>
+      ) : (
+        <iframe
+          src={url}
+          title={source.label ?? url}
+          onError={() => setBlocked(true)}
+          style={{ flex: 1, border: 'none', width: '100%', height: '100%', colorScheme: 'light' }}
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Note editor ──────────────────────────────────────────────────────────────
+
+function NoteEditor({ source }: { source: QueuedSource }) {
+  const { activeId, patchSource } = useApp()
+  const [text, setText] = useState(source.noteContent ?? '')
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => { setText(source.noteContent ?? '') }, [source.id])
+
+  function handleChange(val: string) {
+    setText(val)
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      if (activeId) patchSource(activeId, source.id, { noteContent: val })
+    }, 400)
+  }
+
+  return (
+    <div style={{ flex: 1, overflow: 'auto', background: '#080808', display: 'flex', flexDirection: 'column' }}>
+      <textarea
+        value={text}
+        onChange={e => handleChange(e.target.value)}
+        placeholder="Start writing your note..."
+        style={{
+          flex: 1, width: '100%', minHeight: '100%',
+          background: 'transparent', border: 'none', outline: 'none',
+          resize: 'none', padding: '20px 24px',
+          fontSize: '13px', lineHeight: 1.8, color: '#bbb',
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          boxSizing: 'border-box',
+        }}
+      />
+    </div>
+  )
+}
+
 // ─── Image viewer ─────────────────────────────────────────────────────────────
 
 function ImageViewer({ source, wrongMsg }: { source: ReturnType<typeof useApp>['selectedImageSource']; wrongMsg?: string }) {
@@ -172,9 +238,12 @@ function ImageViewer({ source, wrongMsg }: { source: ReturnType<typeof useApp>['
     if (prevUrl.current) URL.revokeObjectURL(prevUrl.current)
   }, [])
 
+  if (source?.fileType === 'note') return <NoteEditor source={source} />
+  if (source?.fileType === 'url')  return <UrlViewer  source={source} />
+
   return (
     <div style={{ flex: 1, background: '#080808', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {!source && <Empty label={wrongMsg ?? 'Drop a reference here'} sub={wrongMsg ? undefined : 'Images, diagrams, or reference material. Click a reference in the left panel or drag it here.'} />}
+      {!source && <Empty label={wrongMsg ?? 'Drop a reference here'} sub={wrongMsg ? undefined : 'PNG · JPG · WEBP · GIF · or create a note from the left panel'} />}
       {source && source.status !== 'done' && <Msg>Loading...</Msg>}
       {source && source.status === 'done' && !imgUrl && <Msg>Could not load image.</Msg>}
       {source && source.status === 'done' && imgUrl && (
@@ -233,7 +302,7 @@ function PdfViewer({ source, wrongMsg }: { source: ReturnType<typeof useApp>['se
 
   return (
     <div ref={containerRef} style={{ flex: 1, overflow: 'auto', background: '#080808', display: 'flex', flexDirection: 'column' }}>
-      {!source                               && <Empty label={wrongMsg ?? 'Drop a PDF here'} sub={wrongMsg ? undefined : 'Your draft on the right stays tied to this document. Click a PDF in the left panel or drag it here.'} />}
+      {!source                               && <Empty label={wrongMsg ?? 'Drop a PDF here'} sub={wrongMsg ? undefined : 'PDF · Draft on the right stays tied to this document'} />}
       {source?.status === 'queued'           && <Msg>Waiting...</Msg>}
       {source?.status === 'extracting'       && <Msg>Reading document...</Msg>}
       {source?.status === 'done' && !fileUrl && <Msg>Loading...</Msg>}

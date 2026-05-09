@@ -3,20 +3,52 @@ import { useState, useEffect, useRef } from 'react'
 import { useApp } from '@/context/AppContext'
 import { getFile } from '@/lib/idb'
 
-// Rendered in the right column when screenshot is expanded.
-// Takes 60% of the right column height, collapse button returns to default.
-
 export default function ScreenshotZone({ onCollapse }: { onCollapse: () => void }) {
   const { selectedImageSource, setSelectedImageId } = useApp()
+  const src = selectedImageSource
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    const srcId   = e.dataTransfer.getData('application/x-proof-source-id')
+    const srcType = e.dataTransfer.getData('application/x-proof-source-type')
+    if (srcId && srcType !== 'pdf') setSelectedImageId(srcId)
+  }
+
+  function allowDrop(e: React.DragEvent) {
+    if (e.dataTransfer.types.includes('application/x-proof-source-id')) e.preventDefault()
+  }
+
+  return (
+    <div style={{ flex: '0 0 60%', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#080808', borderBottom: '1px solid #1a1a1a' }}
+      onDragOver={allowDrop} onDrop={handleDrop}
+    >
+      <div style={{ height: '28px', flexShrink: 0, display: 'flex', alignItems: 'center', padding: '0 8px 0 14px', borderBottom: '1px solid #1a1a1a', gap: '4px' }}>
+        <span style={{ flex: 1, fontSize: '10px', color: '#555', letterSpacing: '0.04em', userSelect: 'none' }}>Reference</span>
+        <IconBtn onClick={onCollapse} title="Collapse"><CollapseIcon /></IconBtn>
+      </div>
+
+      {!src && (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: '11px', color: '#333', letterSpacing: '0.02em' }}>Drop a reference here</span>
+        </div>
+      )}
+      {src?.fileType === 'image' && <ImageContent source={src} />}
+      {src?.fileType === 'note'  && <NoteContent  source={src} />}
+      {src?.fileType === 'url'   && <UrlContent   source={src} />}
+    </div>
+  )
+}
+
+// ─── Image ────────────────────────────────────────────────────────────────────
+
+function ImageContent({ source }: { source: NonNullable<ReturnType<typeof useApp>['selectedImageSource']> }) {
   const [imgUrl, setImgUrl] = useState<string | null>(null)
   const prevUrl = useRef<string | null>(null)
 
   useEffect(() => {
-    if (!selectedImageSource || selectedImageSource.status !== 'done') {
-      setImgUrl(null); return
-    }
+    if (source.status !== 'done') { setImgUrl(null); return }
     let cancelled = false
-    getFile(selectedImageSource.id).then(file => {
+    getFile(source.id).then(file => {
       if (cancelled) return
       if (prevUrl.current) { URL.revokeObjectURL(prevUrl.current); prevUrl.current = null }
       if (!file) { setImgUrl(null); return }
@@ -25,108 +57,99 @@ export default function ScreenshotZone({ onCollapse }: { onCollapse: () => void 
       setImgUrl(url)
     })
     return () => { cancelled = true }
-  }, [selectedImageSource?.id, selectedImageSource?.status])
+  }, [source.id, source.status])
 
-  useEffect(() => () => {
-    if (prevUrl.current) URL.revokeObjectURL(prevUrl.current)
-  }, [])
+  useEffect(() => () => { if (prevUrl.current) URL.revokeObjectURL(prevUrl.current) }, [])
 
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault()
-    const srcId   = e.dataTransfer.getData('application/x-proof-source-id')
-    const srcType = e.dataTransfer.getData('application/x-proof-source-type')
-    if (srcId && srcType === 'image') setSelectedImageId(srcId)
+  if (!imgUrl) return <Msg>{source.status !== 'done' ? 'Loading...' : 'Could not load image.'}</Msg>
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+      <img src={imgUrl} alt={source.label ?? source.raw}
+        draggable={false} onDragStart={e => e.preventDefault()}
+        style={{ width: '100%', height: 'auto', display: 'block', userSelect: 'none' }} />
+    </div>
+  )
+}
+
+// ─── Note ─────────────────────────────────────────────────────────────────────
+
+function NoteContent({ source }: { source: NonNullable<ReturnType<typeof useApp>['selectedImageSource']> }) {
+  const { activeId, patchSource } = useApp()
+  const [text, setText] = useState(source.noteContent ?? '')
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => { setText(source.noteContent ?? '') }, [source.id])
+
+  function handleChange(val: string) {
+    setText(val)
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      if (activeId) patchSource(activeId, source.id, { noteContent: val })
+    }, 400)
   }
-
-  function allowDrop(e: React.DragEvent) {
-    if (e.dataTransfer.types.includes('application/x-proof-source-id')) e.preventDefault()
-  }
-
-  const showImage = !!(selectedImageSource?.status === 'done' && imgUrl)
 
   return (
-    <div
-      style={{
-        flex: '0 0 60%',
-        minHeight: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        background: '#080808',
-        borderBottom: '1px solid #1a1a1a',
-      }}
-      onDragOver={allowDrop}
-      onDrop={handleDrop}
-    >
-      {/* Header */}
-      <div style={{
-        height: '28px', flexShrink: 0,
-        display: 'flex', alignItems: 'center',
-        padding: '0 8px 0 14px',
-        borderBottom: '1px solid #1a1a1a',
-        gap: '4px',
-      }}>
-        <span style={{
-          flex: 1, fontSize: '10px', color: '#555',
-          letterSpacing: '0.04em', userSelect: 'none',
-        }}>
-          Reference
-        </span>
-        <IconBtn onClick={onCollapse} title="Collapse">
-          <CollapseIcon />
-        </IconBtn>
-      </div>
+    <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+      <textarea value={text} onChange={e => handleChange(e.target.value)}
+        placeholder="Start writing your note..."
+        style={{
+          flex: 1, width: '100%', minHeight: '100%', background: 'transparent',
+          border: 'none', outline: 'none', resize: 'none', padding: '20px 24px',
+          fontSize: '13px', lineHeight: 1.8, color: '#bbb',
+          fontFamily: 'Georgia, "Times New Roman", serif', boxSizing: 'border-box',
+        }}
+      />
+    </div>
+  )
+}
 
-      {/* Content */}
-      {!showImage ? (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '11px', color: '#333', letterSpacing: '0.02em' }}>
-            {selectedImageSource && selectedImageSource.status !== 'done'
-              ? 'Loading...'
-              : 'Drop a reference here'}
-          </span>
+// ─── URL ──────────────────────────────────────────────────────────────────────
+
+function UrlContent({ source }: { source: NonNullable<ReturnType<typeof useApp>['selectedImageSource']> }) {
+  const [blocked, setBlocked] = useState(false)
+  const url = source.url ?? source.raw
+  return (
+    <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      {blocked ? (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '12px', color: '#555', letterSpacing: '0.02em' }}>This site can't be embedded.</span>
+          <a href={url} target="_blank" rel="noopener noreferrer"
+            style={{ fontSize: '12px', color: '#5ca8a0', textDecoration: 'none', letterSpacing: '0.02em' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#7dc4bc')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#5ca8a0')}
+          >Open in browser →</a>
         </div>
       ) : (
-        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-          <img
-            src={imgUrl!}
-            alt={selectedImageSource!.label ?? selectedImageSource!.raw}
-            draggable={false}
-            onDragStart={e => e.preventDefault()}
-            style={{ width: '100%', height: 'auto', display: 'block', userSelect: 'none' }}
-          />
-        </div>
+        <iframe src={url} title={source.label ?? url} onError={() => setBlocked(true)}
+          style={{ flex: 1, border: 'none', width: '100%', height: '100%', colorScheme: 'light' }}
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
       )}
     </div>
   )
 }
 
-function IconBtn({ onClick, title, children }: {
-  onClick: () => void; title: string; children: React.ReactNode
-}) {
+// ─── Shared ───────────────────────────────────────────────────────────────────
+
+function Msg({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#444', letterSpacing: '0.02em' }}>
+      {children}
+    </div>
+  )
+}
+
+function IconBtn({ onClick, title, children }: { onClick: () => void; title: string; children: React.ReactNode }) {
   const [hov, setHov] = useState(false)
   return (
-    <button
-      onClick={onClick} title={title}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        background: 'none', border: 'none', cursor: 'pointer',
-        padding: '4px', lineHeight: 0,
-        color: hov ? '#999' : '#555',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        borderRadius: '2px', flexShrink: 0,
-      }}
-    >
-      {children}
-    </button>
+    <button onClick={onClick} title={title} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', lineHeight: 0, color: hov ? '#999' : '#555', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '2px', flexShrink: 0 }}
+    >{children}</button>
   )
 }
 
 function CollapseIcon() {
   return (
-    <svg width="11" height="11" viewBox="0 0 11 11" fill="none"
-      stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 1V4H1" /><path d="M10 4H7V1" />
       <path d="M7 10V7H10" /><path d="M1 7H4V10" />
     </svg>

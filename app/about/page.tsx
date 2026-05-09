@@ -30,7 +30,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            A focused workspace for research and writing. Load a PDF and a reference side by side, write from them on the right — all in one window. No switching tabs, no copy-pasting, no losing your place.
+            A focused workspace for research and writing. Load PDFs, images, notes, and web pages as references — all in a split view. Write from them on the right. No switching tabs, no copy-pasting, no losing your place.
           </p>
         </div>
 
@@ -41,7 +41,7 @@ export default function About() {
               <span style={{ color: '#999' }}>1. Organize with workspaces</span> — click the workspace name at the top of the left panel to switch between or create workspaces. Each workspace has its own source list and draft.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>2. Add files</span> — drop PDFs and references into the left panel. They sit in the list until you open them.
+              <span style={{ color: '#999' }}>2. Add references</span> — drop PDFs or images into the left panel, paste a URL, or hit New note to create a note directly. Everything sits in the source list until you open it.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
               <span style={{ color: '#999' }}>3. Open in split view</span> — click a reference to load it in the top half of the center panel, click a PDF for the bottom half. Hit the expand icon on either header to fullscreen it. Hit X to close it from the viewer.
@@ -66,8 +66,10 @@ export default function About() {
               { keys: ['Drag source'],           desc: 'Drop into the matching viewer pane' },
               { keys: ['Expand (↗)'],           desc: 'Fullscreen that pane in the center column' },
               { keys: ['X'],                     desc: 'Close source from viewer' },
-              { keys: ['Drop file'],             desc: 'Add to the source list (PDFs and images)' },
-              { keys: ['Right-click source'],    desc: 'Color, rename, or remove' },
+              { keys: ['Drop file'],             desc: 'Add to the source list (PDF or image)' },
+              { keys: ['New note'],              desc: 'Create an editable note in the source list' },
+              { keys: ['Add URL'],               desc: 'Embed a web page as a reference' },
+              { keys: ['Right-click source'],    desc: 'Rename or remove' },
               { keys: ['··· (draft)'],           desc: 'Export or clear the draft' },
               { keys: ['Esc'],                   desc: 'Close menus' },
             ].map((row, i) => (
@@ -89,10 +91,21 @@ export default function About() {
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>File support</h2>
-          <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            PDFs and images (PNG, JPG, WEBP, GIF). PDFs render with selectable text. Scanned or image-only PDFs will display but text won't be selectable.
-          </p>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Reference types</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
+              <span style={{ color: '#999' }}>PDF</span> — renders with selectable text. Scanned or image-only PDFs display but text won't be selectable.
+            </p>
+            <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
+              <span style={{ color: '#999' }}>Image</span> — PNG, JPG, WEBP, GIF. Loads directly in the reference pane.
+            </p>
+            <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
+              <span style={{ color: '#999' }}>Note</span> — an editable text pad. Saves automatically, no file needed.
+            </p>
+            <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
+              <span style={{ color: '#999' }}>URL</span> — embeds the page in an inline viewer. Sites that block embedding show an open-in-browser link instead.
+            </p>
+          </div>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>

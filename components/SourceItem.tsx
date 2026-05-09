@@ -13,6 +13,8 @@ const STATUS_DOT: Record<string, string> = {
 const TYPE_DOT: Record<string, string> = {
   pdf:   '#5c7eb8',
   image: '#5c9e6e',
+  note:  '#b8935c',
+  url:   '#5ca8a0',
 }
 
 export interface RenameSourceDetail { srcId: string; currentLabel: string }
@@ -34,8 +36,7 @@ export default function SourceItem({ src, onDragStart, onDragEnd }: {
   const isSelected  = selectedIds.has(src.id)
   const isPrimary   = selectedId === src.id
   const displayName = src.label || src.raw
-  const defaultDot  = src.status === 'done' ? (TYPE_DOT[src.fileType ?? ''] ?? '#555') : STATUS_DOT[src.status] ?? '#444'
-  const dotColor    = src.color ?? defaultDot
+  const dotColor = src.status === 'done' ? (TYPE_DOT[src.fileType ?? ''] ?? '#555') : STATUS_DOT[src.status] ?? '#444'
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -47,7 +48,7 @@ export default function SourceItem({ src, onDragStart, onDragEnd }: {
   }, [src.id])
 
   function dispatchToViewer() {
-    if (src.fileType === 'image') setSelectedImageId(src.id)
+    if (src.fileType === 'image' || src.fileType === 'note' || src.fileType === 'url') setSelectedImageId(src.id)
     else setSelectedId(src.id)
   }
 

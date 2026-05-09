@@ -42,8 +42,10 @@ export interface QueuedSource {
   error: string | null
   label?: string
   color?: string
-  fileType?: 'pdf' | 'image'
+  fileType?: 'pdf' | 'image' | 'note' | 'url'
   content?: DocContent
+  noteContent?: string
+  url?: string
   clips: Clip[]
   draft?: string
 }
