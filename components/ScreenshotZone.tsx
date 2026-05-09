@@ -23,13 +23,13 @@ export default function ScreenshotZone({ onCollapse }: { onCollapse: () => void 
       onDragOver={allowDrop} onDrop={handleDrop}
     >
       <div style={{ height: '28px', flexShrink: 0, display: 'flex', alignItems: 'center', padding: '0 8px 0 14px', borderBottom: '1px solid #1a1a1a', gap: '4px' }}>
-        <span style={{ flex: 1, fontSize: '10px', color: '#555', letterSpacing: '0.04em', userSelect: 'none' }}>Reference</span>
+        <span style={{ flex: 1, fontSize: '10px', color: '#888', letterSpacing: '0.04em', userSelect: 'none' }}>Reference</span>
         <IconBtn onClick={onCollapse} title="Collapse"><CollapseIcon /></IconBtn>
       </div>
 
       {!src && (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '11px', color: '#333', letterSpacing: '0.02em' }}>Drop a reference here</span>
+          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.02em' }}>Drop a reference here</span>
         </div>
       )}
       {src?.fileType === 'image' && <ImageContent source={src} />}
@@ -142,7 +142,7 @@ function IconBtn({ onClick, title, children }: { onClick: () => void; title: str
   const [hov, setHov] = useState(false)
   return (
     <button onClick={onClick} title={title} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', lineHeight: 0, color: hov ? '#999' : '#555', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '2px', flexShrink: 0 }}
+      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', lineHeight: 0, color: hov ? '#bbb' : '#777', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '2px', flexShrink: 0 }}
     >{children}</button>
   )
 }

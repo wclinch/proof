@@ -163,7 +163,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
       >
         <span style={{
           flex: 1, fontSize: '12px',
-          color: showProjects || toggleHover ? '#aaa' : '#777',
+          color: showProjects || toggleHover ? '#ccc' : '#999',
           letterSpacing: '0.02em',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           transition: 'color 0.15s',
@@ -171,7 +171,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
           {activeProject?.name ?? 'Workspace'}
         </span>
         <svg width="8" height="5" viewBox="0 0 8 5" fill="none"
-          stroke={showProjects || toggleHover ? '#777' : '#444'} strokeWidth="1.2"
+          stroke={showProjects || toggleHover ? '#999' : '#555'} strokeWidth="1.2"
           strokeLinecap="round" strokeLinejoin="round"
           style={{ flexShrink: 0, transition: 'transform 0.15s, stroke 0.15s', transform: showProjects ? 'rotate(180deg)' : 'none' }}
         >
@@ -194,11 +194,16 @@ export default function SourcePanel({ width }: { width: number | string }) {
                 onMouseLeave={() => setHoveredProjId(null)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '9px',
-                  padding: '10px 16px', cursor: 'pointer',
+                  padding: '9px 16px', cursor: 'pointer',
                   background: isActive ? '#111' : isHovered ? '#0d0d0d' : 'transparent',
                   transition: 'background 0.1s', userSelect: 'none',
                 }}
               >
+                <span style={{
+                  width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
+                  background: isActive ? '#666' : '#333',
+                  transition: 'background 0.15s',
+                }} />
                 {editingProjId === p.id ? (
                   <input
                     autoFocus
@@ -231,20 +236,21 @@ export default function SourcePanel({ width }: { width: number | string }) {
             )
           })}
 
-          <button
-            onClick={createProject}
-            style={{
-              display: 'block', width: '100%', textAlign: 'left',
-              background: 'none', border: 'none', borderTop: '1px solid #1a1a1a',
-              padding: '9px 16px', cursor: 'pointer',
-              fontSize: '11px', color: '#444', fontFamily: 'inherit',
-              outline: 'none', transition: 'color 0.15s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#777')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#444')}
-          >
-            + New workspace
-          </button>
+          <div style={{ padding: '5px 16px 8px', display: 'flex', alignItems: 'center', gap: '9px' }}>
+            <span style={{ width: '6px', height: '6px', flexShrink: 0 }} />
+            <button
+              onClick={createProject}
+              style={{
+                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                fontSize: '11px', color: '#444', fontFamily: 'inherit',
+                outline: 'none', transition: 'color 0.15s', letterSpacing: '0.02em',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+            >
+              + New workspace
+            </button>
+          </div>
         </div>
       )}
 
@@ -307,7 +313,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
         onMouseLeave={() => setAddHover(false)}
         style={{ ...shell, background: dragOver ? '#141414' : addHover ? '#111' : '#0d0d0d', borderColor: dragOver ? '#333' : addHover ? '#252525' : '#1a1a1a', cursor: 'pointer' }}
       >
-        <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.04em', flex: 1 }}>
+        <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.04em', flex: 1 }}>
           {dragOver ? 'Drop to add' : 'Add file'}
         </span>
       </div>
@@ -364,7 +370,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
           />
           {filterInput && (
             <button onClick={e => { e.stopPropagation(); setFilterInput(''); setFilter('') }}
-              style={{ background: 'none', border: 'none', padding: '0 0 0 6px', cursor: 'pointer', color: '#444', fontSize: '13px', lineHeight: 1, display: 'flex', alignItems: 'center' }}
+              style={{ background: 'none', border: 'none', padding: '0 0 0 6px', cursor: 'pointer', color: '#666', fontSize: '13px', lineHeight: 1, display: 'flex', alignItems: 'center' }}
             >×</button>
           )}
         </div>
@@ -375,13 +381,13 @@ export default function SourcePanel({ width }: { width: number | string }) {
               <button key={type} onClick={() => setFilterType(active ? null : type)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '5px',
-                  padding: '3px 8px', border: `1px solid ${active ? color : '#1e1e1e'}`,
+                  padding: '3px 8px', border: `1px solid ${active ? color : '#262626'}`,
                   borderRadius: '3px', background: active ? `${color}18` : 'transparent',
                   cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s',
                 }}
               >
                 <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: color, flexShrink: 0 }} />
-                <span style={{ fontSize: '10px', color: active ? color : '#444', letterSpacing: '0.04em' }}>{label}</span>
+                <span style={{ fontSize: '10px', color: active ? color : '#666', letterSpacing: '0.04em' }}>{label}</span>
               </button>
             )
           })}
@@ -395,7 +401,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
         >
           {sources.length === 0
             ? <div style={{ padding: '12px 14px' }}>
-                <span style={{ fontSize: '11px', color: '#555', lineHeight: 1.6 }}>Drop files here or click Add file above.</span>
+                <span style={{ fontSize: '11px', color: '#666', lineHeight: 1.6 }}>Drop files here or click Add file above.</span>
               </div>
             : visible.length === 0
               ? <div style={{ padding: '20px 14px', fontSize: '11px', color: '#777', letterSpacing: '0.02em' }}>No results</div>
@@ -431,7 +437,7 @@ function UrlBtn({ onClick }: { onClick: () => void }) {
         cursor: 'pointer', transition: 'background 0.15s, border-color 0.15s', flexShrink: 0,
       }}
     >
-      <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.04em', flex: 1 }}>Add URL</span>
+      <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.04em', flex: 1 }}>Add URL</span>
     </div>
   )
 }
@@ -451,7 +457,7 @@ function NoteBtn({ onClick }: { onClick: () => void }) {
         cursor: 'pointer', transition: 'background 0.15s, border-color 0.15s', flexShrink: 0,
       }}
     >
-      <span style={{ fontSize: '11px', color: '#666', letterSpacing: '0.04em', flex: 1 }}>New note</span>
+      <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.04em', flex: 1 }}>New note</span>
     </div>
   )
 }

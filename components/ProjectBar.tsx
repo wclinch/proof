@@ -12,33 +12,33 @@ export default function ProjectBar() {
     }}>
       <a href="/" style={{
         textDecoration: 'none', fontSize: '15px', fontWeight: 300,
-        color: '#555', transition: 'color 0.15s',
+        color: '#666', transition: 'color 0.15s',
       }}
         onMouseEnter={e => (e.currentTarget.style.color = '#bbb')}
-        onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+        onMouseLeave={e => (e.currentTarget.style.color = '#666')}
       >{'{'}</a>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {cloudSyncing && (
-          <span style={{ fontSize: '10px', color: '#444' }}>Saving...</span>
+          <span style={{ fontSize: '10px', color: '#555' }}>Saving...</span>
         )}
         {user ? (
           <a href="/account" style={{
-            fontSize: '11px', color: '#555', textDecoration: 'none',
+            fontSize: '11px', color: '#666', textDecoration: 'none',
             maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             transition: 'color 0.15s',
           }}
             title={user.email}
-            onMouseEnter={e => (e.currentTarget.style.color = '#999')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+            onMouseEnter={e => (e.currentTarget.style.color = '#bbb')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#666')}
           >{user.email}</a>
         ) : (
           <a href="/auth" style={{
-            fontSize: '11px', color: '#555', textDecoration: 'none',
+            fontSize: '11px', color: '#666', textDecoration: 'none',
             transition: 'color 0.15s',
           }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#999')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+            onMouseEnter={e => (e.currentTarget.style.color = '#bbb')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#666')}
           >Sign in</a>
         )}
       </div>

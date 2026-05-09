@@ -60,7 +60,7 @@ export default function DraftPanel() {
 
         {hasContent && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '11px', color: '#555' }}>{wordCount}w</span>
+            <span style={{ fontSize: '11px', color: '#666' }}>{wordCount}w</span>
             <button
               ref={menuBtnRef}
               onClick={() => {
@@ -71,11 +71,11 @@ export default function DraftPanel() {
               }}
               style={{
                 background: 'none', border: 'none', padding: '0 2px', cursor: 'pointer',
-                fontSize: '14px', color: '#555', fontFamily: 'inherit', outline: 'none',
+                fontSize: '14px', color: '#666', fontFamily: 'inherit', outline: 'none',
                 letterSpacing: '0.1em', lineHeight: 1,
               }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#999')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+              onMouseEnter={e => (e.currentTarget.style.color = '#bbb')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#666')}
             >···</button>
           </div>
         )}
@@ -98,7 +98,7 @@ export default function DraftPanel() {
               requestAnimationFrame(() => { el.selectionStart = el.selectionEnd = start + 1 })
             }
           }}
-          placeholder={selectedSource ? 'Begin writing.' : 'Click a PDF from the left panel to begin.'}
+          placeholder={selectedSource ? 'Begin writing.' : 'Start writing here, available anytime...'}
           style={{
             width: '100%', minHeight: 'calc(100vh - 120px)',
             background: 'transparent', border: 'none', outline: 'none',

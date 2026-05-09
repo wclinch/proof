@@ -135,7 +135,7 @@ function Header({
       borderBottom: '1px solid #1a1a1a',
       gap: '4px',
     }}>
-      <span style={{ flex: 1, fontSize: '10px', color: '#555', letterSpacing: '0.04em', userSelect: 'none' }}>
+      <span style={{ flex: 1, fontSize: '10px', color: '#888', letterSpacing: '0.04em', userSelect: 'none' }}>
         {label}
       </span>
       {onClose && <IconBtn onClick={onClose} title="Close"><CloseIcon /></IconBtn>}
@@ -157,7 +157,7 @@ function UrlViewer({ source }: { source: QueuedSource }) {
     <div style={{ flex: 1, overflow: 'hidden', background: '#080808', display: 'flex', flexDirection: 'column' }}>
       {blocked ? (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '24px' }}>
-          <span style={{ fontSize: '12px', color: '#555', letterSpacing: '0.02em' }}>This site can't be embedded.</span>
+          <span style={{ fontSize: '12px', color: '#666', letterSpacing: '0.02em' }}>This site can't be embedded.</span>
           <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: '#5ca8a0', textDecoration: 'none', letterSpacing: '0.02em' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#7dc4bc')}
             onMouseLeave={e => (e.currentTarget.style.color = '#5ca8a0')}
@@ -342,7 +342,7 @@ function IconBtn({ onClick, title, children }: {
       style={{
         background: 'none', border: 'none', cursor: 'pointer',
         padding: '4px', lineHeight: 0,
-        color: hov ? '#999' : '#555',
+        color: hov ? '#bbb' : '#777',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         borderRadius: '2px', flexShrink: 0,
       }}
@@ -388,7 +388,7 @@ function Msg({ children }: { children: React.ReactNode }) {
     <div style={{
       flex: 1, minHeight: '40px',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: '11px', color: '#444', letterSpacing: '0.02em',
+      fontSize: '11px', color: '#666', letterSpacing: '0.02em',
     }}>
       {children}
     </div>
@@ -399,12 +399,12 @@ function Empty({ label, sub }: { label: string; sub?: string }) {
   return (
     <div style={{
       flex: 1, margin: '12px', borderRadius: '4px',
-      border: '1px dashed #1e1e1e',
+      border: '1px dashed #252525',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       gap: '8px',
     }}>
-      <span style={{ fontSize: '13px', color: '#444', letterSpacing: '0.02em' }}>{label}</span>
-      {sub && <span style={{ fontSize: '11px', color: '#2e2e2e', letterSpacing: '0.02em', textAlign: 'center', maxWidth: '220px', lineHeight: 1.6 }}>{sub}</span>}
+      <span style={{ fontSize: '13px', color: '#666', letterSpacing: '0.02em' }}>{label}</span>
+      {sub && <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.02em', textAlign: 'center', maxWidth: '220px', lineHeight: 1.6 }}>{sub}</span>}
     </div>
   )
 }

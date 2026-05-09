@@ -11,13 +11,13 @@ body {
 input, button, textarea, select { font-family: inherit; }
 
 /* Source panel — force placeholder to match span text, override Chrome dark-mode tinting */
-.sp-input::placeholder { color: #777 !important; opacity: 1 !important; }
-.sp-input { color: #777 !important; }
+.sp-input::placeholder { color: #555 !important; opacity: 1 !important; }
+.sp-input { color: #888 !important; }
 
 /* Synthesis panel placeholders */
 .draft-title::placeholder { color: #555; opacity: 1; }
 .draft-body::placeholder  { color: #555; opacity: 1; }
-.prose-area::placeholder  { color: #2a2a2a; opacity: 1; font-style: italic; font-family: Georgia, "Times New Roman", serif; }
+.prose-area::placeholder  { color: #555; opacity: 1; font-style: italic; font-family: Georgia, "Times New Roman", serif; }
 
 @keyframes fragmentIn {
   from { opacity: 0; transform: translateY(-6px); }
@@ -29,12 +29,12 @@ button, nav, label { user-select: none; }
 /* Scrollbars */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #2a2a2a; }
-* { scrollbar-width: thin; scrollbar-color: #1a1a1a transparent; }
+::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+* { scrollbar-width: thin; scrollbar-color: #2a2a2a transparent; }
 
 ::selection {
-  background: #2a2a2a;
+  background: #333;
   color: #f0f0f0;
 }
 
@@ -50,7 +50,7 @@ button, nav, label { user-select: none; }
 
 .nav-link {
   font-size: 11px;
-  color: #555;
+  color: #666;
   text-decoration: none;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -75,12 +75,12 @@ button, nav, label { user-select: none; }
 
 .footer-link {
   font-size: 11px;
-  color: #555;
+  color: #666;
   text-decoration: none;
   letter-spacing: 0.06em;
   transition: color 0.15s;
 }
-.footer-link:hover { color: #999; }
+.footer-link:hover { color: #aaa; }
 
 .text-cta {
   font-size: 12px;

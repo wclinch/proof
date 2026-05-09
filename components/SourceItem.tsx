@@ -4,10 +4,10 @@ import { useApp } from '@/context/AppContext'
 import type { QueuedSource } from '@/lib/types'
 
 const STATUS_DOT: Record<string, string> = {
-  done:       '#555',
+  done:       '#666',
   error:      '#a55',
-  extracting: '#777',
-  queued:     '#444',
+  extracting: '#888',
+  queued:     '#555',
 }
 
 const TYPE_DOT: Record<string, string> = {
