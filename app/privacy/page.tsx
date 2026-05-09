@@ -15,21 +15,21 @@ export default function Privacy() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>The short version</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Your files never leave your device. If you sign in, your workspace structure, note content, URL references, and draft text sync to our servers. We collect your email and anonymized usage events. No file content is ever transmitted.
+            Your files never leave your device. If you sign in, your workspace structure, scratchpad notes, URL references, and draft text sync to our servers. We collect your email and anonymized usage events. No file content is ever transmitted.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What stays on your device</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            PDF and image files are stored in your browser (IndexedDB) and are never uploaded to any server. They don't leave your machine under any circumstances. Note content and URL references are part of your workspace data and sync if you're signed in.
+            PDF and image files are stored in your browser (IndexedDB) and are never uploaded to any server. They don't leave your machine under any circumstances. Scratchpad notes and URL references are part of your workspace data and sync if you're signed in.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What syncs when you sign in</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            When you create an account, your workspace names, source names, note content, URL references, and draft text are saved to our database so they're accessible on any device. This data is tied to your account and is never shared or sold. PDF and image files must be re-added on each device. Without an account, everything stays local.
+            When you create an account, your workspace names, source names, scratchpad notes, URL references, and draft text are saved to our database so they're accessible on any device. This data is tied to your account and is never shared or sold. PDF and image files must be re-added on each device. Without an account, everything stays local.
           </p>
         </div>
 

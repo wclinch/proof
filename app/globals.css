@@ -17,7 +17,7 @@ input, button, textarea, select { font-family: inherit; }
 /* Synthesis panel placeholders */
 .draft-title::placeholder { color: #555; opacity: 1; }
 .draft-body::placeholder  { color: #555; opacity: 1; }
-.prose-area::placeholder  { color: #555; opacity: 1; font-style: italic; font-family: Georgia, "Times New Roman", serif; }
+.prose-area::placeholder  { color: #555; opacity: 1; }
 
 @keyframes fragmentIn {
   from { opacity: 0; transform: translateY(-6px); }

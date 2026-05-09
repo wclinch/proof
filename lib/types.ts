@@ -57,4 +57,5 @@ export interface Project {
   draft: string       // legacy — migrated to fragments on first load
   draftTitle: string  // legacy
   fragments: Fragment[]
+  scratchpad?: string
 }

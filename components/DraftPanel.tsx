@@ -104,7 +104,7 @@ export default function DraftPanel() {
             background: 'transparent', border: 'none', outline: 'none',
             resize: 'none',
             fontSize: '15px', lineHeight: 1.9, color: '#ccc',
-            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontFamily: 'inherit',
             padding: 0,
             tabSize: 4,
           }}

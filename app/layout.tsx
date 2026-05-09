@@ -13,21 +13,21 @@ const BASE = 'https://proof-kxfz.onrender.com'
 
 export const metadata: Metadata = {
   title: {
-    default: 'Proof',
-    template: '%s — Proof',
+    default: 'Site',
+    template: '%s — Site',
   },
   description: 'A calm writing environment for source-grounded work. Read PDFs and write beside them — in one focused workspace.',
   metadataBase: new URL(BASE),
   openGraph: {
-    siteName: 'Proof',
-    title: 'Proof — Read. Write. Think.',
+    siteName: 'Site',
+    title: 'Site — Read. Write. Think.',
     description: 'A calm writing environment for source-grounded work. Read PDFs and write beside them — in one focused workspace.',
     url: BASE,
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Proof — Read. Write. Think.',
+    title: 'Site — Read. Write. Think.',
     description: 'A calm writing environment for source-grounded work. Read PDFs and write beside them — in one focused workspace.',
   },
   robots: {

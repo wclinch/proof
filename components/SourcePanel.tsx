@@ -6,7 +6,7 @@ import SourceItem from './SourceItem'
 
 export default function SourcePanel({ width }: { width: number | string }) {
   const {
-    sources, uploadFiles, moveSource, createNote, addUrl,
+    sources, uploadFiles, moveSource, addUrl,
     projects, activeId, activeProject,
     createProject, switchProject, updateProject, deleteProject,
   } = useApp()
@@ -57,6 +57,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
   const [filterInput, setFilterInput] = useState('')
   const [filter, setFilter]           = useState('')
   const [dupMsg, setDupMsg]           = useState(false)
+  const [scratchOpen, setScratchOpen] = useState(false)
   const [draggingId, setDraggingId]   = useState<string | null>(null)
   const [liveOrder, setLiveOrder]     = useState<string[] | null>(null)
 
@@ -145,7 +146,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
   }
 
   return (
-    <div style={{ width, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ width, flexShrink: 0, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* Workspace header */}
       <button
@@ -208,10 +209,6 @@ export default function SourcePanel({ width }: { width: number | string }) {
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#111' }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
               >
-                <span style={{
-                  width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
-                  background: isActive ? '#666' : '#2e2e2e',
-                }} />
                 {editingProjId === p.id ? (
                   <input
                     autoFocus
@@ -324,7 +321,6 @@ export default function SourcePanel({ width }: { width: number | string }) {
       <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif" multiple style={{ display: 'none' }}
         onChange={e => { if (e.target.files?.length) { handleUpload(e.target.files); e.target.value = '' } }}
       />
-      <NoteBtn onClick={createNote} />
       {addingUrl ? (
         <div style={{
           margin: '6px 10px 0', padding: '11px 14px',
@@ -363,8 +359,8 @@ export default function SourcePanel({ width }: { width: number | string }) {
         </div>
       )}
 
-      {/* Source list */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '8px', borderTop: '1px solid #1a1a1a' }}>
+      {/* Source list — unmounted when notes expanded so it takes zero space */}
+      {!scratchOpen && <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '8px', borderTop: '1px solid #1a1a1a' }}>
         {sources.length > 0 && (
           <div style={{ ...shell, cursor: 'text', padding: '11px 14px' }} onClick={() => filterRef.current?.focus()}>
             <input
@@ -389,7 +385,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
           {sources.length === 0
             ? (
               <div style={{ padding: '20px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span style={{ fontSize: '11px', color: '#555', lineHeight: 1.7 }}>Add a PDF, image, page, or URL to get started.</span>
+                <span style={{ fontSize: '11px', color: '#555', lineHeight: 1.7 }}>Drop a file or paste a URL to begin.</span>
               </div>
             )
             : visible.length === 0
@@ -405,10 +401,64 @@ export default function SourcePanel({ width }: { width: number | string }) {
                 ))
           }
         </div>
+      </div>}
+
+      {/* Scratchpad */}
+      <div style={{
+        borderTop: '1px solid #1a1a1a',
+        display: 'flex', flexDirection: 'column',
+        ...(scratchOpen ? { flex: 1, minHeight: 0, marginTop: '8px' } : { flexShrink: 0 }),
+      }}>
+        {/* Header — matches Reference / Pdf Website header exactly */}
+        <div style={{
+          height: '28px', flexShrink: 0,
+          display: 'flex', alignItems: 'center',
+          padding: '0 8px 0 14px', gap: '4px',
+          ...(scratchOpen ? { borderBottom: '1px solid #1a1a1a' } : {}),
+        }}>
+          <span style={{ flex: 1, fontSize: '10px', letterSpacing: '0.04em', userSelect: 'none', color: '#888' }}>
+            {!scratchOpen && (activeProject?.scratchpad ?? '').trim()
+              ? <span style={{ color: '#555' }}>{(activeProject!.scratchpad!).trimStart().split('\n')[0].slice(0, 28)}{(activeProject!.scratchpad!).length > 28 ? '…' : ''}</span>
+              : 'Notes'}
+          </span>
+          <SPIconBtn onClick={() => setScratchOpen(o => !o)} title={scratchOpen ? 'Collapse' : 'Expand'}>
+            {scratchOpen ? <SPCollapseIcon /> : <SPExpandIcon />}
+          </SPIconBtn>
+        </div>
+        {scratchOpen && (
+          <textarea
+            value={activeProject?.scratchpad ?? ''}
+            onChange={e => { if (activeId) updateProject(activeId, { scratchpad: e.target.value }) }}
+            placeholder="Notes..."
+            style={{
+              flex: 1, width: '100%', boxSizing: 'border-box',
+              background: 'transparent', border: 'none', outline: 'none', resize: 'none',
+              padding: '12px 14px',
+              fontSize: '11px', color: '#ccc', fontFamily: 'inherit', letterSpacing: '0.02em',
+              lineHeight: 1.7, caretColor: '#888',
+            }}
+          />
+        )}
       </div>
 
     </div>
   )
+}
+
+function SPIconBtn({ onClick, title, children }: { onClick: () => void; title: string; children: React.ReactNode }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button onClick={onClick} title={title}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', lineHeight: 0, color: hov ? '#bbb' : '#555', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '2px', flexShrink: 0 }}
+    >{children}</button>
+  )
+}
+function SPExpandIcon() {
+  return <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"><path d="M1 4V1H4" /><path d="M7 1H10V4" /><path d="M10 7V10H7" /><path d="M4 10H1V7" /></svg>
+}
+function SPCollapseIcon() {
+  return <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 1V4H1" /><path d="M10 4H7V1" /><path d="M7 10V7H10" /><path d="M1 7H4V10" /></svg>
 }
 
 function UrlBtn({ onClick }: { onClick: () => void }) {
@@ -431,22 +481,3 @@ function UrlBtn({ onClick }: { onClick: () => void }) {
   )
 }
 
-function NoteBtn({ onClick }: { onClick: () => void }) {
-  const [hov, setHov] = useState(false)
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        margin: '6px 10px 0', padding: '11px 14px',
-        background: hov ? '#111' : '#0d0d0d',
-        border: `1px solid ${hov ? '#252525' : '#1a1a1a'}`,
-        borderRadius: '4px', display: 'flex', alignItems: 'center',
-        cursor: 'pointer', transition: 'background 0.15s, border-color 0.15s', flexShrink: 0,
-      }}
-    >
-      <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.04em', flex: 1 }}>New page</span>
-    </div>
-  )
-}

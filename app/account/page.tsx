@@ -115,7 +115,7 @@ export default function AccountPage() {
           <span style={labelStyle}>Account</span>
           <div style={{ fontSize: '14px', color: '#999' }}>{user?.email}</div>
           <div style={{ fontSize: '12px', color: '#555', letterSpacing: '0.03em' }}>
-            Workspaces and drafts sync across devices.
+            Workspaces, notes, and drafts sync across devices.
           </div>
         </div>
 

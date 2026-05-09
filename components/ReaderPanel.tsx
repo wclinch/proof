@@ -62,7 +62,7 @@ export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot, onExp
         />
         <PdfViewer
           source={selectedSource}
-          wrongMsg={wrongDrop === 'pdf' ? 'Images and pages go in the top pane' : undefined}
+          wrongMsg={wrongDrop === 'pdf' ? 'Images go in the top pane' : undefined}
         />
       </div>
     )
@@ -113,7 +113,7 @@ export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot, onExp
           />
           <PdfViewer
             source={selectedSource}
-            wrongMsg={wrongDrop === 'pdf' ? 'Images and pages go in the top pane' : undefined}
+            wrongMsg={wrongDrop === 'pdf' ? 'Images go in the top pane' : undefined}
           />
         </div>
       )}
@@ -275,7 +275,7 @@ function ImageViewer({ source, wrongMsg }: { source: ReturnType<typeof useApp>['
 
   return (
     <div style={{ flex: 1, background: '#080808', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {!source && <Empty label='Drop a reference here' sub='PDF · PNG · JPG · WEBP · GIF · URL · or a page' />}
+      {!source && <Empty label='Drop a reference here' sub='PDF · PNG · JPG · WEBP · GIF · URL' />}
       {source && source.status !== 'done' && <Msg>Loading...</Msg>}
       {source && source.status === 'done' && !imgUrl && <Msg>Could not load image.</Msg>}
       {source && source.status === 'done' && imgUrl && (

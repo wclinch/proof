@@ -28,9 +28,9 @@ export default function About() {
         </span>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Proof is</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Site is</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            A focused workspace for research and writing. Load PDFs, images, pages, and web references — all in a split view. Write from them on the right. No switching tabs, no copy-pasting, no losing your place.
+            A focused workspace for research and writing. Load PDFs, images, and web references — all in a split view. Write from them on the right. No switching tabs, no copy-pasting, no losing your place.
           </p>
         </div>
 
@@ -38,13 +38,13 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How to use it</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>1. Organize with workspaces</span> — click the workspace name at the top of the left panel to switch between or create workspaces. Each workspace has its own source list and draft.
+              <span style={{ color: '#999' }}>1. Organize with workspaces</span> — click the workspace name at the top of the left panel to switch between or create workspaces. Each workspace has its own source list, scratchpad, and draft.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>2. Add references</span> — drop PDFs or images into the left panel, paste a URL, or hit New page to open a blank page. Everything sits in the source list until you open it.
+              <span style={{ color: '#999' }}>2. Add references</span> — drop PDFs or images into the left panel, or paste a URL. Everything sits in the source list until you open it.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>3. Open in split view</span> — drag an image, page, or URL into the top half of the center panel, drag a PDF or website into the bottom half. Hit the expand icon on either header to fullscreen it. Hit X to close it from the viewer.
+              <span style={{ color: '#999' }}>3. Open in split view</span> — drag an image or URL into the top half of the center panel, drag a PDF or website into the bottom half. Hit the expand icon on either header to fullscreen it. Hit X to close it from the viewer.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
               <span style={{ color: '#999' }}>4. Write</span> — type in the draft panel on the right. The draft is tied to the open PDF and saves automatically.
@@ -61,13 +61,13 @@ export default function About() {
             {[
               { keys: ['Workspace name'],        desc: 'Open workspace switcher' },
               { keys: ['Right-click workspace'], desc: 'Rename or delete workspace' },
-              { keys: ['Drag image / page'],      desc: 'Drop into the top viewer pane' },
+              { keys: ['Drag image / URL'],        desc: 'Drop into the top viewer pane' },
               { keys: ['Drag PDF / website'],    desc: 'Drop into the bottom viewer pane' },
               { keys: ['Expand (↗)'],           desc: 'Fullscreen that pane in the center column' },
               { keys: ['X'],                     desc: 'Close source from viewer' },
               { keys: ['Drop file'],             desc: 'Add to the source list (PDF or image)' },
-              { keys: ['New page'],              desc: 'Create a blank writable page in the source list' },
               { keys: ['Add URL'],               desc: 'Embed a web page as a reference' },
+              { keys: ['Scratchpad'],            desc: 'Freeform notes at the bottom of the left panel — saved per workspace' },
               { keys: ['Right-click source'],    desc: 'Rename or remove' },
               { keys: ['··· (draft)'],           desc: 'Export or clear the draft' },
               { keys: ['Esc'],                   desc: 'Close menus' },
@@ -85,7 +85,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Layout</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Three columns. Left: workspace switcher and source list. Center: split viewer (image/page top, PDF/website bottom). Right: draft editor.
+            Three columns. Left: workspace switcher, source list, and scratchpad. Center: split viewer (image/URL top, PDF/website bottom). Right: draft editor.
           </p>
         </div>
 
@@ -99,9 +99,6 @@ export default function About() {
               <span style={{ color: '#999' }}>Image</span> — PNG, JPG, WEBP, GIF. Loads in the top viewer pane.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>Page</span> — a blank writable surface that loads in the top pane. Saves automatically, no file needed.
-            </p>
-            <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
               <span style={{ color: '#999' }}>URL</span> — embeds the page in the bottom viewer pane. Sites that block embedding show an open-in-browser link instead.
             </p>
           </div>
@@ -110,7 +107,7 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Saving your work</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            No account needed. Files and drafts are stored locally in your browser. Sign in to sync your workspaces and draft text across devices — files stay on your machine and need to be re-added on each device.
+            No account needed. Files and drafts are stored locally in your browser. Sign in to sync your workspaces, scratchpad notes, and draft text across devices — files stay on your machine and need to be re-added on each device.
           </p>
         </div>
 

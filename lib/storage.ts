@@ -17,6 +17,7 @@ export function newProject(n: number): Project {
     draft: '',
     draftTitle: '',
     fragments: [],
+    scratchpad: '',
   }
 }
 
