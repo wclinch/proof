@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useApp } from '@/context/AppContext'
 import type { QueuedSource } from '@/lib/types'
 
@@ -25,16 +25,16 @@ export default function SourceItem({ src, onDragStart, onDragEnd }: {
   onDragEnd?: () => void
 }) {
   const {
-    activeId, selectedId, selectedIds, anchorId, sources,
-    setSelectedId, setSelectedImageId, setSelectedIds, setAnchorId, setContextMenu,
+    activeId, selectedIds, anchorId, sources,
+    setSelectedIds, setAnchorId, setContextMenu,
     patchSource,
   } = useApp()
 
   const [editing, setEditing]       = useState(false)
   const [labelInput, setLabelInput] = useState('')
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const isSelected  = selectedIds.has(src.id)
-  const isPrimary   = selectedId === src.id
   const displayName = src.label || src.raw
   const dotColor = src.status === 'done' ? (TYPE_DOT[src.fileType ?? ''] ?? '#555') : STATUS_DOT[src.status] ?? '#444'
 
@@ -47,11 +47,6 @@ export default function SourceItem({ src, onDragStart, onDragEnd }: {
     return () => window.removeEventListener('proof:rename-source', handler)
   }, [src.id])
 
-  function dispatchToViewer() {
-    if (src.fileType === 'image' || src.fileType === 'note' || src.fileType === 'url') setSelectedImageId(src.id)
-    else setSelectedId(src.id)
-  }
-
   function handleClick(e: React.MouseEvent) {
     if (e.shiftKey && anchorId) {
       const ai = sources.findIndex(s => s.id === anchorId)
@@ -61,7 +56,6 @@ export default function SourceItem({ src, onDragStart, onDragEnd }: {
     } else {
       setSelectedIds(new Set([src.id]))
       setAnchorId(src.id)
-      dispatchToViewer()
     }
   }
 
@@ -115,16 +109,28 @@ export default function SourceItem({ src, onDragStart, onDragEnd }: {
 
       <div style={{ flex: 1, minWidth: 0 }}>
         {editing ? (
-          <input
+          <textarea
+            ref={textareaRef}
             autoFocus
+            rows={1}
             value={labelInput}
-            onChange={e => setLabelInput(e.target.value)}
-            onFocus={e => e.target.select()}
+            onChange={e => {
+              setLabelInput(e.target.value)
+              const el = e.target
+              el.style.height = 'auto'
+              el.style.height = el.scrollHeight + 'px'
+            }}
+            onFocus={e => {
+              e.target.select()
+              const el = e.target
+              el.style.height = 'auto'
+              el.style.height = el.scrollHeight + 'px'
+            }}
             onClick={e => e.stopPropagation()}
             onBlur={commitLabel}
             onKeyDown={e => {
               e.stopPropagation()
-              if (e.key === 'Enter') commitLabel()
+              if (e.key === 'Enter') { e.preventDefault(); commitLabel() }
               if (e.key === 'Escape') setEditing(false)
             }}
             style={{
@@ -132,6 +138,7 @@ export default function SourceItem({ src, onDragStart, onDragEnd }: {
               width: '100%', fontSize: '12px', color: '#ccc',
               fontFamily: 'inherit', padding: 0, margin: 0,
               lineHeight: 1.4, wordBreak: 'break-word', boxSizing: 'border-box',
+              resize: 'none', overflow: 'hidden', display: 'block',
             }}
           />
         ) : (
