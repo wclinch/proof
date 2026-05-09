@@ -13,23 +13,33 @@ const TYPE_CHIPS = [
 export default function SourcePanel({ width }: { width: number | string }) {
   const {
     sources, uploadFiles, moveSource, createNote, addUrl,
-    showProjects, setShowProjects,
     projects, activeId, activeProject,
     createProject, switchProject, updateProject, deleteProject,
   } = useApp()
 
-  // ── Project dropdown state ─────────────────────────────────────────────────
-  const [editingProjId, setEditingProjId]    = useState<string | null>(null)
-  const [projNameInput, setProjNameInput]    = useState('')
-  const [menuProjId, setMenuProjId]          = useState<string | null>(null)
-  const [menuPos, setMenuPos]                = useState<{ top: number; left: number } | null>(null)
+  // ── Workspace popover state ────────────────────────────────────────────────
+  const [projOpen, setProjOpen]             = useState(false)
+  const [projPos, setProjPos]               = useState<{ left: number; top: number; width: number } | null>(null)
+  const [editingProjId, setEditingProjId]   = useState<string | null>(null)
+  const [projNameInput, setProjNameInput]   = useState('')
+  const [menuProjId, setMenuProjId]         = useState<string | null>(null)
+  const [menuPos, setMenuPos]               = useState<{ top: number; left: number } | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-  const [hoveredProjId, setHoveredProjId]    = useState<string | null>(null)
+  const toggleRef = useRef<HTMLButtonElement>(null)
+
+  function openProjMenu() {
+    if (projOpen) { setProjOpen(false); setProjPos(null); return }
+    if (!toggleRef.current) return
+    const r = toggleRef.current.getBoundingClientRect()
+    setProjPos({ left: r.left, top: r.bottom, width: r.width })
+    setProjOpen(true)
+  }
 
   function commitRename(projId: string, fallback: string) {
     updateProject(projId, { name: projNameInput.trim() || fallback })
     setEditingProjId(null)
   }
+
 
   useEffect(() => {
     if (!menuProjId) return
@@ -47,7 +57,6 @@ export default function SourcePanel({ width }: { width: number | string }) {
   const [toggleHover, setToggleHover] = useState(false)
   const [dragOver, setDragOver]       = useState(false)
   const [addHover, setAddHover]       = useState(false)
-  const [noteHover, setNoteHover]     = useState(false)
   const [addingUrl, setAddingUrl]     = useState(false)
   const [urlInput, setUrlInput]       = useState('')
   const urlInputRef = useRef<HTMLInputElement>(null)
@@ -146,16 +155,16 @@ export default function SourcePanel({ width }: { width: number | string }) {
   return (
     <div style={{ width, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* Project toggle header */}
+      {/* Workspace header */}
       <button
-        id="proj-toggle"
-        onClick={() => setShowProjects(v => !v)}
+        ref={toggleRef}
+        onClick={openProjMenu}
         onMouseEnter={() => setToggleHover(true)}
         onMouseLeave={() => setToggleHover(false)}
         style={{
           display: 'flex', alignItems: 'center', gap: '6px',
           padding: '0 14px', height: '36px', flexShrink: 0,
-          background: toggleHover ? '#0d0d0d' : 'none',
+          background: projOpen || toggleHover ? '#0d0d0d' : 'none',
           border: 'none', borderBottom: '1px solid #1a1a1a',
           cursor: 'pointer', fontFamily: 'inherit', outline: 'none',
           width: '100%', textAlign: 'left', transition: 'background 0.15s',
@@ -163,7 +172,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
       >
         <span style={{
           flex: 1, fontSize: '12px',
-          color: showProjects || toggleHover ? '#ccc' : '#999',
+          color: projOpen || toggleHover ? '#ccc' : '#999',
           letterSpacing: '0.02em',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           transition: 'color 0.15s',
@@ -171,38 +180,45 @@ export default function SourcePanel({ width }: { width: number | string }) {
           {activeProject?.name ?? 'Workspace'}
         </span>
         <svg width="8" height="5" viewBox="0 0 8 5" fill="none"
-          stroke={showProjects || toggleHover ? '#999' : '#555'} strokeWidth="1.2"
+          stroke={projOpen || toggleHover ? '#999' : '#555'} strokeWidth="1.2"
           strokeLinecap="round" strokeLinejoin="round"
-          style={{ flexShrink: 0, transition: 'transform 0.15s, stroke 0.15s', transform: showProjects ? 'rotate(180deg)' : 'none' }}
+          style={{ flexShrink: 0, transition: 'transform 0.15s, stroke 0.15s', transform: projOpen ? 'rotate(180deg)' : 'none' }}
         >
           <path d="M1 1l3 3 3-3" />
         </svg>
       </button>
 
-      {/* Inline project dropdown */}
-      {showProjects && (
-        <div id="proj-dropdown" style={{ flexShrink: 0, borderBottom: '1px solid #1a1a1a' }}>
+      {/* Floating workspace popover */}
+      {projOpen && projPos && (
+        <div
+          id="proj-popover"
+          style={{
+            position: 'fixed', left: projPos.left, top: projPos.top,
+            width: projPos.width,
+            background: '#0c0c0c', borderLeft: '1px solid #222', borderRight: '1px solid #222', borderBottom: '1px solid #222',
+            zIndex: 300, overflow: 'hidden',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          }}
+        >
           {projects.map(p => {
-            const isActive  = p.id === activeId
-            const isHovered = hoveredProjId === p.id
+            const isActive = p.id === activeId
             return (
               <div
                 key={p.id}
                 onClick={() => { if (editingProjId === p.id) return; switchProject(p.id) }}
                 onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setConfirmDeleteId(null); setMenuProjId(p.id); setMenuPos({ top: e.clientY, left: e.clientX }) }}
-                onMouseEnter={() => setHoveredProjId(p.id)}
-                onMouseLeave={() => setHoveredProjId(null)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '9px',
-                  padding: '9px 16px', cursor: 'pointer',
-                  background: isActive ? '#111' : isHovered ? '#0d0d0d' : 'transparent',
-                  transition: 'background 0.1s', userSelect: 'none',
+                  padding: '9px 14px', cursor: 'pointer',
+                  background: isActive ? '#161616' : 'transparent',
+                  userSelect: 'none',
                 }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#111' }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
               >
                 <span style={{
                   width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
-                  background: isActive ? '#666' : '#333',
-                  transition: 'background 0.15s',
+                  background: isActive ? '#666' : '#2e2e2e',
                 }} />
                 {editingProjId === p.id ? (
                   <input
@@ -235,22 +251,18 @@ export default function SourcePanel({ width }: { width: number | string }) {
               </div>
             )
           })}
-
-          <div style={{ padding: '5px 16px 8px', display: 'flex', alignItems: 'center', gap: '9px' }}>
-            <span style={{ width: '6px', height: '6px', flexShrink: 0 }} />
-            <button
-              onClick={createProject}
-              style={{
-                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                fontSize: '11px', color: '#444', fontFamily: 'inherit',
-                outline: 'none', transition: 'color 0.15s', letterSpacing: '0.02em',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#444')}
-            >
-              + New workspace
-            </button>
-          </div>
+          <div style={{ height: '1px', background: '#1e1e1e' }} />
+          <button
+            onClick={() => { createProject() }}
+            style={{
+              display: 'block', width: '100%', textAlign: 'left',
+              background: 'none', border: 'none', padding: '8px 14px',
+              cursor: 'pointer', fontSize: '11px', color: '#444',
+              fontFamily: 'inherit', letterSpacing: '0.02em',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+          >+ New workspace</button>
         </div>
       )}
 
