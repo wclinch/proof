@@ -11,9 +11,12 @@ pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 interface Props {
   pdfOnly?: boolean
   onExpandScreenshot?: () => void
+  onExpandPdf?: () => void
+  pdfIsFullscreen?: boolean
+  onCollapsePdf?: () => void
 }
 
-export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot }: Props) {
+export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot, onExpandPdf, pdfIsFullscreen = false, onCollapsePdf }: Props) {
   const { selectedSource, selectedImageSource, setSelectedId, setSelectedImageId } = useApp()
   const [screenshotFull, setScreenshotFull] = useState(false)
   const [pdfFull, setPdfFull] = useState(false)
@@ -31,17 +34,14 @@ export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot }: Pro
     const srcId   = e.dataTransfer.getData('application/x-proof-source-id')
     const srcType = e.dataTransfer.getData('application/x-proof-source-type')
     if (!srcId) return
-    if (srcType === 'pdf') setSelectedId(srcId)
+    if (srcType === 'pdf' || srcType === 'url') setSelectedId(srcId)
     else flashWrong('pdf')
   }
 
   function handleImageDrop(e: React.DragEvent) {
     e.preventDefault()
-    const srcId   = e.dataTransfer.getData('application/x-proof-source-id')
-    const srcType = e.dataTransfer.getData('application/x-proof-source-type')
-    if (!srcId) return
-    if (srcType === 'image') setSelectedImageId(srcId)
-    else flashWrong('screenshot')
+    const srcId = e.dataTransfer.getData('application/x-proof-source-id')
+    if (srcId) setSelectedImageId(srcId)
   }
 
   function allowDrop(e: React.DragEvent) {
@@ -53,7 +53,17 @@ export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot }: Pro
     return (
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
         onDragOver={allowDrop} onDrop={handlePdfDrop}>
-        <PdfViewer source={selectedSource} />
+        <Header
+          label="Pdf / Website"
+          onExpand={onExpandPdf ?? (() => {})}
+          isFullscreen={pdfIsFullscreen}
+          onCollapse={onCollapsePdf ?? (() => {})}
+          onClose={selectedSource ? () => setSelectedId(null) : undefined}
+        />
+        <PdfViewer
+          source={selectedSource}
+          wrongMsg={wrongDrop === 'pdf' ? 'Images and pages go in the top pane' : undefined}
+        />
       </div>
     )
   }
@@ -79,10 +89,7 @@ export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot }: Pro
             onCollapse={() => setScreenshotFull(false)}
             onClose={selectedImageSource ? () => setSelectedImageId(null) : undefined}
           />
-          <ImageViewer
-            source={selectedImageSource}
-            wrongMsg={wrongDrop === 'screenshot' ? 'That\'s a PDF — drop it below' : undefined}
-          />
+          <ImageViewer source={selectedImageSource} />
         </div>
       )}
 
@@ -98,7 +105,7 @@ export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot }: Pro
           onDrop={handlePdfDrop}
         >
           <Header
-            label="Pdf"
+            label="Pdf / Website"
             onExpand={() => { setPdfFull(true); setScreenshotFull(false) }}
             isFullscreen={pdfFull}
             onCollapse={() => setPdfFull(false)}
@@ -106,7 +113,7 @@ export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot }: Pro
           />
           <PdfViewer
             source={selectedSource}
-            wrongMsg={wrongDrop === 'pdf' ? 'That\'s a reference — drop it above' : undefined}
+            wrongMsg={wrongDrop === 'pdf' ? 'Images and pages go in the top pane' : undefined}
           />
         </div>
       )}
@@ -150,28 +157,52 @@ function Header({
 // ─── URL viewer ───────────────────────────────────────────────────────────────
 
 function UrlViewer({ source }: { source: QueuedSource }) {
-  const [blocked, setBlocked] = useState(false)
+  const [state, setState] = useState<'checking' | 'ready' | 'blocked'>('checking')
   const url = source.url ?? source.raw
+
+  useEffect(() => {
+    setState('checking')
+    fetch(`/api/url-check?url=${encodeURIComponent(url)}`)
+      .then(r => r.json())
+      .then(({ embeddable }) => setState(embeddable ? 'ready' : 'blocked'))
+      .catch(() => setState('ready'))
+  }, [url])
+
+  const hostname = (() => { try { return new URL(url).hostname } catch { return url } })()
 
   return (
     <div style={{ flex: 1, overflow: 'hidden', background: '#080808', display: 'flex', flexDirection: 'column' }}>
-      {blocked ? (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '24px' }}>
-          <span style={{ fontSize: '12px', color: '#666', letterSpacing: '0.02em' }}>This site can't be embedded.</span>
-          <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: '#5ca8a0', textDecoration: 'none', letterSpacing: '0.02em' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#7dc4bc')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#5ca8a0')}
-          >Open in browser →</a>
+      {state === 'checking' && (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.02em' }}>Checking…</span>
         </div>
-      ) : (
+      )}
+      {state === 'blocked' && <UrlBlocked url={url} hostname={hostname} />}
+      {state === 'ready' && (
         <iframe
           src={url}
           title={source.label ?? url}
-          onError={() => setBlocked(true)}
+          onError={() => setState('blocked')}
           style={{ flex: 1, border: 'none', width: '100%', height: '100%', colorScheme: 'light' }}
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         />
       )}
+    </div>
+  )
+}
+
+function UrlBlocked({ url, hostname }: { url: string; hostname: string }) {
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '32px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+        <span style={{ fontSize: '13px', color: '#777', letterSpacing: '0.02em' }}>This site blocks embedding.</span>
+        <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.02em' }}>{hostname} doesn't allow being shown inside other pages.</span>
+      </div>
+      <a href={url} target="_blank" rel="noopener noreferrer"
+        style={{ fontSize: '12px', color: '#5ca8a0', textDecoration: 'none', letterSpacing: '0.02em', transition: 'color 0.15s' }}
+        onMouseEnter={e => (e.currentTarget.style.color = '#7dc4bc')}
+        onMouseLeave={e => (e.currentTarget.style.color = '#5ca8a0')}
+      >Open {hostname} in browser →</a>
     </div>
   )
 }
@@ -198,7 +229,7 @@ function NoteEditor({ source }: { source: QueuedSource }) {
       <textarea
         value={text}
         onChange={e => handleChange(e.target.value)}
-        placeholder="Start writing your note..."
+        placeholder="Start writing..."
         style={{
           flex: 1, width: '100%', minHeight: '100%',
           background: 'transparent', border: 'none', outline: 'none',
@@ -240,10 +271,11 @@ function ImageViewer({ source, wrongMsg }: { source: ReturnType<typeof useApp>['
 
   if (source?.fileType === 'note') return <NoteEditor source={source} />
   if (source?.fileType === 'url')  return <UrlViewer  source={source} />
+  if (source?.fileType === 'pdf')  return <PdfViewer  source={source as ReturnType<typeof useApp>['selectedSource']} />
 
   return (
     <div style={{ flex: 1, background: '#080808', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {!source && <Empty label={wrongMsg ?? 'Drop a reference here'} sub={wrongMsg ? undefined : 'PNG · JPG · WEBP · GIF · or create a note from the left panel'} />}
+      {!source && <Empty label='Drop a reference here' sub='PDF · PNG · JPG · WEBP · GIF · URL · or a page' />}
       {source && source.status !== 'done' && <Msg>Loading...</Msg>}
       {source && source.status === 'done' && !imgUrl && <Msg>Could not load image.</Msg>}
       {source && source.status === 'done' && imgUrl && (
@@ -300,9 +332,11 @@ function PdfViewer({ source, wrongMsg }: { source: ReturnType<typeof useApp>['se
     if (prevUrl.current) URL.revokeObjectURL(prevUrl.current)
   }, [])
 
+  if (source?.fileType === 'url') return <UrlViewer source={source} />
+
   return (
     <div ref={containerRef} style={{ flex: 1, overflow: 'auto', background: '#080808', display: 'flex', flexDirection: 'column' }}>
-      {!source                               && <Empty label={wrongMsg ?? 'Drop a PDF here'} sub={wrongMsg ? undefined : 'PDF · Draft on the right stays tied to this document'} />}
+      {!source                               && <Empty label={wrongMsg ?? 'Drop a PDF or website here'} sub={wrongMsg ? undefined : 'PDF · URL · Draft on the right stays tied to what\'s open'} />}
       {source?.status === 'queued'           && <Msg>Waiting...</Msg>}
       {source?.status === 'extracting'       && <Msg>Reading document...</Msg>}
       {source?.status === 'done' && !fileUrl && <Msg>Loading...</Msg>}
@@ -310,7 +344,7 @@ function PdfViewer({ source, wrongMsg }: { source: ReturnType<typeof useApp>['se
       {source?.status === 'done' && loadError && <Msg>Could not read this PDF.</Msg>}
 
       {source?.status === 'done' && fileUrl && !loadError && (
-        <div style={{ padding: '16px 0 0' }}>
+        <div>
           <Document
             file={fileUrl}
             onLoadSuccess={({ numPages }) => { setNumPages(numPages); setLoadError(false) }}

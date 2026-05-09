@@ -30,7 +30,7 @@ export default async function Home() {
           </h1>
 
           <p style={{ fontSize: '15px', color: '#777', lineHeight: 1.8, margin: '0 0 40px', maxWidth: '480px' }}>
-            Load PDFs, images, notes, and web pages as references. Write beside them on the right. Everything in one window — no switching tabs, no losing your place.
+            Load PDFs, images, pages, and web references. Write beside them on the right. Everything in one window — no switching tabs, no losing your place.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -48,8 +48,8 @@ export default async function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
-              ['Add references', 'Drop PDFs or images, paste a URL, or create a note — all from the left panel. Use workspaces to keep separate projects organized.'],
-              ['Open in split view', 'Click any reference to load it in the top viewer. Click a PDF to load it in the bottom. Hit the expand icon to fullscreen either one.'],
+              ['Add references', 'Drop PDFs or images, paste a URL, or open a page — all from the left panel. Use workspaces to keep separate projects organized.'],
+              ['Open in split view', 'Drag any image, page, or URL to the top viewer. Drag a PDF or website to the bottom. Hit the expand icon to fullscreen either one.'],
               ['Write', 'Your draft lives on the right, tied to the open PDF. Write directly as you reference. Saves automatically.'],
               ['Export', 'Use the draft menu to save as .txt or .md when you\'re done.'],
             ] as const).map(([title, body]) => (

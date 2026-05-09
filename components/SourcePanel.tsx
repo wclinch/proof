@@ -3,12 +3,6 @@ import { useState, useRef, useEffect } from 'react'
 import { useApp } from '@/context/AppContext'
 import SourceItem from './SourceItem'
 
-const TYPE_CHIPS = [
-  { type: 'pdf',   label: 'PDF',   color: '#5c7eb8' },
-  { type: 'image', label: 'Image', color: '#5c9e6e' },
-  { type: 'note',  label: 'Note',  color: '#b8935c' },
-  { type: 'url',   label: 'URL',   color: '#5ca8a0' },
-]
 
 export default function SourcePanel({ width }: { width: number | string }) {
   const {
@@ -62,7 +56,6 @@ export default function SourcePanel({ width }: { width: number | string }) {
   const urlInputRef = useRef<HTMLInputElement>(null)
   const [filterInput, setFilterInput] = useState('')
   const [filter, setFilter]           = useState('')
-  const [filterType, setFilterType]   = useState<string | null>(null)
   const [dupMsg, setDupMsg]           = useState(false)
   const [draggingId, setDraggingId]   = useState<string | null>(null)
   const [liveOrder, setLiveOrder]     = useState<string[] | null>(null)
@@ -140,7 +133,6 @@ export default function SourcePanel({ width }: { width: number | string }) {
     ? liveOrder.map(id => sources.find(s => s.id === id)).filter(Boolean) as typeof sources
     : sources
   const visible = orderedSources.filter(s => {
-    if (filterType && s.fileType !== filterType) return false
     if (q && !(s.label || s.raw).toLowerCase().includes(q)) return false
     return true
   })
@@ -335,7 +327,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
       <NoteBtn onClick={createNote} />
       {addingUrl ? (
         <div style={{
-          margin: '6px 10px 0', padding: '9px 14px',
+          margin: '6px 10px 0', padding: '11px 14px',
           background: '#0d0d0d', border: '1px solid #333', borderRadius: '4px',
           display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0,
         }}>
@@ -373,50 +365,35 @@ export default function SourcePanel({ width }: { width: number | string }) {
 
       {/* Source list */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '8px', borderTop: '1px solid #1a1a1a' }}>
-        <div style={{ ...shell, cursor: 'text', padding: '9px 14px' }} onClick={() => filterRef.current?.focus()}>
-          <input
-            ref={filterRef} className="sp-input"
-            value={filterInput} onChange={e => setFilterInput(e.target.value)}
-            placeholder="Filter..."
-            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '12px', fontFamily: 'inherit', letterSpacing: '0.02em', color: '#555' }}
-          />
-          {filterInput && (
-            <button onClick={e => { e.stopPropagation(); setFilterInput(''); setFilter('') }}
-              style={{ background: 'none', border: 'none', padding: '0 0 0 6px', cursor: 'pointer', color: '#666', fontSize: '13px', lineHeight: 1, display: 'flex', alignItems: 'center' }}
-            >×</button>
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: '5px', padding: '6px 10px 0', flexWrap: 'wrap' }}>
-          {TYPE_CHIPS.map(({ type, label, color }) => {
-            const active = filterType === type
-            return (
-              <button key={type} onClick={() => setFilterType(active ? null : type)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '5px',
-                  padding: '3px 8px', border: `1px solid ${active ? color : '#262626'}`,
-                  borderRadius: '3px', background: active ? `${color}18` : 'transparent',
-                  cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s',
-                }}
-              >
-                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: color, flexShrink: 0 }} />
-                <span style={{ fontSize: '10px', color: active ? color : '#666', letterSpacing: '0.04em' }}>{label}</span>
-              </button>
-            )
-          })}
-        </div>
-
+        {sources.length > 0 && (
+          <div style={{ ...shell, cursor: 'text', padding: '11px 14px' }} onClick={() => filterRef.current?.focus()}>
+            <input
+              ref={filterRef} className="sp-input"
+              value={filterInput} onChange={e => setFilterInput(e.target.value)}
+              placeholder="Filter..."
+              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '12px', fontFamily: 'inherit', letterSpacing: '0.02em', color: '#555' }}
+            />
+            {filterInput && (
+              <button onClick={e => { e.stopPropagation(); setFilterInput(''); setFilter('') }}
+                style={{ background: 'none', border: 'none', padding: '0 0 0 6px', cursor: 'pointer', color: '#666', fontSize: '13px', lineHeight: 1, display: 'flex', alignItems: 'center' }}
+              >×</button>
+            )}
+          </div>
+        )}
         <div
           ref={listRef}
-          style={{ flex: 1, overflowY: 'auto', marginTop: '4px' }}
+          style={{ flex: 1, overflowY: 'auto', marginTop: sources.length > 0 ? '4px' : '0' }}
           onDragOver={handleListDragOver}
           onDrop={handleListDrop}
         >
           {sources.length === 0
-            ? <div style={{ padding: '12px 14px' }}>
-                <span style={{ fontSize: '11px', color: '#666', lineHeight: 1.6 }}>Drop files here or click Add file above.</span>
+            ? (
+              <div style={{ padding: '20px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <span style={{ fontSize: '11px', color: '#555', lineHeight: 1.7 }}>Add a PDF, image, page, or URL to get started.</span>
               </div>
+            )
             : visible.length === 0
-              ? <div style={{ padding: '20px 14px', fontSize: '11px', color: '#777', letterSpacing: '0.02em' }}>No results</div>
+              ? <div style={{ padding: '10px 16px', fontSize: '12px', color: '#555' }}>No results</div>
               : visible.map(src => (
                   <div key={src.id} style={{ opacity: src.id === draggingId ? 0.35 : 1, transition: 'opacity 0.1s' }}>
                     <SourceItem
@@ -469,7 +446,7 @@ function NoteBtn({ onClick }: { onClick: () => void }) {
         cursor: 'pointer', transition: 'background 0.15s, border-color 0.15s', flexShrink: 0,
       }}
     >
-      <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.04em', flex: 1 }}>New note</span>
+      <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.04em', flex: 1 }}>New page</span>
     </div>
   )
 }

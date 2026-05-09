@@ -50,7 +50,7 @@ export default function DraftPanel() {
 
       {/* Header */}
       <div style={{
-        padding: '0 20px', height: '40px', flexShrink: 0,
+        padding: '0 8px 0 14px', height: '28px', flexShrink: 0,
         borderBottom: '1px solid #1a1a1a',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>

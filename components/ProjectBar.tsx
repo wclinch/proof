@@ -25,7 +25,6 @@ export default function ProjectBar() {
         {user ? (
           <a href="/account" style={{
             fontSize: '11px', color: '#666', textDecoration: 'none',
-            maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             transition: 'color 0.15s',
           }}
             title={user.email}

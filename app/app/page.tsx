@@ -4,13 +4,13 @@ import { AppProvider }   from '@/context/AppContext'
 import ProjectBar        from '@/components/ProjectBar'
 import SourcePanel       from '@/components/SourcePanel'
 import DraftPanel        from '@/components/DraftPanel'
-import ScreenshotZone    from '@/components/ScreenshotZone'
 import SourceContextMenu from '@/components/SourceContextMenu'
 import { useApp }        from '@/context/AppContext'
 import { useState, useEffect } from 'react'
 
 // pdfjs-dist uses DOMMatrix at module init — must not run during SSR
-const ReaderPanel = dynamic(() => import('@/components/ReaderPanel'), { ssr: false })
+const ReaderPanel    = dynamic(() => import('@/components/ReaderPanel'),    { ssr: false })
+const ScreenshotZone = dynamic(() => import('@/components/ScreenshotZone'), { ssr: false })
 
 const DEF_SOURCE = '20%'
 const DEF_DRAFT  = '40%'
@@ -42,6 +42,7 @@ function StorageWarning() {
 function Layout() {
   const { mounted } = useApp()
   const [screenshotExpanded, setScreenshotExpanded] = useState(false)
+  const [pdfFullscreen, setPdfFullscreen] = useState(false)
 
   if (!mounted) {
     return (
@@ -60,13 +61,20 @@ function Layout() {
         <SourcePanel width={DEF_SOURCE} />
         <div style={{ width: '1px', flexShrink: 0, background: '#222' }} />
 
-        {screenshotExpanded ? (
-          /* EXPANDED: screenshot spans full top 60%, PDF + draft side-by-side at bottom 40% */
+        {pdfFullscreen ? (
+          /* PDF FULLSCREEN: pdf takes full height, draft alongside */
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+            <ReaderPanel pdfOnly pdfIsFullscreen onCollapsePdf={() => setPdfFullscreen(false)} />
+            <div style={{ width: '1px', flexShrink: 0, background: '#333' }} />
+            <DraftPanel />
+          </div>
+        ) : screenshotExpanded ? (
+          /* SCREENSHOT EXPANDED: screenshot spans full top 60%, PDF + draft side-by-side at bottom 40% */
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <ScreenshotZone onCollapse={() => setScreenshotExpanded(false)} />
             <div style={{ height: '1px', flexShrink: 0, background: '#1a1a1a' }} />
             <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-              <ReaderPanel pdfOnly />
+              <ReaderPanel pdfOnly onExpandPdf={() => { setScreenshotExpanded(false); setPdfFullscreen(true) }} />
               <div style={{ width: '1px', flexShrink: 0, background: '#333' }} />
               <DraftPanel />
             </div>

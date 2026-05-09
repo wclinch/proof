@@ -533,7 +533,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!projId) return
     const note = newNote()
     updateProject(projId, { sources: [...sources, note] })
-    setSelectedImageId(note.id)
   }
 
   async function addUrl(url: string) {
@@ -541,7 +540,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!projId) return
     const src = newUrlSource(url)
     updateProject(projId, { sources: [...sources, src] })
-    setSelectedImageId(src.id)
     // Fetch title in background and update label
     try {
       const res = await fetch(`/api/url-meta?url=${encodeURIComponent(url)}`)

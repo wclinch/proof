@@ -9,9 +9,11 @@ export async function GET(req: NextRequest) {
       signal: AbortSignal.timeout(6000),
     })
     const html = await res.text()
-    const ogTitle  = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)?.[1]
+    const ogTitle   = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)?.[1]
     const htmlTitle = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]
-    const title = (ogTitle ?? htmlTitle ?? '').trim().slice(0, 120) || null
+    const raw = (ogTitle ?? htmlTitle ?? '').trim().slice(0, 120)
+    const GENERIC = /^(login|log in|sign in|sign up|register|home|homepage|welcome|index|untitled|error|not found|403|404|500|access denied|redirecting)$/i
+    const title = raw && !GENERIC.test(raw) ? raw : null
     return Response.json({ title })
   } catch {
     return Response.json({ title: null })

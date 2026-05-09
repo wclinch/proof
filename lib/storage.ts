@@ -25,7 +25,7 @@ export function newSource(raw: string, label?: string): import('./types').Queued
 }
 
 export function newNote(): import('./types').QueuedSource {
-  return { id: uid(), raw: 'note', label: 'Note', status: 'done', error: null, fileType: 'note', noteContent: '', clips: [] }
+  return { id: uid(), raw: 'page', label: 'Page', status: 'done', error: null, fileType: 'note', noteContent: '', clips: [] }
 }
 
 export function newUrlSource(url: string, title?: string): import('./types').QueuedSource {
