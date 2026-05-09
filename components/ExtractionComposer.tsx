@@ -11,16 +11,17 @@ function buildPageLabel(sents: Sentence[]): string {
 }
 
 interface Props {
-  sentences:        Sentence[]
-  centreId:         number
-  sourceLabel:      string
-  anchorRect:       DOMRect
-  onDismiss:        () => void
+  sentences:         Sentence[]
+  centreId:          number
+  sourceLabel:       string
+  anchorRect:        DOMRect
+  onInsert:          (text: string, meta?: { pageLabel?: string; sourceLabel?: string }) => void
+  onDismiss:         () => void
   onDragStateChange: (dragging: boolean) => void
 }
 
 export default function ExtractionComposer({
-  sentences, centreId, sourceLabel, anchorRect, onDismiss, onDragStateChange,
+  sentences, centreId, sourceLabel, anchorRect, onInsert, onDismiss, onDragStateChange,
 }: Props) {
   const composerRef = useRef<HTMLDivElement>(null)
 
@@ -138,7 +139,7 @@ export default function ExtractionComposer({
       {/* Source label */}
       {(label || sourceLabel) && (
         <div style={{
-          padding: '0 14px 10px',
+          padding: '0 14px 6px',
           fontSize: '9px', color: '#555', letterSpacing: '0.07em',
           display: 'flex', alignItems: 'center', gap: '5px',
         }}>
@@ -149,6 +150,48 @@ export default function ExtractionComposer({
           )}
         </div>
       )}
+
+      {/* Actions */}
+      <div style={{
+        padding: '8px 12px 10px',
+        borderTop: '1px solid #1c1c1c',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px',
+      }}>
+        <button
+          onClick={() => {
+            const text = sentences.map(s => s.text).join(' ')
+            const citation = label ? ` (${[label, sourceLabel].filter(Boolean).join(', ')})` : ''
+            onInsert(text + citation, { pageLabel: label, sourceLabel })
+            onDismiss()
+          }}
+          style={{
+            background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+            fontSize: '10px', color: '#555',
+            fontFamily: 'inherit', letterSpacing: '0.08em', textTransform: 'uppercase', outline: 'none',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#999')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+        >
+          + Citation
+        </button>
+
+        <button
+          onClick={() => {
+            onInsert(sentences.map(s => s.text).join(' '), { pageLabel: label, sourceLabel })
+            onDismiss()
+          }}
+          style={{
+            background: '#efefef', border: 'none', borderRadius: '4px',
+            padding: '7px 20px', cursor: 'pointer',
+            fontSize: '12px', fontWeight: 500, color: '#111',
+            fontFamily: 'inherit', outline: 'none', transition: 'background 0.1s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#e0e0e0')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#efefef')}
+        >
+          Insert
+        </button>
+      </div>
     </div>
   )
 }

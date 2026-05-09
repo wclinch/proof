@@ -3,20 +3,29 @@ import { useState, useEffect } from 'react'
 import { useApp } from '@/context/AppContext'
 import type { QueuedSource } from '@/lib/types'
 
-const DOT: Record<string, string> = {
-  done:       '#666',
+const STATUS_DOT: Record<string, string> = {
+  done:       '#555',
   error:      '#a55',
-  extracting: '#888',
-  queued:     '#555',
+  extracting: '#777',
+  queued:     '#444',
 }
 
-// SourceContextMenu dispatches this event to trigger inline renaming
+const TYPE_DOT: Record<string, string> = {
+  pdf:   '#5c7eb8',
+  image: '#5c9e6e',
+}
+
 export interface RenameSourceDetail { srcId: string; currentLabel: string }
 
-export default function SourceItem({ src }: { src: QueuedSource }) {
+export default function SourceItem({ src, onDragStart, onDragEnd }: {
+  src: QueuedSource
+  onDragStart?: (id: string) => void
+  onDragEnd?: () => void
+}) {
   const {
     activeId, selectedId, selectedIds, anchorId, sources,
-    setSelectedId, setSelectedIds, setAnchorId, setContextMenu, patchSource,
+    setSelectedId, setSelectedImageId, setSelectedIds, setAnchorId, setContextMenu,
+    patchSource,
   } = useApp()
 
   const [editing, setEditing]       = useState(false)
@@ -25,42 +34,40 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
   const isSelected  = selectedIds.has(src.id)
   const isPrimary   = selectedId === src.id
   const displayName = src.label || src.raw
+  const defaultDot  = src.status === 'done' ? (TYPE_DOT[src.fileType ?? ''] ?? '#555') : STATUS_DOT[src.status] ?? '#444'
+  const dotColor    = src.color ?? defaultDot
 
-  // Progress bar: React-controlled width so we can snap to 100% on completion
-
-  // Listen for rename trigger dispatched by SourceContextMenu
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<RenameSourceDetail>).detail
-      if (detail.srcId === src.id) {
-        setLabelInput(detail.currentLabel)
-        setEditing(true)
-      }
+      if (detail.srcId === src.id) { setLabelInput(detail.currentLabel); setEditing(true) }
     }
     window.addEventListener('proof:rename-source', handler)
     return () => window.removeEventListener('proof:rename-source', handler)
   }, [src.id])
 
+  function dispatchToViewer() {
+    if (src.fileType === 'image') setSelectedImageId(src.id)
+    else setSelectedId(src.id)
+  }
+
   function handleClick(e: React.MouseEvent) {
     if (e.shiftKey && anchorId) {
-      const anchorIdx = sources.findIndex(s => s.id === anchorId)
-      const clickIdx  = sources.findIndex(s => s.id === src.id)
-      const [lo, hi]  = anchorIdx < clickIdx ? [anchorIdx, clickIdx] : [clickIdx, anchorIdx]
+      const ai = sources.findIndex(s => s.id === anchorId)
+      const ci = sources.findIndex(s => s.id === src.id)
+      const [lo, hi] = ai < ci ? [ai, ci] : [ci, ai]
       setSelectedIds(new Set(sources.slice(lo, hi + 1).map(s => s.id)))
-      setSelectedId(src.id)
     } else {
       setSelectedIds(new Set([src.id]))
-      setSelectedId(src.id)
       setAnchorId(src.id)
+      dispatchToViewer()
     }
   }
 
   function handleContextMenu(e: React.MouseEvent) {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault(); e.stopPropagation()
     if (!selectedIds.has(src.id)) {
       setSelectedIds(new Set([src.id]))
-      setSelectedId(src.id)
       setAnchorId(src.id)
     }
     setContextMenu({ srcId: src.id, x: e.clientX, y: e.clientY })
@@ -74,13 +81,21 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
 
   return (
     <div
+      data-src-id={src.id}
+      draggable
+      onDragStart={e => {
+        e.dataTransfer.setData('application/x-proof-source-id', src.id)
+        e.dataTransfer.setData('application/x-proof-source-type', src.fileType ?? 'pdf')
+        e.dataTransfer.effectAllowed = 'copyMove'
+        onDragStart?.(src.id)
+      }}
+      onDragEnd={() => onDragEnd?.()}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
       style={{
         padding: '10px 16px',
         cursor: 'pointer',
         background: isSelected ? '#111' : 'transparent',
-        borderLeft: `2px solid ${isPrimary ? '#333' : isSelected ? '#1a1a1a' : 'transparent'}`,
         display: 'flex',
         alignItems: 'flex-start',
         gap: '9px',
@@ -91,11 +106,11 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
       onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
     >
       <span style={{
-          width: '6px', height: '6px', borderRadius: '50%',
-          flexShrink: 0, marginTop: '5px',
-          background: DOT[src.status] ?? '#2a2a2a',
-        }}
-      />
+        width: '6px', height: '6px', borderRadius: '50%',
+        flexShrink: 0, marginTop: '5px',
+        background: dotColor,
+        transition: 'background 0.15s',
+      }} />
 
       <div style={{ flex: 1, minWidth: 0 }}>
         {editing ? (
@@ -119,11 +134,7 @@ export default function SourceItem({ src }: { src: QueuedSource }) {
             }}
           />
         ) : (
-          <div style={{
-            fontSize: '12px', lineHeight: 1.4,
-            color: src.status === 'done' ? '#ccc' : '#777',
-            wordBreak: 'break-word',
-          }}>
+          <div style={{ fontSize: '12px', lineHeight: 1.4, color: src.status === 'done' ? '#ccc' : '#777', wordBreak: 'break-word' }}>
             {displayName}
           </div>
         )}

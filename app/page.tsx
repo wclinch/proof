@@ -21,37 +21,37 @@ export default async function Home() {
 
         {/* Hero */}
         <section style={{ maxWidth: '620px', width: '100%', margin: '0 auto', padding: '96px 24px 80px' }}>
-          <div style={{ fontSize: '11px', color: '#666', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '32px' }}>
-            Proof — Research Workspace
+          <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.1em', marginBottom: '32px' }}>
+            Proof
           </div>
 
           <h1 style={{ fontSize: '32px', fontWeight: 500, color: '#bbb', lineHeight: 1.25, margin: '0 0 20px', letterSpacing: '-0.01em' }}>
-            Read. Extract. Write.<br />All in one place.
+            Reference material.<br />Write beside it.
           </h1>
 
           <p style={{ fontSize: '15px', color: '#777', lineHeight: 1.8, margin: '0 0 40px', maxWidth: '480px' }}>
-            Add a PDF, read it as clean text, drag sentences into your draft or save them for later — without switching tabs or losing your place.
+            Load a PDF and a reference into a split view. Write on the right. Everything in one window — no switching tabs, no losing your place.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <a href="/app" className="cta-link">Open Proof →</a>
-            <span style={{ fontSize: '12px', color: '#666', letterSpacing: '0.04em' }}>
-              Free to use. Sign in to sync across devices.
+            <span style={{ fontSize: '12px', color: '#555', letterSpacing: '0.02em' }}>
+              Free. Sign in to sync across devices.
             </span>
           </div>
         </section>
 
         {/* How it works */}
         <section style={{ borderTop: '1px solid #111', maxWidth: '620px', width: '100%', margin: '0 auto', padding: '64px 24px' }}>
-          <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
+          <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.06em', marginBottom: '40px' }}>
             How it works
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
-              ['Add a document', 'Drop a PDF into the left panel. It\'s extracted and ready to read in seconds — no upload, no waiting.'],
-              ['Read', 'Your document opens as clean readable text in the center. Sentence boundaries are detected so you can work with individual ideas.'],
-              ['Extract', 'Click any sentence to open the extraction composer. It shows that sentence and its surrounding context. Drag individual sentences to the right to insert into your draft, or to the left to save for later.'],
-              ['Write', 'Your draft grows as you read. Drag clips in, write around them, reorder freely. Export as .txt or .md when done.'],
+              ['Add files', 'Drop PDFs and references into the left panel. Use workspaces to keep separate projects organized.'],
+              ['Open in split view', 'Click a reference to load it in the top half of the center panel. Click a PDF to load it in the bottom half. Hit the expand icon to fullscreen either one.'],
+              ['Write', 'Your draft lives on the right, tied to the open PDF. Write directly as you reference. Saves automatically.'],
+              ['Export', 'Use the draft menu to save as .txt or .md when you\'re done.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ display: 'flex', gap: '24px' }}>
                 <div style={{ width: '4px', flexShrink: 0, background: '#1a1a1a', borderRadius: '2px', alignSelf: 'stretch' }} />
@@ -66,8 +66,8 @@ export default async function Home() {
 
         {/* Footer CTA */}
         <section style={{ borderTop: '1px solid #111', maxWidth: '620px', width: '100%', margin: '0 auto', padding: '64px 24px' }}>
-          <p style={{ fontSize: '13px', color: '#777', lineHeight: 1.75, margin: '0 0 28px' }}>
-            Free to use with no account. Sign in to sync your clips and workspaces across devices — your documents stay on your machine either way.
+          <p style={{ fontSize: '13px', color: '#666', lineHeight: 1.75, margin: '0 0 28px' }}>
+            No account needed. Sign in to sync your workspaces across devices — your documents stay on your machine either way.
           </p>
           <a href="/app" className="text-cta">Open Proof →</a>
         </section>
@@ -75,7 +75,7 @@ export default async function Home() {
       </main>
 
       <footer style={{ borderTop: '1px solid #111', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '620px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
-        <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.06em' }}>Proof</span>
+        <span style={{ fontSize: '11px', color: '#444' }}>Proof</span>
         <div style={{ display: 'flex', gap: '20px' }}>
           <a href="/about"   className="footer-link">About</a>
           <a href="/privacy" className="footer-link">Privacy</a>

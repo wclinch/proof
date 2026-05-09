@@ -20,7 +20,7 @@ export default function ProjectBar() {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {cloudSyncing && (
-          <span style={{ fontSize: '10px', color: '#444' }}>saving...</span>
+          <span style={{ fontSize: '10px', color: '#444' }}>Saving...</span>
         )}
         {user ? (
           <a href="/account" style={{

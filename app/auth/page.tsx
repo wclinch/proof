@@ -66,15 +66,15 @@ export default function AuthPage() {
 
   const backBtn: React.CSSProperties = {
     background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-    fontSize: '12px', color: '#777', letterSpacing: '0.06em',
-    textTransform: 'uppercase', fontFamily: 'inherit', textAlign: 'left',
+    fontSize: '12px', color: '#777', letterSpacing: '0.02em',
+    fontFamily: 'inherit', textAlign: 'left',
   }
 
   const submitBtn = (disabled: boolean): React.CSSProperties => ({
     marginTop: '6px', background: '#0f0f0f', border: '1px solid #1a1a1a',
     borderRadius: '4px', padding: '10px 20px', cursor: disabled ? 'default' : 'pointer',
-    fontSize: '12px', color: disabled ? '#444' : '#777', letterSpacing: '0.08em',
-    textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none',
+    fontSize: '13px', color: disabled ? '#444' : '#777', letterSpacing: '0.02em',
+    fontFamily: 'inherit', outline: 'none',
     transition: 'border-color 0.15s, color 0.15s',
   })
 
@@ -86,7 +86,7 @@ export default function AuthPage() {
 
           {sentTo ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ fontSize: '11px', color: '#777', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
+              <div style={{ fontSize: '13px', color: '#888', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
                 Check your email
               </div>
               <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
@@ -116,14 +116,14 @@ export default function AuthPage() {
           ) : mode === 'forgot' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #1a1a1a', paddingBottom: '16px' }}>
-                <span style={{ fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#aaa' }}>
+                <span style={{ fontSize: '13px', color: '#888' }}>
                   Reset password
                 </span>
               </div>
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <input
                   type="email" placeholder="Email" value={email}
-                  onChange={e => setEmail(e.target.value)} required
+                  onChange={e => setEmail(e.target.value)}
                   style={inputStyle}
                   onFocus={e => (e.currentTarget.style.borderColor = '#333')}
                   onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
@@ -165,26 +165,29 @@ export default function AuthPage() {
                     onClick={() => switchMode(m)}
                     style={{
                       background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                      fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase',
-                      fontFamily: 'inherit', color: mode === m ? '#bbb' : '#777',
+                      fontSize: '13px', letterSpacing: '0.02em',
+                      fontFamily: 'inherit', color: mode === m ? '#bbb' : '#555',
+                      transition: 'color 0.15s',
                     }}
+                    onMouseEnter={e => { if (mode !== m) e.currentTarget.style.color = '#999' }}
+                    onMouseLeave={e => { if (mode !== m) e.currentTarget.style.color = '#555' }}
                   >
                     {m === 'login' ? 'Sign in' : 'Create account'}
                   </button>
                 ))}
               </div>
 
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <input
                   type="email" placeholder="Email" value={email}
-                  onChange={e => setEmail(e.target.value)} required
+                  onChange={e => setEmail(e.target.value)}
                   style={inputStyle}
                   onFocus={e => (e.currentTarget.style.borderColor = '#333')}
                   onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
                 />
                 <input
                   type="password" placeholder="Password" value={password}
-                  onChange={e => setPassword(e.target.value)} required minLength={6}
+                  onChange={e => setPassword(e.target.value)}
                   style={inputStyle}
                   onFocus={e => (e.currentTarget.style.borderColor = '#333')}
                   onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}

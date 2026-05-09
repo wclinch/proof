@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect, useRef, ReactNode } fro
 import type { User } from '@supabase/supabase-js'
 import type { Project, QueuedSource, Clip, Fragment } from '@/lib/types'
 import {
-  ACTIVE_KEY, SELECTED_KEY,
+  ACTIVE_KEY, SELECTED_KEY, SELECTED_IMAGE_KEY,
   uid, newProject, newSource,
   loadProjects, saveProjects,
 } from '@/lib/storage'
@@ -30,12 +30,15 @@ interface AppState {
   activeProject: Project | null
   sources: QueuedSource[]
   selectedSource: QueuedSource | null
+  selectedImageId: string | null
+  selectedImageSource: QueuedSource | null
   // auth
   user: User | null
   cloudSyncing: boolean
   // setters
   setShowProjects: (v: boolean | ((prev: boolean) => boolean)) => void
   setSelectedId: (id: string | null) => void
+  setSelectedImageId: (id: string | null) => void
   setSelectedIds: (ids: Set<string>) => void
   setAnchorId: (id: string | null) => void
   setContextMenu: (m: ContextMenu | null) => void
@@ -54,6 +57,7 @@ interface AppState {
   updateFragment: (fragmentId: string, patch: Partial<Fragment>) => void
   moveFragment: (id: string, afterId: string | null) => void
   clearFragments: () => void
+  moveSource: (srcId: string, toIndex: number) => void
   uploadFiles: (files: FileList | File[]) => Promise<void>
   retrySource: (srcId: string) => Promise<void>
   removeSource: (srcId: string) => void
@@ -69,8 +73,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted]           = useState(false)
   const [projects, setProjects]         = useState<Project[]>([])
   const [activeId, setActiveId]         = useState<string | null>(null)
-  const [selectedId, setSelectedId]     = useState<string | null>(null)
-  const [selectedIds, setSelectedIds]   = useState<Set<string>>(new Set())
+  const [selectedId, setSelectedId]         = useState<string | null>(null)
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds]       = useState<Set<string>>(new Set())
   const [anchorId, setAnchorId]         = useState<string | null>(null)
   const [showProjects, setShowProjects] = useState(false)
   const [contextMenu, setContextMenu]     = useState<ContextMenu | null>(null)
@@ -150,6 +155,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (savedSelected && match.sources.find(s => s.id === savedSelected)) {
         setSelectedId(savedSelected)
       }
+      const savedSelectedImage = localStorage.getItem(SELECTED_IMAGE_KEY)
+      if (savedSelectedImage && match.sources.find(s => s.id === savedSelectedImage)) {
+        setSelectedImageId(savedSelectedImage)
+      }
 
       // Content is always stripped from localStorage — recover from IDB on
       // every load. Falls back to re-extracting from the stored file if needed.
@@ -157,6 +166,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         for (const proj of fixed) {
           for (const src of proj.sources) {
             if (src.status !== 'done') continue
+            if (src.fileType === 'image') continue  // images have no content, load directly from IDB
             try {
               let content = await getContent(src.id) as import('@/lib/types').DocContent | null
               if (!content) {
@@ -201,6 +211,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (savedSelected && match.sources.find((s: { id: string }) => s.id === savedSelected)) {
           setSelectedId(savedSelected)
         }
+        const savedSelectedImage = localStorage.getItem(SELECTED_IMAGE_KEY)
+        if (savedSelectedImage && match.sources.find((s: { id: string }) => s.id === savedSelectedImage)) {
+          setSelectedImageId(savedSelectedImage)
+        }
       }
       cloudReady.current = true
     }).catch(() => { cloudReady.current = true })
@@ -237,12 +251,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (selectedId) localStorage.setItem(SELECTED_KEY, selectedId)
     else localStorage.removeItem(SELECTED_KEY)
   }, [selectedId])
+  useEffect(() => {
+    if (selectedImageId) localStorage.setItem(SELECTED_IMAGE_KEY, selectedImageId)
+    else localStorage.removeItem(SELECTED_IMAGE_KEY)
+  }, [selectedImageId])
 
   // ─── Derived ────────────────────────────────────────────────────────────────
 
-  const activeProject  = projects.find(p => p.id === activeId) ?? null
-  const sources        = activeProject?.sources ?? []
-  const selectedSource = sources.find(s => s.id === selectedId) ?? null
+  const activeProject       = projects.find(p => p.id === activeId) ?? null
+  const sources             = activeProject?.sources ?? []
+  const selectedSource      = sources.find(s => s.id === selectedId) ?? null
+  const selectedImageSource = sources.find(s => s.id === selectedImageId) ?? null
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -390,27 +409,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setProjects(ps => ps.map(p => p.id !== projId ? p : { ...p, fragments: [] }))
   }
 
+  function moveSource(srcId: string, toIndex: number) {
+    if (!activeId) return
+    setProjects(ps => ps.map(p => {
+      if (p.id !== activeId) return p
+      const from = p.sources.findIndex(s => s.id === srcId)
+      if (from === -1) return p
+      const arr = [...p.sources]
+      const [item] = arr.splice(from, 1)
+      arr.splice(toIndex, 0, item)
+      return { ...p, sources: arr }
+    }))
+  }
+
   // ─── Actions ────────────────────────────────────────────────────────────────
 
   const MAX_BATCH   = 10
-  const MAX_FILE_MB = 20
+  const MAX_FILE_MB = 100
 
   async function uploadFiles(files: FileList | File[]) {
     const projId = activeIdRef.current
     if (!projId) return
 
+    const isImage = (f: File) =>
+      f.type.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(f.name)
+    const isPdf = (f: File) =>
+      f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+
     let list = Array.from(files)
-      .filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'))
+      .filter(f => isPdf(f) || isImage(f))
       .slice(0, MAX_BATCH)
     list = list.filter(f => !sources.some(s => s.label === f.name))
     if (!list.length) return
 
-    const newSources = list.map(f => newSource(`file:${f.name}`, f.name))
+    const newSources = list.map(f => ({
+      ...newSource(`file:${f.name}`, f.name),
+      fileType: (isImage(f) ? 'image' : 'pdf') as 'pdf' | 'image',
+    }))
 
     updateProject(projId, { sources: [...sources, ...newSources] })
-    setSelectedId(newSources[0].id)
-    setSelectedIds(new Set([newSources[0].id]))
-    setAnchorId(newSources[0].id)
+    // No auto-select — files sit in list until clicked or dragged
 
     for (let i = 0; i < list.length; i++) {
       const file = list[i]
@@ -422,11 +460,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        patchSource(projId, src.id, { status: 'extracting' })
         await storeFile(src.id, file)
-        const content = await extractContent(file)
-        await storeContent(src.id, content).catch(() => {})
-        patchSource(projId, src.id, { status: 'done', content })
+        if (src.fileType === 'image') {
+          // Images need no extraction — just store and mark done
+          patchSource(projId, src.id, { status: 'done' })
+        } else {
+          patchSource(projId, src.id, { status: 'extracting' })
+          const content = await extractContent(file)
+          await storeContent(src.id, content).catch(() => {})
+          patchSource(projId, src.id, { status: 'done', content })
+        }
         capture('upload_complete')
       } catch (err) {
         patchSource(projId, src.id, {
@@ -462,7 +505,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!activeId) return
     const updated = sources.filter(s => s.id !== srcId)
     updateProject(activeId, { sources: updated })
-    if (selectedId === srcId) setSelectedId(updated[0]?.id ?? null)
+    if (selectedId === srcId) setSelectedId(null)
+    if (selectedImageId === srcId) setSelectedImageId(null)
     setSelectedIds(new Set())
     setAnchorId(null)
     deleteFile(srcId).catch(() => {})
@@ -473,10 +517,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!activeId || !selectedIds.size) return
     const updated = sources.filter(s => !selectedIds.has(s.id))
     updateProject(activeId, { sources: updated })
-    const nextSelected = selectedId && !selectedIds.has(selectedId)
-      ? selectedId
-      : (updated[0]?.id ?? null)
-    setSelectedId(nextSelected)
+    if (selectedId && selectedIds.has(selectedId)) setSelectedId(null)
+    if (selectedImageId && selectedIds.has(selectedImageId)) setSelectedImageId(null)
     selectedIds.forEach(id => { deleteFile(id).catch(() => {}); deleteContent(id).catch(() => {}) })
     setSelectedIds(new Set())
     setAnchorId(null)
@@ -486,13 +528,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const p = newProject(projects.length + 1)
     setProjects(ps => [...ps, p])
     setActiveId(p.id)
-    setShowProjects(false)
     setSelectedId(null)
   }
 
   function switchProject(id: string) {
     setActiveId(id)
-    setShowProjects(false)
     setSelectedId(null)
   }
 
@@ -516,11 +556,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value: AppState = {
     mounted, projects, activeId, selectedId, selectedIds, anchorId,
     showProjects, contextMenu, projContextMenu,
-    activeProject, sources, selectedSource,
+    activeProject, sources, selectedSource, selectedImageId, selectedImageSource,
     user, cloudSyncing,
-    setShowProjects, setSelectedId, setSelectedIds, setAnchorId,
+    setShowProjects, setSelectedId, setSelectedImageId, setSelectedIds, setAnchorId,
     setContextMenu, setProjContextMenu,
-    setProjects, updateProject, patchSource,
+    setProjects, updateProject, patchSource, moveSource,
     addClip, removeClip, updateClip, reorderClips,
     addFragment, insertFragment, removeFragment, updateFragment, moveFragment, clearFragments,
     uploadFiles, retrySource,

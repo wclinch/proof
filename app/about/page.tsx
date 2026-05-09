@@ -9,7 +9,7 @@ const mono: React.CSSProperties = {
   padding: '1px 6px',
   fontSize: '12px',
   color: '#777',
-  letterSpacing: '0.04em',
+  letterSpacing: '0.02em',
 }
 
 function Kbd({ children }: { children: React.ReactNode }) {
@@ -23,14 +23,14 @@ export default function About() {
 
       <main style={{ flex: 1, maxWidth: '580px', width: '100%', margin: '0 auto', padding: '56px 20px', display: 'flex', flexDirection: 'column' }}>
 
-        <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
+        <span style={{ fontSize: '13px', color: '#888', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
           About
         </span>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Proof is</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            A reading and writing workspace. Drop a PDF, read it as clean structured text, drag sentences into your draft or save them for later — all in one place. No switching tabs, no copy-pasting, no losing your place.
+            A focused workspace for research and writing. Load a PDF and a reference side by side, write from them on the right — all in one window. No switching tabs, no copy-pasting, no losing your place.
           </p>
         </div>
 
@@ -38,19 +38,19 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How to use it</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>1. Add a document</span> — drop a PDF into the left panel. It's extracted and ready to read in seconds.
+              <span style={{ color: '#999' }}>1. Organize with workspaces</span> — click the workspace name at the top of the left panel to switch between or create workspaces. Each workspace has its own source list and draft.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>2. Read</span> — your document opens as clean readable text in the center. Scroll through at your own pace.
+              <span style={{ color: '#999' }}>2. Add files</span> — drop PDFs and references into the left panel. They sit in the list until you open them.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>3. Extract</span> — click any sentence to open the extraction composer. It shows that sentence and its surrounding context. Drag individual sentences to the right to insert into your draft, or to the left to save for later.
+              <span style={{ color: '#999' }}>3. Open in split view</span> — click a reference to load it in the top half of the center panel, click a PDF for the bottom half. Hit the expand icon on either header to fullscreen it. Hit X to close it from the viewer.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>4. Write</span> — your draft grows as you read. Write freely around what you've inserted. Export as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span> from the Draft menu when done.
+              <span style={{ color: '#999' }}>4. Write</span> — type in the draft panel on the right. The draft is tied to the open PDF and saves automatically.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>5. Workspaces</span> — click your project name at the top to manage multiple workspaces. Sign in to sync across devices.
+              <span style={{ color: '#999' }}>5. Export</span> — use the <span style={{ color: '#999' }}>···</span> menu to save as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span>.
             </p>
           </div>
         </div>
@@ -59,13 +59,17 @@ export default function About() {
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Interactions</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {[
-              { keys: ['Click sentence'],          desc: 'Open the extraction composer for that sentence' },
-              { keys: ['Drag sentence → right'],   desc: 'Insert into draft at cursor position' },
-              { keys: ['Drag sentence → left'],    desc: 'Save to the Saved panel' },
-              { keys: ['Click saved sentence'],    desc: 'Remove it from saved' },
-              { keys: ['Grip (composer)'],         desc: 'Drag to reposition the composer' },
-              { keys: ['Esc'],                     desc: 'Dismiss the composer' },
-              { keys: ['Tab (in draft)'],          desc: 'Indent by four spaces' },
+              { keys: ['Workspace name'],        desc: 'Open workspace switcher' },
+              { keys: ['Right-click workspace'], desc: 'Rename or delete workspace' },
+              { keys: ['Click reference'],       desc: 'Load in the top viewer pane' },
+              { keys: ['Click PDF'],             desc: 'Load in the bottom viewer pane' },
+              { keys: ['Drag source'],           desc: 'Drop into the matching viewer pane' },
+              { keys: ['Expand (↗)'],           desc: 'Fullscreen that pane in the center column' },
+              { keys: ['X'],                     desc: 'Close source from viewer' },
+              { keys: ['Drop file'],             desc: 'Add to the source list (PDFs and images)' },
+              { keys: ['Right-click source'],    desc: 'Color, rename, or remove' },
+              { keys: ['··· (draft)'],           desc: 'Export or clear the draft' },
+              { keys: ['Esc'],                   desc: 'Close menus' },
             ].map((row, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
                 <div style={{ display: 'flex', gap: '4px', flexShrink: 0, minWidth: '160px' }}>
@@ -80,21 +84,21 @@ export default function About() {
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Layout</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Three columns. Left: document list. Center: clips panel (left half) + document reader (right half) — the divider between them is draggable. Right: draft editor. The divider between center and right is also draggable.
+            Three columns. Left: workspace switcher and source list. Center: split viewer (reference top, PDF bottom). Right: draft editor.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Document support</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>File support</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Works with standard text-based PDFs. Text is extracted once when you add the file. Scanned documents and image-only PDFs are not supported.
+            PDFs and images (PNG, JPG, WEBP, GIF). PDFs render with selectable text. Scanned or image-only PDFs will display but text won't be selectable.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Saving your work</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Free to use with no account. Your documents are stored locally in your browser. Sign in to sync your clips and workspaces across devices — documents stay on your machine and need to be re-added on each device.
+            No account needed. Files and drafts are stored locally in your browser. Sign in to sync your workspaces and draft text across devices — files stay on your machine and need to be re-added on each device.
           </p>
         </div>
 

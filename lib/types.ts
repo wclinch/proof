@@ -41,8 +41,11 @@ export interface QueuedSource {
   status: 'queued' | 'extracting' | 'done' | 'error'
   error: string | null
   label?: string
+  color?: string
+  fileType?: 'pdf' | 'image'
   content?: DocContent
   clips: Clip[]
+  draft?: string
 }
 
 export interface Project {

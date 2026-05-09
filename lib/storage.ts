@@ -1,8 +1,9 @@
 import type { Project } from './types'
 
 const STORAGE_KEY  = 'proof-v3-projects'
-export const ACTIVE_KEY   = 'proof-v3-active'
-export const SELECTED_KEY = 'proof-v3-selected'
+export const ACTIVE_KEY          = 'proof-v3-active'
+export const SELECTED_KEY        = 'proof-v3-selected'
+export const SELECTED_IMAGE_KEY  = 'proof-v3-selected-image'
 
 export function uid(): string {
   return Math.random().toString(36).slice(2, 10)
@@ -11,7 +12,7 @@ export function uid(): string {
 export function newProject(n: number): Project {
   return {
     id: uid(),
-    name: `untitled-${n}`,
+    name: `Untitled-${n}`,
     sources: [],
     draft: '',
     draftTitle: '',

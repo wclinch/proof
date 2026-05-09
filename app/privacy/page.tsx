@@ -8,45 +8,47 @@ export default function Privacy() {
 
       <main style={{ flex: 1, maxWidth: '580px', width: '100%', margin: '0 auto', padding: '56px 20px', display: 'flex', flexDirection: 'column' }}>
 
-        <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
+        <span style={{ fontSize: '13px', color: '#888', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
           Privacy
         </span>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>The short version</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Your documents never leave your device. If you sign in, your clips and workspace data sync to our servers so they're available everywhere. We collect your email address and anonymized usage events. No document content is ever transmitted.
+            Your documents never leave your device. If you sign in, your workspace and draft data sync to our servers so they're available everywhere. We collect your email and anonymized usage events. No document content is ever transmitted.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What stays on your device</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            PDF files are stored in your browser (IndexedDB) and are never uploaded to any server. They do not leave your machine under any circumstances.
+            PDF and image files are stored in your browser (IndexedDB) and are never uploaded to any server. They don't leave your machine under any circumstances.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What syncs when you sign in</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            When you create an account, your workspace names, document names, clips, and draft text are saved to our database so they're accessible on any device. This data is tied to your account and is never shared or sold. Without an account, everything stays local and is never transmitted.
+            When you create an account, your workspace names, file names, and draft text are saved to our database so they're accessible on any device. This data is tied to your account and is never shared or sold. Without an account, everything stays local.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What we collect</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#999' }}>Account:</span> email address. Required to manage sign-in and synced data.
+            <span style={{ color: '#999' }}>Account:</span> email address. Used only to manage sign-in and synced data.
           </p>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            <span style={{ color: '#999' }}>Usage analytics:</span> anonymized events — page visits, documents added, clips created. No document content, no IP addresses.
+            <span style={{ color: '#999' }}>Usage analytics:</span> anonymized events — page visits, files added. No document content, no IP addresses.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Deleting your data</h2>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            You can delete your account and all associated data at any time from the <a href="/account" style={{ color: '#777', textDecoration: 'none' }}>account page</a>. Local data (PDFs) is cleared when you clear your browser storage.
+            You can delete your account and all associated data at any time from the{' '}
+            <a href="/account" style={{ color: '#777', textDecoration: 'none' }}>account page</a>.
+            Local data (files) is cleared when you clear your browser storage.
           </p>
         </div>
 

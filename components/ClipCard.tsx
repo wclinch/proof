@@ -80,6 +80,7 @@ export default function ClipCard({
         onMouseLeave={() => setHov(false)}
         onContextMenu={e => { e.preventDefault(); setConfirmDel(false); setMenu({ x: e.clientX, y: e.clientY }) }}
         style={{
+          display: 'flex', gap: '8px',
           padding: '10px 12px',
           borderBottom: '1px solid #0f0f0f',
           opacity: isDragging ? 0.25 : 1,
@@ -88,6 +89,9 @@ export default function ClipCard({
           cursor: 'grab',
         }}
       >
+        <div style={{ flexShrink: 0, paddingTop: '2px', userSelect: 'none' }}>
+          <span style={{ fontSize: '10px', color: hov ? '#777' : '#444', letterSpacing: '0.15em', transition: 'color 0.15s' }}>⠿</span>
+        </div>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {/* Editable text */}
           {editing ? (
