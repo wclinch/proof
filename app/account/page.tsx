@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
-import BackButton from '@/components/BackButton'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
 import type { User } from '@supabase/supabase-js'
 
@@ -195,7 +194,7 @@ export default function AccountPage() {
         </div>
 
         <div style={{ paddingTop: '8px' }}>
-          <BackButton />
+          <a href="/app" className="nav-link" style={{ textDecoration: 'none' }}>← Back</a>
         </div>
 
       </main>
