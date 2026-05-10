@@ -438,7 +438,7 @@ function Empty({ label, sub }: { label: string; sub?: string }) {
       gap: '8px',
     }}>
       <span style={{ fontSize: '13px', color: '#666', letterSpacing: '0.02em' }}>{label}</span>
-      {sub && <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.02em', textAlign: 'center', maxWidth: '220px', lineHeight: 1.6 }}>{sub}</span>}
+      {sub && <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.02em', textAlign: 'center', lineHeight: 1.6, whiteSpace: 'nowrap' }}>{sub}</span>}
     </div>
   )
 }
