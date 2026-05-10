@@ -77,7 +77,8 @@ button, nav, label { user-select: none; }
   font-size: 11px;
   color: #666;
   text-decoration: none;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   transition: color 0.15s;
 }
 .footer-link:hover { color: #aaa; }

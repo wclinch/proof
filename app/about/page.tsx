@@ -23,31 +23,31 @@ export default function About() {
 
       <main style={{ flex: 1, maxWidth: '580px', width: '100%', margin: '0 auto', padding: '56px 20px', display: 'flex', flexDirection: 'column' }}>
 
-        <span style={{ fontSize: '13px', color: '#888', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
+        <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '14px', borderBottom: '1px solid #1a1a1a' }}>
           About
         </span>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>What Site is</h2>
+          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.1em', textTransform: 'uppercase' }}>What Site is</span>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            A focused workspace for research and writing. Load PDFs, images, and web references — all in a split view. Write from them on the right. No switching tabs, no copy-pasting, no losing your place.
+            A minimal research workspace designed for reading and writing side-by-side. Load PDFs, images, and web references. Organize them into projects or keep them floating. Write directly beside your references. Everything in one window — no switching tabs, no losing your place.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>How to use it</h2>
+          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.1em', textTransform: 'uppercase' }}>How to use it</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>1. Organize with workspaces</span> — click the workspace name at the top of the left panel to switch between or create workspaces. Each workspace has its own source list, scratchpad, and draft.
+              <span style={{ color: '#999' }}>1. Add sources</span> — drop PDFs or images into the left panel, or paste a URL. New sources are floating by default.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>2. Add references</span> — drop PDFs or images into the left panel, or paste a URL. Everything sits in the source list until you open it.
+              <span style={{ color: '#999' }}>2. Organize with projects</span> — type a name in the project field to create a project folder. Drag floating sources into a project, or right-click to move them.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>3. Open in split view</span> — drag an image into the top half of the center panel, drag a PDF or URL into the bottom half. Hit the expand icon on either header to fullscreen it. Hit X to close it from the viewer.
+              <span style={{ color: '#999' }}>3. Open in split view</span> — drag an image into the top viewer pane, drag a PDF or URL into the bottom pane. Hit the expand icon to fullscreen either one. Hit X to close it.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-              <span style={{ color: '#999' }}>4. Write</span> — type in the draft panel on the right. The draft is tied to what's open and saves automatically.
+              <span style={{ color: '#999' }}>4. Write</span> — type in the draft panel on the right. The draft is tied to the active project and saves automatically.
             </p>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
               <span style={{ color: '#999' }}>5. Export</span> — use the <span style={{ color: '#999' }}>···</span> menu to save as <span style={{ color: '#999' }}>.txt</span> or <span style={{ color: '#999' }}>.md</span>.
@@ -56,19 +56,19 @@ export default function About() {
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Interactions</h2>
+          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Interactions</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {[
-              { keys: ['Workspace name'],        desc: 'Open workspace switcher' },
-              { keys: ['Right-click workspace'], desc: 'Rename or delete workspace' },
-              { keys: ['Drag image'],              desc: 'Drop into the top viewer pane' },
-              { keys: ['Drag PDF / URL'],          desc: 'Drop into the bottom viewer pane' },
+              { keys: ['Drop file'],             desc: 'Add to sources (PDF or image)' },
+              { keys: ['Add URL'],               desc: 'Embed a web page as a reference' },
+              { keys: ['New project'],           desc: 'Type a name and press Enter to create a project folder' },
+              { keys: ['Right-click project'],   desc: 'Rename or delete the project' },
+              { keys: ['Drag source → folder'],  desc: 'Move a floating source into a project' },
+              { keys: ['Right-click source'],    desc: 'Rename, move to a project, or remove' },
+              { keys: ['Drag image'],            desc: 'Drop into the top viewer pane' },
+              { keys: ['Drag PDF / URL'],        desc: 'Drop into the bottom viewer pane' },
               { keys: ['Expand (↗)'],           desc: 'Fullscreen that pane in the center column' },
               { keys: ['X'],                     desc: 'Close source from viewer' },
-              { keys: ['Drop file'],             desc: 'Add to the source list (PDF or image)' },
-              { keys: ['Add URL'],               desc: 'Embed a web page as a reference' },
-              { keys: ['Notes'],                 desc: 'Freeform notes at the bottom of the draft panel — saved per workspace' },
-              { keys: ['Right-click source'],    desc: 'Rename or remove' },
               { keys: ['··· (draft)'],           desc: 'Export or clear the draft' },
               { keys: ['Esc'],                   desc: 'Close menus' },
             ].map((row, i) => (
@@ -83,14 +83,14 @@ export default function About() {
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Layout</h2>
+          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Layout</span>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            Three columns. Left: workspace switcher and source list. Center: split viewer (image top, PDF/URL bottom). Right: draft editor and notes.
+            Three columns. Left: source list and project folders. Center: split viewer (image top, PDF/URL bottom). Right: draft editor.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Reference types</h2>
+          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Reference types</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
               <span style={{ color: '#999' }}>PDF</span> — renders with selectable text. Scanned or image-only PDFs display but text won't be selectable.
@@ -105,14 +105,14 @@ export default function About() {
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Saving your work</h2>
+          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Saving your work</span>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
-            No account needed. Files and drafts are stored locally in your browser. Sign in to sync your workspaces, notes, and draft text across devices — files stay on your machine and need to be re-added on each device.
+            No account needed. Files and drafts are stored locally in your browser. Sign in to sync your projects and draft text across devices — files stay on your machine and need to be re-added on each device.
           </p>
         </div>
 
         <div style={{ padding: '20px 0', borderBottom: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#aaa', margin: 0 }}>Contact</h2>
+          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Contact</span>
           <p style={{ fontSize: '14px', color: '#777', lineHeight: 1.75, margin: 0 }}>
             <a href="mailto:proof_official@protonmail.com" className="inline-link">proof_official@protonmail.com</a>
           </p>

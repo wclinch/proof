@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
+import BackButton from '@/components/BackButton'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
 import type { User } from '@supabase/supabase-js'
 
@@ -114,14 +115,21 @@ export default function AccountPage() {
         <div style={sectionStyle}>
           <span style={labelStyle}>Account</span>
           <div style={{ fontSize: '14px', color: '#999' }}>{user?.email}</div>
-          <div style={{ fontSize: '12px', color: '#555', letterSpacing: '0.03em' }}>
-            Workspaces, notes, and drafts sync across devices.
+          <div>
+            <button
+              onClick={handleSignOut}
+              style={btnStyle}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#777' }}
+            >
+              Sign out
+            </button>
           </div>
         </div>
 
-        {/* Change password */}
+        {/* Password */}
         <div style={sectionStyle}>
-          <span style={labelStyle}>Change password</span>
+          <span style={labelStyle}>Password</span>
           <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <input
               type="password"
@@ -149,25 +157,10 @@ export default function AccountPage() {
           </form>
         </div>
 
-        {/* Sign out */}
-        <div style={sectionStyle}>
-          <span style={labelStyle}>Session</span>
-          <div>
-            <button
-              onClick={handleSignOut}
-              style={btnStyle}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#aaa' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#777' }}
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-
-        {/* Danger zone */}
+        {/* Delete account */}
         <div style={{ ...sectionStyle, borderBottom: 'none' }}>
-          <span style={{ ...labelStyle, color: '#a44' }}>Danger zone</span>
-          <div>
+          <span style={labelStyle}>Delete account</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
             <button
               onClick={handleDeleteAccount}
               style={{
@@ -186,19 +179,15 @@ export default function AccountPage() {
             {confirmDelete && (
               <button
                 onClick={() => setConfirmDelete(false)}
-                style={{
-                  marginLeft: '12px', background: 'none', border: 'none',
-                  cursor: 'pointer', fontSize: '11px', color: '#555',
-                  letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'inherit',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#777')}
+                style={{ ...btnStyle, color: '#555', border: '1px solid transparent' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#888')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#555')}
               >
                 Cancel
               </button>
             )}
             {deleteError && (
-              <div style={{ marginTop: '8px', fontSize: '11px', color: '#a44', letterSpacing: '0.03em' }}>
+              <div style={{ fontSize: '11px', color: '#a44', letterSpacing: '0.03em' }}>
                 {deleteError}
               </div>
             )}
@@ -206,14 +195,7 @@ export default function AccountPage() {
         </div>
 
         <div style={{ paddingTop: '8px' }}>
-          <a
-            href="/app"
-            style={{ fontSize: '12px', color: '#555', letterSpacing: '0.06em', textDecoration: 'none', textTransform: 'uppercase' }}
-            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#aaa')}
-            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#555')}
-          >
-            ← Back
-          </a>
+          <BackButton />
         </div>
 
       </main>

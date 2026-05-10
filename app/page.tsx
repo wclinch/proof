@@ -43,14 +43,14 @@ export default async function Home() {
 
         {/* How it works */}
         <section style={{ borderTop: '1px solid #111', maxWidth: '620px', width: '100%', margin: '0 auto', padding: '64px 24px' }}>
-          <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.06em', marginBottom: '40px' }}>
+          <div style={{ fontSize: '11px', color: '#555', letterSpacing: '0.1em', marginBottom: '40px' }}>
             How it works
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
-              ['Add references', 'Drop PDFs or images, or paste a URL — all from the left panel. Use workspaces to keep separate projects organized.'],
-              ['Open in split view', 'Drag an image to the top viewer. Drag a PDF or URL to the bottom. Hit the expand icon to fullscreen either one.'],
-              ['Write', 'Your draft lives on the right, tied to the open PDF. Write directly as you reference. Saves automatically.'],
+              ['Add references', 'Drop PDFs or images, or paste a URL from the left panel. Organize them into projects or keep them floating.'],
+              ['Open in split view', 'Drag a source into the center panel to view it. Hit the expand icon to fullscreen. Multiple references open at once.'],
+              ['Write', 'Your draft lives on the right, tied to the current project. Write directly as you reference. Saves automatically.'],
               ['Export', 'Use the draft menu to save as .txt or .md when you\'re done.'],
             ] as const).map(([title, body]) => (
               <div key={title} style={{ display: 'flex', gap: '24px' }}>
@@ -67,7 +67,7 @@ export default async function Home() {
         {/* Footer CTA */}
         <section style={{ borderTop: '1px solid #111', maxWidth: '620px', width: '100%', margin: '0 auto', padding: '64px 24px' }}>
           <p style={{ fontSize: '13px', color: '#666', lineHeight: 1.75, margin: '0 0 28px' }}>
-            No account needed. Sign in to sync your workspaces across devices — your documents stay on your machine either way.
+            No account needed. Sign in to sync your projects and drafts across devices — your files stay on your machine either way.
           </p>
           <a href="/app" className="text-cta">Open Site →</a>
         </section>
@@ -75,7 +75,7 @@ export default async function Home() {
       </main>
 
       <footer style={{ borderTop: '1px solid #111', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '620px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
-        <span style={{ fontSize: '11px', color: '#444' }}>Site</span>
+        <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.08em' }}>Site</span>
         <div style={{ display: 'flex', gap: '20px' }}>
           <a href="/about"   className="footer-link">About</a>
           <a href="/privacy" className="footer-link">Privacy</a>
