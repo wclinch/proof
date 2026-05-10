@@ -49,7 +49,7 @@ export default async function Home() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {([
               ['Add references', 'Drop PDFs or images, or paste a URL — all from the left panel. Use workspaces to keep separate projects organized.'],
-              ['Open in split view', 'Drag an image or URL to the top viewer. Drag a PDF or website to the bottom. Hit the expand icon to fullscreen either one.'],
+              ['Open in split view', 'Drag an image to the top viewer. Drag a PDF or URL to the bottom. Hit the expand icon to fullscreen either one.'],
               ['Write', 'Your draft lives on the right, tied to the open PDF. Write directly as you reference. Saves automatically.'],
               ['Export', 'Use the draft menu to save as .txt or .md when you\'re done.'],
             ] as const).map(([title, body]) => (

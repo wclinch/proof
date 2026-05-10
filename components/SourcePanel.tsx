@@ -57,6 +57,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
   const [dupMsg, setDupMsg]           = useState(false)
   const [draggingId, setDraggingId]   = useState<string | null>(null)
   const [liveOrder, setLiveOrder]     = useState<string[] | null>(null)
+  const [clockOpen, setClockOpen]     = useState(false)
 
   const fileRef   = useRef<HTMLInputElement>(null)
   const filterRef = useRef<HTMLInputElement>(null)
@@ -146,7 +147,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
     <div style={{ width, flexShrink: 0, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* Workspace header */}
-      <button
+      {!clockOpen && <button
         ref={toggleRef}
         onClick={openProjMenu}
         onMouseEnter={() => setToggleHover(true)}
@@ -176,7 +177,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
         >
           <path d="M1 1l3 3 3-3" />
         </svg>
-      </button>
+      </button>}
 
       {/* Floating workspace popover */}
       {projOpen && projPos && (
@@ -295,113 +296,172 @@ export default function SourcePanel({ width }: { width: number | string }) {
         )
       })()}
 
-      {/* Add file */}
-      <div
-        onDragOver={e => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setDragOver(true) } }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={e => {
-          e.preventDefault(); setDragOver(false)
-          const valid = Array.from(e.dataTransfer.files).filter(f =>
-            f.type === 'application/pdf' || f.name.endsWith('.pdf') ||
-            f.type.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(f.name))
-          if (valid.length) handleUpload(valid)
-        }}
-        onClick={() => fileRef.current?.click()}
-        onMouseEnter={() => setAddHover(true)}
-        onMouseLeave={() => setAddHover(false)}
-        style={{ ...shell, background: dragOver ? '#141414' : addHover ? '#111' : '#0d0d0d', borderColor: dragOver ? '#333' : addHover ? '#252525' : '#1a1a1a', cursor: 'pointer' }}
-      >
-        <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.04em', flex: 1 }}>
-          {dragOver ? 'Drop to add file' : 'Add file'}
-        </span>
-      </div>
-      <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif" multiple style={{ display: 'none' }}
-        onChange={e => { if (e.target.files?.length) { handleUpload(e.target.files); e.target.value = '' } }}
-      />
-      {addingUrl ? (
-        <div style={{
-          margin: '6px 10px 0', padding: '11px 14px',
-          background: '#0d0d0d', border: '1px solid #333', borderRadius: '4px',
-          display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0,
-        }}>
-          <input
-            ref={urlInputRef}
-            autoFocus
-            value={urlInput}
-            onChange={e => setUrlInput(e.target.value)}
-            placeholder="Paste a URL..."
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                const raw = urlInput.trim()
-                if (!raw) { setAddingUrl(false); setUrlInput(''); return }
-                const url = raw.startsWith('http') ? raw : `https://${raw}`
-                addUrl(url)
-                setAddingUrl(false); setUrlInput('')
-              }
-              if (e.key === 'Escape') { setAddingUrl(false); setUrlInput('') }
+      {!clockOpen && (
+        <>
+          {/* Add file */}
+          <div
+            onDragOver={e => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setDragOver(true) } }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => {
+              e.preventDefault(); setDragOver(false)
+              const valid = Array.from(e.dataTransfer.files).filter(f =>
+                f.type === 'application/pdf' || f.name.endsWith('.pdf') ||
+                f.type.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(f.name))
+              if (valid.length) handleUpload(valid)
             }}
-            onBlur={() => { if (!urlInput.trim()) { setAddingUrl(false); setUrlInput('') } }}
-            style={{
-              flex: 1, background: 'transparent', border: 'none', outline: 'none',
-              fontSize: '11px', color: '#bbb', fontFamily: 'inherit', letterSpacing: '0.02em',
-            }}
+            onClick={() => fileRef.current?.click()}
+            onMouseEnter={() => setAddHover(true)}
+            onMouseLeave={() => setAddHover(false)}
+            style={{ ...shell, background: dragOver ? '#141414' : addHover ? '#111' : '#0d0d0d', borderColor: dragOver ? '#333' : addHover ? '#252525' : '#1a1a1a', cursor: 'pointer' }}
+          >
+            <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.04em', flex: 1 }}>
+              {dragOver ? 'Drop to add file' : 'Add file'}
+            </span>
+          </div>
+          <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif" multiple style={{ display: 'none' }}
+            onChange={e => { if (e.target.files?.length) { handleUpload(e.target.files); e.target.value = '' } }}
           />
-        </div>
-      ) : (
-        <UrlBtn onClick={() => { setAddingUrl(true); setTimeout(() => urlInputRef.current?.focus(), 0) }} />
-      )}
-      {dupMsg && (
-        <div style={{ margin: '6px 10px 0', fontSize: '11px', color: '#666', letterSpacing: '0.02em', padding: '0 2px' }}>
-          Already added.
-        </div>
+          {addingUrl ? (
+            <div style={{
+              margin: '6px 10px 0', padding: '11px 14px',
+              background: '#0d0d0d', border: '1px solid #333', borderRadius: '4px',
+              display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0,
+            }}>
+              <input
+                ref={urlInputRef}
+                autoFocus
+                value={urlInput}
+                onChange={e => setUrlInput(e.target.value)}
+                placeholder="Paste a URL..."
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    const raw = urlInput.trim()
+                    if (!raw) { setAddingUrl(false); setUrlInput(''); return }
+                    const url = raw.startsWith('http') ? raw : `https://${raw}`
+                    addUrl(url)
+                    setAddingUrl(false); setUrlInput('')
+                  }
+                  if (e.key === 'Escape') { setAddingUrl(false); setUrlInput('') }
+                }}
+                onBlur={() => { if (!urlInput.trim()) { setAddingUrl(false); setUrlInput('') } }}
+                style={{
+                  flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                  fontSize: '11px', color: '#bbb', fontFamily: 'inherit', letterSpacing: '0.02em',
+                }}
+              />
+            </div>
+          ) : (
+            <UrlBtn onClick={() => { setAddingUrl(true); setTimeout(() => urlInputRef.current?.focus(), 0) }} />
+          )}
+          {dupMsg && (
+            <div style={{ margin: '6px 10px 0', fontSize: '11px', color: '#666', letterSpacing: '0.02em', padding: '0 2px' }}>
+              Already added.
+            </div>
+          )}
+
+          {/* Source list */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '8px', borderTop: '1px solid #1a1a1a' }}>
+            {sources.length > 0 && (
+              <div style={{ ...shell, cursor: 'text', padding: '11px 14px' }} onClick={() => filterRef.current?.focus()}>
+                <input
+                  ref={filterRef} className="sp-input"
+                  value={filterInput} onChange={e => setFilterInput(e.target.value)}
+                  placeholder="Filter..."
+                  style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '12px', fontFamily: 'inherit', letterSpacing: '0.02em', color: '#555' }}
+                />
+                {filterInput && (
+                  <button onClick={e => { e.stopPropagation(); setFilterInput(''); setFilter('') }}
+                    style={{ background: 'none', border: 'none', padding: '0 0 0 6px', cursor: 'pointer', color: '#666', fontSize: '13px', lineHeight: 1, display: 'flex', alignItems: 'center' }}
+                  >×</button>
+                )}
+              </div>
+            )}
+            <div
+              ref={listRef}
+              style={{ flex: 1, overflowY: 'auto', marginTop: sources.length > 0 ? '4px' : '0' }}
+              onDragOver={handleListDragOver}
+              onDrop={handleListDrop}
+            >
+              {sources.length === 0
+                ? (
+                  <div style={{ padding: '20px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', color: '#555', lineHeight: 1.7 }}>Drop a file or paste a URL to begin.</span>
+                  </div>
+                )
+                : visible.length === 0
+                  ? <div style={{ padding: '10px 16px', fontSize: '12px', color: '#555' }}>No results</div>
+                  : visible.map(src => (
+                      <div key={src.id} style={{ opacity: src.id === draggingId ? 0.35 : 1, transition: 'opacity 0.1s' }}>
+                        <SourceItem
+                          src={src}
+                          onDragStart={handleItemDragStart}
+                          onDragEnd={handleItemDragEnd}
+                        />
+                      </div>
+                    ))
+              }
+            </div>
+          </div>
+        </>
       )}
 
-      {/* Source list */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, marginTop: '8px', borderTop: '1px solid #1a1a1a' }}>
-        {sources.length > 0 && (
-          <div style={{ ...shell, cursor: 'text', padding: '11px 14px' }} onClick={() => filterRef.current?.focus()}>
-            <input
-              ref={filterRef} className="sp-input"
-              value={filterInput} onChange={e => setFilterInput(e.target.value)}
-              placeholder="Filter..."
-              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '12px', fontFamily: 'inherit', letterSpacing: '0.02em', color: '#555' }}
-            />
-            {filterInput && (
-              <button onClick={e => { e.stopPropagation(); setFilterInput(''); setFilter('') }}
-                style={{ background: 'none', border: 'none', padding: '0 0 0 6px', cursor: 'pointer', color: '#666', fontSize: '13px', lineHeight: 1, display: 'flex', alignItems: 'center' }}
-              >×</button>
-            )}
-          </div>
-        )}
-        <div
-          ref={listRef}
-          style={{ flex: 1, overflowY: 'auto', marginTop: sources.length > 0 ? '4px' : '0' }}
-          onDragOver={handleListDragOver}
-          onDrop={handleListDrop}
-        >
-          {sources.length === 0
-            ? (
-              <div style={{ padding: '20px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span style={{ fontSize: '11px', color: '#555', lineHeight: 1.7 }}>Drop a file or paste a URL to begin.</span>
-              </div>
-            )
-            : visible.length === 0
-              ? <div style={{ padding: '10px 16px', fontSize: '12px', color: '#555' }}>No results</div>
-              : visible.map(src => (
-                  <div key={src.id} style={{ opacity: src.id === draggingId ? 0.35 : 1, transition: 'opacity 0.1s' }}>
-                    <SourceItem
-                      src={src}
-                      onDragStart={handleItemDragStart}
-                      onDragEnd={handleItemDragEnd}
-                    />
-                  </div>
-                ))
-          }
-        </div>
-      </div>
+      <Clock open={clockOpen} onToggle={() => setClockOpen(o => !o)} />
 
     </div>
   )
+}
+
+function Clock({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  const hhmm = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const ss   = now.toLocaleTimeString([], { second: '2-digit' }).slice(-2)
+  const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+
+  if (open) {
+    return (
+      <div style={{ flex: 1, minHeight: 0, borderTop: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        <div style={{ position: 'absolute', top: 0, right: 0, padding: '4px' }}>
+          <ClockIconBtn onClick={onToggle} title="Collapse"><ClockCollapseIcon /></ClockIconBtn>
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ fontSize: '32px', color: '#555', letterSpacing: '0.06em', fontWeight: 300 }}>{hhmm}</span>
+            <span style={{ fontSize: '14px', color: '#333', letterSpacing: '0.04em' }}>{ss}</span>
+          </div>
+          <div style={{ fontSize: '10px', color: '#383838', letterSpacing: '0.1em' }}>{date.toUpperCase()}</div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ borderTop: '1px solid #1a1a1a', flexShrink: 0, display: 'flex', alignItems: 'center', height: '28px', padding: '0 8px 0 14px', gap: '4px' }}>
+      <span style={{ flex: 1, fontSize: '10px', letterSpacing: '0.04em', userSelect: 'none', color: '#888', fontVariantNumeric: 'tabular-nums' }}>
+        {hhmm}
+      </span>
+      <ClockIconBtn onClick={onToggle} title="Expand"><ClockExpandIcon /></ClockIconBtn>
+    </div>
+  )
+}
+
+function ClockIconBtn({ onClick, title, children }: { onClick: () => void; title: string; children: React.ReactNode }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button onClick={onClick} title={title}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', lineHeight: 0, color: hov ? '#bbb' : '#555', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '2px', flexShrink: 0 }}
+    >{children}</button>
+  )
+}
+function ClockExpandIcon() {
+  return <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"><path d="M1 4V1H4" /><path d="M7 1H10V4" /><path d="M10 7V10H7" /><path d="M4 10H1V7" /></svg>
+}
+function ClockCollapseIcon() {
+  return <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 1V4H1" /><path d="M10 4H7V1" /><path d="M7 10V7H10" /><path d="M1 7H4V10" /></svg>
 }
 
 function UrlBtn({ onClick }: { onClick: () => void }) {
