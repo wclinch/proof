@@ -21,6 +21,7 @@ export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot, onExp
   const [screenshotFull, setScreenshotFull] = useState(false)
   const [pdfFull, setPdfFull] = useState(false)
   const [wrongDrop, setWrongDrop] = useState<'screenshot' | 'pdf' | null>(null)
+  const [dragOverZone, setDragOverZone] = useState<'screenshot' | 'pdf' | null>(null)
   const wrongTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function flashWrong(zone: 'screenshot' | 'pdf') {
@@ -46,6 +47,18 @@ export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot, onExp
 
   function allowDrop(e: React.DragEvent) {
     if (e.dataTransfer.types.includes('application/x-proof-source-id')) e.preventDefault()
+  }
+
+  function handleDragEnter(zone: 'screenshot' | 'pdf') {
+    return (e: React.DragEvent) => {
+      if (e.dataTransfer.types.includes('application/x-proof-source-id')) {
+        setDragOverZone(zone)
+      }
+    }
+  }
+
+  function handleDragLeave() {
+    setDragOverZone(null)
   }
 
   // In pdfOnly mode (expanded layout from page.tsx) just show PDF
@@ -77,9 +90,15 @@ export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot, onExp
       {/* Screenshot zone */}
       {showScreenshot && (
         <div
-          style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+          style={{
+            flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            background: dragOverZone === 'screenshot' ? 'rgba(92, 168, 160, 0.05)' : 'transparent',
+            transition: 'background 0.2s',
+          }}
           onDragOver={allowDrop}
-          onDrop={handleImageDrop}
+          onDragEnter={handleDragEnter('screenshot')}
+          onDragLeave={handleDragLeave}
+          onDrop={(e) => { handleImageDrop(e); setDragOverZone(null) }}
         >
           <Header
             label="Reference"
@@ -100,9 +119,15 @@ export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot, onExp
       {/* PDF zone */}
       {showPdf && (
         <div
-          style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+          style={{
+            flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            background: dragOverZone === 'pdf' ? 'rgba(92, 168, 160, 0.05)' : 'transparent',
+            transition: 'background 0.2s',
+          }}
           onDragOver={allowDrop}
-          onDrop={handlePdfDrop}
+          onDragEnter={handleDragEnter('pdf')}
+          onDragLeave={handleDragLeave}
+          onDrop={(e) => { handlePdfDrop(e); setDragOverZone(null) }}
         >
           <Header
             label="Pdf / Website"
@@ -432,13 +457,13 @@ function Msg({ children }: { children: React.ReactNode }) {
 function Empty({ label, sub }: { label: string; sub?: string }) {
   return (
     <div style={{
-      flex: 1, margin: '12px', borderRadius: '4px',
-      border: '1px dashed #252525',
+      flex: 1,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      gap: '8px',
+      gap: '12px',
+      padding: '32px 24px',
     }}>
-      <span style={{ fontSize: '13px', color: '#666', letterSpacing: '0.02em' }}>{label}</span>
-      {sub && <span style={{ fontSize: '11px', color: '#444', letterSpacing: '0.02em', textAlign: 'center', lineHeight: 1.6, whiteSpace: 'nowrap' }}>{sub}</span>}
+      <span style={{ fontSize: '14px', color: '#888', letterSpacing: '0.02em', fontWeight: 400 }}>{label}</span>
+      {sub && <span style={{ fontSize: '12px', color: '#666', letterSpacing: '0.02em', textAlign: 'center', lineHeight: 1.6 }}>{sub}</span>}
     </div>
   )
 }

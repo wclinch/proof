@@ -18,6 +18,7 @@ export function newProject(n: number): Project {
     draftTitle: '',
     fragments: [],
     scratchpad: '',
+    projectDraft: '',
   }
 }
 

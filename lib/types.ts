@@ -58,4 +58,5 @@ export interface Project {
   draftTitle: string  // legacy
   fragments: Fragment[]
   scratchpad?: string
+  projectDraft?: string
 }

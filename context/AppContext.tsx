@@ -13,6 +13,8 @@ import { extractContent } from '@/lib/extract'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
 import { capture, identify, reset } from '@/lib/posthog'
 
+export const INBOX_ID = '__inbox__'
+
 interface ContextMenu     { srcId: string; x: number; y: number }
 interface ProjContextMenu { projId: string; x: number; y: number }
 
@@ -29,6 +31,7 @@ interface AppState {
   // derived
   activeProject: Project | null
   sources: QueuedSource[]
+  allSources: QueuedSource[]
   selectedSource: QueuedSource | null
   selectedImageId: string | null
   selectedImageSource: QueuedSource | null
@@ -58,18 +61,32 @@ interface AppState {
   moveFragment: (id: string, afterId: string | null) => void
   clearFragments: () => void
   moveSource: (srcId: string, toIndex: number) => void
-  uploadFiles: (files: FileList | File[]) => Promise<void>
+  moveSourceToProject: (srcId: string, targetProjId: string) => void
+  uploadFiles: (files: FileList | File[], targetProjId?: string) => Promise<void>
   retrySource: (srcId: string) => Promise<void>
   removeSource: (srcId: string) => void
   removeSelected: () => void
-  createNote: () => void
-  addUrl: (url: string) => Promise<void>
-  createProject: () => void
+  createNote: (targetProjId?: string) => void
+  addUrl: (url: string, targetProjId?: string) => Promise<void>
+  createProject: (name?: string) => void
   switchProject: (id: string) => void
   deleteProject: (id: string) => void
 }
 
 const AppContext = createContext<AppState | null>(null)
+
+function makeInbox(): Project {
+  return {
+    id: INBOX_ID,
+    name: '',
+    sources: [],
+    draft: '',
+    draftTitle: '',
+    fragments: [],
+    scratchpad: '',
+    projectDraft: '',
+  }
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted]           = useState(false)
@@ -90,7 +107,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [cloudSyncing, setCloudSyncing] = useState(false)
   const projectsRef    = useRef<Project[]>([])
 
-  // activeId ref for use in async callbacks
   const activeIdRef = useRef(activeId)
   useEffect(() => { activeIdRef.current = activeId }, [activeId])
 
@@ -118,7 +134,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('click', handler)
   }, [projContextMenu])
 
-  useEffect(() => { setSelectedIds(new Set()); setAnchorId(null) }, [activeId])
   useEffect(() => { setProjContextMenu(null) }, [showProjects])
 
   useEffect(() => {
@@ -141,36 +156,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = loadProjects()
     if (saved.length) {
-      // Reset sources stuck mid-extraction (page was closed during extraction)
-      const fixed = saved.map(proj => ({
+      let fixed = saved.map(proj => ({
         ...proj,
         sources: proj.sources.map(src =>
           src.status === 'extracting' ? { ...src, status: 'queued' as const } : src
         ),
       }))
+      // Ensure inbox project always exists
+      if (!fixed.some(p => p.id === INBOX_ID)) {
+        fixed = [makeInbox(), ...fixed]
+      }
       setProjects(fixed)
 
       const savedActive   = localStorage.getItem(ACTIVE_KEY)
-      const match         = fixed.find(p => p.id === savedActive) ?? fixed[0]
+      const match         = fixed.find(p => p.id === savedActive) ?? fixed.find(p => p.id !== INBOX_ID) ?? fixed[0]
       setActiveId(match.id)
       const savedSelected = localStorage.getItem(SELECTED_KEY)
-      if (savedSelected && match.sources.find(s => s.id === savedSelected)) {
+      const allSrc = fixed.flatMap(p => p.sources)
+      if (savedSelected && allSrc.find(s => s.id === savedSelected)) {
         setSelectedId(savedSelected)
       }
       const savedSelectedImage = localStorage.getItem(SELECTED_IMAGE_KEY)
-      if (savedSelectedImage && match.sources.find(s => s.id === savedSelectedImage)) {
+      if (savedSelectedImage && allSrc.find(s => s.id === savedSelectedImage)) {
         setSelectedImageId(savedSelectedImage)
       }
 
-      // Content is always stripped from localStorage — recover from IDB on
-      // every load. Falls back to re-extracting from the stored file if needed.
       ;(async () => {
         for (const proj of fixed) {
           for (const src of proj.sources) {
             if (src.status !== 'done') continue
-            if (src.fileType === 'image') continue  // images load directly from IDB
-            if (src.fileType === 'note')  continue  // notes store content inline
-            if (src.fileType === 'url')   continue  // urls need no local content
+            if (src.fileType === 'image') continue
+            if (src.fileType === 'note')  continue
+            if (src.fileType === 'url')   continue
             try {
               let content = await getContent(src.id) as import('@/lib/types').DocContent | null
               if (!content) {
@@ -183,7 +200,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
               if (content) {
                 patchSource(proj.id, src.id, { content })
               } else {
-                // File gone — let user re-upload
                 patchSource(proj.id, src.id, { status: 'queued' as const, error: null })
               }
             } catch {
@@ -193,9 +209,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       })()
     } else {
-      const p = newProject(1)
-      setProjects([p])
-      setActiveId(p.id)
+      const inbox = makeInbox()
+      setProjects([inbox])
+      setActiveId(inbox.id)
     }
     setMounted(true)
   }, [])
@@ -207,16 +223,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     cloudReady.current = false
     loadProjectsCloud(user.id).then(cloud => {
       if (cloud && cloud.length > 0) {
-        setProjects(cloud)
+        // Ensure inbox exists in cloud data too
+        let fixed = cloud
+        if (!fixed.some((p: Project) => p.id === INBOX_ID)) {
+          fixed = [makeInbox(), ...fixed]
+        }
+        setProjects(fixed)
         const savedActive = localStorage.getItem(ACTIVE_KEY)
-        const match = cloud.find(p => p.id === savedActive) ?? cloud[0]
+        const match = fixed.find((p: Project) => p.id === savedActive) ?? fixed.find((p: Project) => p.id !== INBOX_ID) ?? fixed[0]
         setActiveId(match.id)
         const savedSelected = localStorage.getItem(SELECTED_KEY)
-        if (savedSelected && match.sources.find((s: { id: string }) => s.id === savedSelected)) {
+        const allSrc = fixed.flatMap((p: Project) => p.sources)
+        if (savedSelected && allSrc.find((s: { id: string }) => s.id === savedSelected)) {
           setSelectedId(savedSelected)
         }
         const savedSelectedImage = localStorage.getItem(SELECTED_IMAGE_KEY)
-        if (savedSelectedImage && match.sources.find((s: { id: string }) => s.id === savedSelectedImage)) {
+        if (savedSelectedImage && allSrc.find((s: { id: string }) => s.id === savedSelectedImage)) {
           setSelectedImageId(savedSelectedImage)
         }
       }
@@ -229,8 +251,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (projects.length) saveProjects(projects)
   }, [projects])
 
-  // Force-save before the page unloads — covers hard reload and tab close
-  // where the async effect might not have fired yet.
   useEffect(() => {
     function onBeforeUnload() {
       if (projectsRef.current.length) saveProjects(projectsRef.current)
@@ -264,8 +284,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const activeProject       = projects.find(p => p.id === activeId) ?? null
   const sources             = activeProject?.sources ?? []
-  const selectedSource      = sources.find(s => s.id === selectedId) ?? null
-  const selectedImageSource = sources.find(s => s.id === selectedImageId) ?? null
+  const allSources          = projects.flatMap(p => p.sources)
+  const selectedSource      = allSources.find(s => s.id === selectedId) ?? null
+  const selectedImageSource = allSources.find(s => s.id === selectedImageId) ?? null
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -273,77 +294,59 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setProjects(ps => ps.map(p => p.id === id ? { ...p, ...patch } : p))
   }
 
-  function patchSource(projId: string, srcId: string, patch: Partial<QueuedSource>) {
-    setProjects(ps => ps.map(p =>
-      p.id !== projId ? p : {
-        ...p,
-        sources: p.sources.map(s => s.id === srcId ? { ...s, ...patch } : s),
-      }
-    ))
+  // projId is kept in signature for backward compat but ignored — scans all projects
+  function patchSource(_projId: string, srcId: string, patch: Partial<QueuedSource>) {
+    setProjects(ps => ps.map(p => ({
+      ...p,
+      sources: p.sources.map(s => s.id === srcId ? { ...s, ...patch } : s),
+    })))
   }
 
   function addClip(srcId: string, clip: Clip) {
-    const projId = activeIdRef.current
-    if (!projId) return
-    setProjects(ps => ps.map(p =>
-      p.id !== projId ? p : {
-        ...p,
-        sources: p.sources.map(s =>
-          s.id !== srcId ? s : { ...s, clips: [...s.clips, clip] }
-        ),
-      }
-    ))
+    setProjects(ps => ps.map(p => ({
+      ...p,
+      sources: p.sources.map(s =>
+        s.id !== srcId ? s : { ...s, clips: [...s.clips, clip] }
+      ),
+    })))
   }
 
   function updateClip(srcId: string, clipId: string, patch: Partial<Clip>) {
-    const projId = activeIdRef.current
-    if (!projId) return
-    setProjects(ps => ps.map(p =>
-      p.id !== projId ? p : {
-        ...p,
-        sources: p.sources.map(s =>
-          s.id !== srcId ? s : { ...s, clips: s.clips.map(c => c.id !== clipId ? c : { ...c, ...patch }) }
-        ),
-      }
-    ))
+    setProjects(ps => ps.map(p => ({
+      ...p,
+      sources: p.sources.map(s =>
+        s.id !== srcId ? s : { ...s, clips: s.clips.map(c => c.id !== clipId ? c : { ...c, ...patch }) }
+      ),
+    })))
   }
 
   function reorderClips(srcId: string, fromId: string, afterId: string | null) {
-    const projId = activeIdRef.current
-    if (!projId) return
-    setProjects(ps => ps.map(p => {
-      if (p.id !== projId) return p
-      return {
-        ...p,
-        sources: p.sources.map(s => {
-          if (s.id !== srcId) return s
-          const clips  = s.clips
-          const idx    = clips.findIndex(c => c.id === fromId)
-          if (idx === -1) return s
-          const moved  = clips[idx]
-          const rest   = clips.filter(c => c.id !== fromId)
-          if (afterId === null) return { ...s, clips: [moved, ...rest] }
-          const afterIdx = rest.findIndex(c => c.id === afterId)
-          if (afterIdx === -1) return { ...s, clips: [...rest, moved] }
-          const result = [...rest]
-          result.splice(afterIdx + 1, 0, moved)
-          return { ...s, clips: result }
-        }),
-      }
-    }))
+    setProjects(ps => ps.map(p => ({
+      ...p,
+      sources: p.sources.map(s => {
+        if (s.id !== srcId) return s
+        const clips  = s.clips
+        const idx    = clips.findIndex(c => c.id === fromId)
+        if (idx === -1) return s
+        const moved  = clips[idx]
+        const rest   = clips.filter(c => c.id !== fromId)
+        if (afterId === null) return { ...s, clips: [moved, ...rest] }
+        const afterIdx = rest.findIndex(c => c.id === afterId)
+        if (afterIdx === -1) return { ...s, clips: [...rest, moved] }
+        const result = [...rest]
+        result.splice(afterIdx + 1, 0, moved)
+        return { ...s, clips: result }
+      }),
+    })))
   }
 
   function removeClip(srcId: string, clipId: string) {
-    const projId = activeIdRef.current
-    if (!projId) return
-    setProjects(ps => ps.map(p =>
-      p.id !== projId ? p : {
-        ...p,
-        sources: p.sources.map(s =>
-          s.id !== srcId ? s : { ...s, clips: s.clips.filter(c => c.id !== clipId) }
-        ),
-      }
-    ))
+    setProjects(ps => ps.map(p => ({
+      ...p,
+      sources: p.sources.map(s =>
+        s.id !== srcId ? s : { ...s, clips: s.clips.filter(c => c.id !== clipId) }
+      ),
+    })))
   }
 
   function addFragment(fragment: Fragment) {
@@ -414,9 +417,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   function moveSource(srcId: string, toIndex: number) {
-    if (!activeId) return
     setProjects(ps => ps.map(p => {
-      if (p.id !== activeId) return p
+      if (!p.sources.some(s => s.id === srcId)) return p
       const from = p.sources.findIndex(s => s.id === srcId)
       if (from === -1) return p
       const arr = [...p.sources]
@@ -426,14 +428,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }))
   }
 
+  function moveSourceToProject(srcId: string, targetProjId: string) {
+    setProjects(ps => {
+      const src = ps.flatMap(p => p.sources).find(s => s.id === srcId)
+      if (!src) return ps
+      return ps.map(p => {
+        if (p.sources.some(s => s.id === srcId)) {
+          return { ...p, sources: p.sources.filter(s => s.id !== srcId) }
+        }
+        if (p.id === targetProjId) {
+          return { ...p, sources: [...p.sources, src] }
+        }
+        return p
+      })
+    })
+  }
+
   // ─── Actions ────────────────────────────────────────────────────────────────
 
   const MAX_BATCH   = 10
   const MAX_FILE_MB = 100
 
-  async function uploadFiles(files: FileList | File[]) {
-    const projId = activeIdRef.current
-    if (!projId) return
+  async function uploadFiles(files: FileList | File[], targetProjId?: string) {
+    const projId = targetProjId ?? INBOX_ID
 
     const isImage = (f: File) =>
       f.type.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(f.name)
@@ -443,7 +460,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let list = Array.from(files)
       .filter(f => isPdf(f) || isImage(f))
       .slice(0, MAX_BATCH)
-    list = list.filter(f => !sources.some(s => s.label === f.name))
+
+    const currentAllSources = projectsRef.current.flatMap(p => p.sources)
+    list = list.filter(f => !currentAllSources.some(s => s.label === f.name))
     if (!list.length) return
 
     const newSources = list.map(f => ({
@@ -451,8 +470,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       fileType: (isImage(f) ? 'image' : 'pdf') as 'pdf' | 'image',
     }))
 
-    updateProject(projId, { sources: [...sources, ...newSources] })
-    // No auto-select — files sit in list until clicked or dragged
+    setProjects(ps => ps.map(p =>
+      p.id !== projId ? p : { ...p, sources: [...p.sources, ...newSources] }
+    ))
 
     for (let i = 0; i < list.length; i++) {
       const file = list[i]
@@ -466,7 +486,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         await storeFile(src.id, file)
         if (src.fileType === 'image') {
-          // Images need no extraction — just store and mark done
           patchSource(projId, src.id, { status: 'done' })
         } else {
           patchSource(projId, src.id, { status: 'extracting' })
@@ -485,20 +504,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function retrySource(srcId: string) {
-    const projId = activeIdRef.current
-    if (!projId) return
     const file = await getFile(srcId)
     if (!file) {
-      patchSource(projId, srcId, { status: 'error', error: 'File not found — re-upload to retry.' })
+      patchSource('', srcId, { status: 'error', error: 'File not found — re-upload to retry.' })
       return
     }
     try {
-      patchSource(projId, srcId, { status: 'extracting' })
+      patchSource('', srcId, { status: 'extracting' })
       const content = await extractContent(file)
       await storeContent(srcId, content).catch(() => {})
-      patchSource(projId, srcId, { status: 'done', content, error: null })
+      patchSource('', srcId, { status: 'done', content, error: null })
     } catch (err) {
-      patchSource(projId, srcId, {
+      patchSource('', srcId, {
         status: 'error',
         error: err instanceof Error ? err.message : 'Failed to process file — try again.',
       })
@@ -506,9 +523,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   function removeSource(srcId: string) {
-    if (!activeId) return
-    const updated = sources.filter(s => s.id !== srcId)
-    updateProject(activeId, { sources: updated })
+    setProjects(ps => ps.map(p => ({
+      ...p,
+      sources: p.sources.filter(s => s.id !== srcId),
+    })))
     if (selectedId === srcId) setSelectedId(null)
     if (selectedImageId === srcId) setSelectedImageId(null)
     setSelectedIds(new Set())
@@ -518,9 +536,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   function removeSelected() {
-    if (!activeId || !selectedIds.size) return
-    const updated = sources.filter(s => !selectedIds.has(s.id))
-    updateProject(activeId, { sources: updated })
+    if (!selectedIds.size) return
+    setProjects(ps => ps.map(p => ({
+      ...p,
+      sources: p.sources.filter(s => !selectedIds.has(s.id)),
+    })))
     if (selectedId && selectedIds.has(selectedId)) setSelectedId(null)
     if (selectedImageId && selectedIds.has(selectedImageId)) setSelectedImageId(null)
     selectedIds.forEach(id => { deleteFile(id).catch(() => {}); deleteContent(id).catch(() => {}) })
@@ -528,18 +548,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAnchorId(null)
   }
 
-  function createNote() {
-    const projId = activeIdRef.current
-    if (!projId) return
+  function createNote(targetProjId?: string) {
+    const projId = targetProjId ?? INBOX_ID
     const note = newNote()
-    updateProject(projId, { sources: [...sources, note] })
+    setProjects(ps => ps.map(p =>
+      p.id !== projId ? p : { ...p, sources: [...p.sources, note] }
+    ))
   }
 
-  async function addUrl(url: string) {
-    const projId = activeIdRef.current
-    if (!projId) return
+  async function addUrl(url: string, targetProjId?: string) {
+    const projId = targetProjId ?? INBOX_ID
     const src = newUrlSource(url)
-    updateProject(projId, { sources: [...sources, src] })
+    setProjects(ps => ps.map(p =>
+      p.id !== projId ? p : { ...p, sources: [...p.sources, src] }
+    ))
     try {
       const res = await fetch(`/api/url-meta?url=${encodeURIComponent(url)}`)
       const { title } = await res.json()
@@ -547,8 +569,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch {}
   }
 
-  function createProject() {
-    const p = newProject(projects.length + 1)
+  function createProject(name?: string) {
+    const p = newProject(projects.filter(proj => proj.id !== INBOX_ID).length + 1)
+    if (name) p.name = name
     setProjects(ps => [...ps, p])
     setActiveId(p.id)
     setSelectedId(null)
@@ -560,17 +583,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   function deleteProject(id: string) {
+    if (id === INBOX_ID) return
     const updated = projects.filter(p => p.id !== id)
     setSelectedId(null)
     setSelectedIds(new Set())
-    if (!updated.length) {
-      const p = newProject(1)
-      setProjects([p])
-      setActiveId(p.id)
+    if (!updated.some(p => p.id !== INBOX_ID)) {
+      // Only inbox left — that's fine, just keep it
+      setProjects(updated)
+      setActiveId(INBOX_ID)
       setShowProjects(false)
     } else {
       setProjects(updated)
-      if (activeId === id) setActiveId(updated[0].id)
+      if (activeId === id) {
+        const next = updated.find(p => p.id !== INBOX_ID) ?? updated[0]
+        setActiveId(next.id)
+      }
     }
   }
 
@@ -579,11 +606,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value: AppState = {
     mounted, projects, activeId, selectedId, selectedIds, anchorId,
     showProjects, contextMenu, projContextMenu,
-    activeProject, sources, selectedSource, selectedImageId, selectedImageSource,
+    activeProject, sources, allSources, selectedSource, selectedImageId, selectedImageSource,
     user, cloudSyncing,
     setShowProjects, setSelectedId, setSelectedImageId, setSelectedIds, setAnchorId,
     setContextMenu, setProjContextMenu,
-    setProjects, updateProject, patchSource, moveSource,
+    setProjects, updateProject, patchSource, moveSource, moveSourceToProject,
     addClip, removeClip, updateClip, reorderClips,
     addFragment, insertFragment, removeFragment, updateFragment, moveFragment, clearFragments,
     uploadFiles, retrySource,

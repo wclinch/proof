@@ -25,7 +25,7 @@ export default function SourceItem({ src, onDragStart, onDragEnd }: {
   onDragEnd?: () => void
 }) {
   const {
-    activeId, selectedIds, anchorId, sources,
+    selectedIds, anchorId, allSources,
     setSelectedIds, setAnchorId, setContextMenu,
     patchSource,
   } = useApp()
@@ -49,10 +49,10 @@ export default function SourceItem({ src, onDragStart, onDragEnd }: {
 
   function handleClick(e: React.MouseEvent) {
     if (e.shiftKey && anchorId) {
-      const ai = sources.findIndex(s => s.id === anchorId)
-      const ci = sources.findIndex(s => s.id === src.id)
+      const ai = allSources.findIndex(s => s.id === anchorId)
+      const ci = allSources.findIndex(s => s.id === src.id)
       const [lo, hi] = ai < ci ? [ai, ci] : [ci, ai]
-      setSelectedIds(new Set(sources.slice(lo, hi + 1).map(s => s.id)))
+      setSelectedIds(new Set(allSources.slice(lo, hi + 1).map(s => s.id)))
     } else {
       setSelectedIds(new Set([src.id]))
       setAnchorId(src.id)
@@ -70,7 +70,7 @@ export default function SourceItem({ src, onDragStart, onDragEnd }: {
 
   function commitLabel() {
     const val = labelInput.trim()
-    if (activeId) patchSource(activeId, src.id, { label: val || undefined })
+    patchSource('', src.id, { label: val || undefined })
     setEditing(false)
   }
 
