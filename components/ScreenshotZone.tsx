@@ -32,7 +32,7 @@ export default function ScreenshotZone({ onCollapse }: { onCollapse: () => void 
 
       {!src && (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.02em' }}>Drop a reference here</span>
+          <span style={{ fontSize: '11px', color: '#555', letterSpacing: '0.02em' }}>Drop an image here</span>
         </div>
       )}
       {src?.fileType === 'image' && <ImageContent source={src} />}

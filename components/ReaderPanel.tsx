@@ -62,7 +62,7 @@ export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot, onExp
         />
         <PdfViewer
           source={selectedSource}
-          wrongMsg={wrongDrop === 'pdf' ? 'Images go in the top pane' : undefined}
+          wrongMsg={wrongDrop === 'pdf' ? 'Drop images in top pane' : undefined}
         />
       </div>
     )
@@ -113,7 +113,7 @@ export default function ReaderPanel({ pdfOnly = false, onExpandScreenshot, onExp
           />
           <PdfViewer
             source={selectedSource}
-            wrongMsg={wrongDrop === 'pdf' ? 'Images go in the top pane' : undefined}
+            wrongMsg={wrongDrop === 'pdf' ? 'Drop images in top pane' : undefined}
           />
         </div>
       )}
@@ -275,7 +275,7 @@ function ImageViewer({ source, wrongMsg }: { source: ReturnType<typeof useApp>['
 
   return (
     <div style={{ flex: 1, background: '#080808', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {!source && <Empty label='Drop a reference here' sub='PDF · PNG · JPG · WEBP · GIF · URL' />}
+      {!source && <Empty label='Drop an image here' sub='PNG · JPG · WEBP · GIF' />}
       {source && source.status !== 'done' && <Msg>Loading...</Msg>}
       {source && source.status === 'done' && !imgUrl && <Msg>Could not load image.</Msg>}
       {source && source.status === 'done' && imgUrl && (
@@ -336,7 +336,7 @@ function PdfViewer({ source, wrongMsg }: { source: ReturnType<typeof useApp>['se
 
   return (
     <div ref={containerRef} style={{ flex: 1, overflow: 'auto', background: '#080808', display: 'flex', flexDirection: 'column' }}>
-      {!source                               && <Empty label={wrongMsg ?? 'Drop a PDF or website here'} sub={wrongMsg ? undefined : 'PDF · URL · Draft on the right stays tied to what\'s open'} />}
+      {!source                               && <Empty label={wrongMsg ?? 'Drop a PDF or paste a URL'} sub={wrongMsg ? undefined : 'PDF · URL · Draft on the right stays tied to what\'s open'} />}
       {source?.status === 'queued'           && <Msg>Waiting...</Msg>}
       {source?.status === 'extracting'       && <Msg>Reading document...</Msg>}
       {source?.status === 'done' && !fileUrl && <Msg>Loading...</Msg>}

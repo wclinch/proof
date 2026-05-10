@@ -312,7 +312,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
         style={{ ...shell, background: dragOver ? '#141414' : addHover ? '#111' : '#0d0d0d', borderColor: dragOver ? '#333' : addHover ? '#252525' : '#1a1a1a', cursor: 'pointer' }}
       >
         <span style={{ fontSize: '11px', color: '#777', letterSpacing: '0.04em', flex: 1 }}>
-          {dragOver ? 'Drop to add' : 'Add file'}
+          {dragOver ? 'Drop to add file' : 'Add file'}
         </span>
       </div>
       <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif" multiple style={{ display: 'none' }}
