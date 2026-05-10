@@ -8,7 +8,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
   const {
     sources, uploadFiles, moveSource, addUrl,
     projects, activeId, activeProject,
-    createProject, switchProject, deleteProject,
+    createProject, switchProject, updateProject, deleteProject,
   } = useApp()
 
   // ── Workspace popover state ────────────────────────────────────────────────
