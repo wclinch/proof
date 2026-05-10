@@ -116,7 +116,7 @@ export default function DraftPanel() {
       <div style={{
         borderTop: '1px solid #1a1a1a', flexShrink: 0,
         display: 'flex', flexDirection: 'column',
-        ...(notesOpen ? { flex: '0 0 38%', minHeight: 0 } : {}),
+        ...(notesOpen ? { flexGrow: 0, flexBasis: '38%', minHeight: 0 } : {}),
       }}>
         <div style={{
           height: '28px', flexShrink: 0,

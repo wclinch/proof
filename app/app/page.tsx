@@ -4,8 +4,6 @@ import { AppProvider }   from '@/context/AppContext'
 import ProjectBar        from '@/components/ProjectBar'
 import SourcePanel       from '@/components/SourcePanel'
 import DraftPanel        from '@/components/DraftPanel'
-import ScoutDiscovery    from '@/components/ScoutDiscovery'
-import DropZone          from '@/components/DropZone'
 import SourceContextMenu from '@/components/SourceContextMenu'
 import { useApp }        from '@/context/AppContext'
 import { useState, useEffect } from 'react'
@@ -45,7 +43,6 @@ function Layout() {
   const { mounted } = useApp()
   const [screenshotExpanded, setScreenshotExpanded] = useState(false)
   const [pdfFullscreen, setPdfFullscreen] = useState(false)
-  const [scoutDiscovery, setScoutDiscovery] = useState(false)
 
   if (!mounted) {
     return (
@@ -60,19 +57,8 @@ function Layout() {
       <ProjectBar />
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
-        {scoutDiscovery ? (
-          /* SCOUT DISCOVERY: ScoutDiscovery spans left+center, DropZone on right */
-          <>
-            <ScoutDiscovery onClose={() => setScoutDiscovery(false)} />
-            <div style={{ width: '1px', flexShrink: 0, background: '#333' }} />
-            <div style={{ width: DEF_DRAFT, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <DropZone onClose={() => setScoutDiscovery(false)} />
-            </div>
-          </>
-        ) : (
-        <>
         {/* Left 20%: source list */}
-        <SourcePanel width={DEF_SOURCE} onScoutFullscreen={() => setScoutDiscovery(true)} />
+        <SourcePanel width={DEF_SOURCE} />
         <div style={{ width: '1px', flexShrink: 0, background: '#222' }} />
 
         {pdfFullscreen ? (
@@ -102,8 +88,6 @@ function Layout() {
               <DraftPanel />
             </div>
           </>
-        )}
-        </>
         )}
 
       </div>

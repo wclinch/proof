@@ -540,7 +540,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!projId) return
     const src = newUrlSource(url)
     updateProject(projId, { sources: [...sources, src] })
-    // Fetch title in background and update label
     try {
       const res = await fetch(`/api/url-meta?url=${encodeURIComponent(url)}`)
       const { title } = await res.json()
