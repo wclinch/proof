@@ -412,18 +412,42 @@ export default function SourcePanel({ width }: { width: number | string }) {
 }
 
 function Clock({ open, onToggle }: { open: boolean; onToggle: () => void }) {
-  const [now, setNow] = useState(new Date())
+  const [now, setNow]   = useState(new Date())
+  const containerRef    = useRef<HTMLDivElement>(null)
+  const [dims, setDims] = useState<{ w: number; h: number } | null>(null)
+
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(t)
   }, [])
+
+  useEffect(() => {
+    if (!open || !containerRef.current) return
+    const el = containerRef.current
+    const ro = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect
+      setDims({ w: width, h: height })
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [open])
+
   const hhmm = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   const ss   = now.toLocaleTimeString([], { second: '2-digit' }).slice(-2)
   const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
 
+  const hr = now.getHours()
+  const mn = now.getMinutes()
+  const sc = now.getSeconds()
+  const is427 = (hr === 4 || hr === 16) && mn === 27
+  const is428close = (hr === 4 || hr === 16) && mn === 28 && sc === 0
+  const showTrack = open && (is427 || is428close)
+  const trackProgress = is428close ? 1 : sc / 60
+
   if (open) {
     return (
-      <div style={{ flex: 1, minHeight: 0, borderTop: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <div ref={containerRef} style={{ flex: 1, minHeight: 0, borderTop: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        {showTrack && dims && <TrackOverlay dims={dims} progress={trackProgress} />}
         <div style={{ position: 'absolute', top: 0, right: 0, padding: '4px' }}>
           <ClockIconBtn onClick={onToggle} title="Collapse"><ClockCollapseIcon /></ClockIconBtn>
         </div>
@@ -445,6 +469,45 @@ function Clock({ open, onToggle }: { open: boolean; onToggle: () => void }) {
       </span>
       <ClockIconBtn onClick={onToggle} title="Expand"><ClockExpandIcon /></ClockIconBtn>
     </div>
+  )
+}
+
+function TrackOverlay({ dims, progress }: { dims: { w: number; h: number }; progress: number }) {
+  const pad = 10
+  const rx  = 18
+  const x   = pad, y = pad
+  const w   = dims.w - 2 * pad
+  const h   = dims.h - 2 * pad
+  const cx  = x + w / 2
+
+  const perim = 2 * (w - 2 * rx) + 2 * (h - 2 * rx) + 2 * Math.PI * rx
+
+  // Clockwise from top dead center
+  const d = [
+    `M ${cx} ${y}`,
+    `L ${x + w - rx} ${y}`,
+    `A ${rx} ${rx} 0 0 1 ${x + w} ${y + rx}`,
+    `L ${x + w} ${y + h - rx}`,
+    `A ${rx} ${rx} 0 0 1 ${x + w - rx} ${y + h}`,
+    `L ${x + rx} ${y + h}`,
+    `A ${rx} ${rx} 0 0 1 ${x} ${y + h - rx}`,
+    `L ${x} ${y + rx}`,
+    `A ${rx} ${rx} 0 0 1 ${x + rx} ${y}`,
+    `L ${cx} ${y}`,
+  ].join(' ')
+
+  return (
+    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+      <path
+        d={d}
+        fill="none"
+        stroke="#2a2a2a"
+        strokeWidth="1"
+        strokeLinecap="butt"
+        strokeDasharray={perim}
+        strokeDashoffset={perim * (1 - progress)}
+      />
+    </svg>
   )
 }
 
