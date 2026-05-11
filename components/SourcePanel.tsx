@@ -333,7 +333,7 @@ export default function SourcePanel({ width }: { width: number | string }) {
               {/* Inbox / floating area */}
               {visibleInbox.length === 0 && namedProjects.length === 0 ? (
                 <div style={{ padding: '20px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontSize: '11px', color: '#555', lineHeight: 1.7 }}>Drop a file or paste a URL to begin.</span>
+                  <span style={{ fontSize: '11px', color: '#555', lineHeight: 1.7 }}>Select a file or paste a URL to begin.</span>
                 </div>
               ) : (
                 <div
@@ -535,7 +535,9 @@ export default function SourcePanel({ width }: { width: number | string }) {
 function Clock({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const [now, setNow]   = useState(new Date())
   const containerRef    = useRef<HTMLDivElement>(null)
+  const timeRef         = useRef<HTMLDivElement>(null)
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null)
+  const [timeBounds, setTimeBounds] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
@@ -553,6 +555,18 @@ function Clock({ open, onToggle }: { open: boolean; onToggle: () => void }) {
     return () => ro.disconnect()
   }, [open])
 
+  useEffect(() => {
+    if (!open || !dims || !timeRef.current || !containerRef.current) return
+    const containerRect = containerRef.current.getBoundingClientRect()
+    const timeRect = timeRef.current.getBoundingClientRect()
+    setTimeBounds({
+      x: timeRect.left - containerRect.left,
+      y: timeRect.top - containerRect.top,
+      w: timeRect.width,
+      h: timeRect.height,
+    })
+  }, [open, dims])
+
   const hhmm = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   const ss   = now.toLocaleTimeString([], { second: '2-digit' }).slice(-2)
   const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
@@ -568,12 +582,12 @@ function Clock({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   if (open) {
     return (
       <div ref={containerRef} style={{ flex: 1, minHeight: 0, borderTop: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-        {showTrack && dims && <TrackOverlay dims={dims} progress={trackProgress} />}
+        {showTrack && timeBounds && <TrackOverlay bounds={timeBounds} progress={trackProgress} />}
         <div style={{ position: 'absolute', top: 0, right: 0, padding: '4px' }}>
           <ClockIconBtn onClick={onToggle} title="Collapse"><ClockCollapseIcon /></ClockIconBtn>
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', fontVariantNumeric: 'tabular-nums' }}>
+          <div ref={timeRef} style={{ display: 'flex', alignItems: 'baseline', gap: '4px', fontVariantNumeric: 'tabular-nums' }}>
             <span style={{ fontSize: '32px', color: '#555', letterSpacing: '0.06em', fontWeight: 300 }}>{hhmm}</span>
             <span style={{ fontSize: '14px', color: '#333', letterSpacing: '0.04em' }}>{ss}</span>
           </div>
@@ -593,12 +607,13 @@ function Clock({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   )
 }
 
-function TrackOverlay({ dims, progress }: { dims: { w: number; h: number }; progress: number }) {
-  const pad = 10
-  const rx  = 18
-  const x   = pad, y = pad
-  const w   = dims.w - 2 * pad
-  const h   = dims.h - 2 * pad
+function TrackOverlay({ bounds, progress }: { bounds: { x: number; y: number; w: number; h: number }; progress: number }) {
+  const pad = 48
+  const rx  = 12
+  const x   = bounds.x - pad
+  const y   = bounds.y - pad
+  const w   = bounds.w + pad * 2
+  const h   = bounds.h + pad * 2
   const cx  = x + w / 2
 
   const perim = 2 * (w - 2 * rx) + 2 * (h - 2 * rx) + 2 * Math.PI * rx
